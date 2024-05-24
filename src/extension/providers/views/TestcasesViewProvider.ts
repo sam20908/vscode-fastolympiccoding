@@ -150,7 +150,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 break;
             case 'SOURCE_CODE_STOP': {
                 const process = this._processes.find(process => process.getStartTime(), message.payload.id)!;
-                process.process.kill();
+                this._onExit(process, -1);
                 break;
             }
             case 'STDIN': {
@@ -198,21 +198,25 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _onChangeActiveFile(): void {
+        const waiting = [];
         if (this._compileProcess) {
             this._compileProcess.process.kill();
+            waiting.push(this._compileProcess.executionPromise);
         }
         for (const process of this._processes) {
-            process.process.removeAllListeners('exit'); // don't fire events because new eventlistener might receive it
             process.process.kill();
+            waiting.push(process.executionPromise);
         }
 
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            super._postMessage('SAVED_TESTCASES');
-            return;
-        }
+        Promise.allSettled(waiting).then(() => {
+            this._processes = [];
 
-        super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+            const file = vscode.window.activeTextEditor?.document.fileName;
+            if (!file) {
+                super._postMessage('SAVED_TESTCASES');
+                return;
+            }
+            super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+        });
     }
-
 }
