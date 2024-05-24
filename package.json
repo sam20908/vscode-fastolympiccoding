@@ -1,10 +1,10 @@
 {
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Port of CppFastOlympicCoding for VSCode",
   "engines": {
-    "vscode": "^1.22.0"
+    "vscode": "^1.89.0"
   },
   "publisher": "sam20908",
   "repository": {
@@ -12,6 +12,7 @@
     "url": "https://github.com/sam20908/vscode-fastolympiccoding.git"
   },
   "main": "./dist/extension.js",
+  "activationEvents": [],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -122,7 +123,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "NODE_ENV=production node ./esbuild.js",
+    "vscode:prepublish": "cross-env NODE_ENV=production node ./esbuild.js",
     "build": "node ./esbuild.js",
     "watch": "node ./esbuild.js --watch"
   },
@@ -131,6 +132,8 @@
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/vscode": "^1.89.0",
+    "@vscode/vsce": "^2.26.1",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.21.2"
   },
   "dependencies": {
