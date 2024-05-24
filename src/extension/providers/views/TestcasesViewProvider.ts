@@ -209,6 +209,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
 
         Promise.allSettled(waiting).then(() => {
+            this._compileProcess = undefined;
             this._processes = [];
 
             const file = vscode.window.activeTextEditor?.document.fileName;
