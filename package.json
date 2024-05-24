@@ -2,7 +2,7 @@
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
   "version": "0.1.0",
-  "description": "Port of CppFastOlympicCoding for VSCode",
+  "description": "Port of FastOlympicCoding for VSCode",
   "engines": {
     "vscode": "^1.89.0"
   },
