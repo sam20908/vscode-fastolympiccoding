@@ -1,0 +1,139 @@
+{
+  "name": "vscode-fastolympiccoding",
+  "displayName": "Fast Olympic Coding",
+  "version": "1.0.0",
+  "description": "Port of CppFastOlympicCoding for VSCode",
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "publisher": "sam20908",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sam20908/vscode-fastolympiccoding.git"
+  },
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fastolympiccoding",
+          "title": "Fast Olympic Coding",
+          "icon": "$(zap)"
+        }
+      ]
+    },
+    "views": {
+      "fastolympiccoding": [
+        {
+          "id": "fastolympiccoding.testcases",
+          "type": "webview",
+          "name": "Testcases"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "File Variables",
+        "properties": {
+          "fastolympiccoding.fileSnippetsBaseDirectory": {
+            "type": "string",
+            "default": null,
+            "description": "The base directory of the file snippets (empty string to disable this functionality).",
+            "scope": "File Variables"
+          },
+          "fastolympiccoding.goodSolutionFile": {
+            "type": "string",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Good.${fileExtname}",
+            "description": "The full path to the good solution file.",
+            "scope": "File Variables"
+          },
+          "fastolympiccoding.generatorFile": {
+            "type": "string",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Generator.${fileExtname}",
+            "description": "The full path to the generator file.",
+            "scope": "File Variables"
+          },
+          "fastolympiccoding.checkerFile": {
+            "type": "string",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Checker.${fileExtname}",
+            "description": "The full path to the solution checker file.",
+            "scope": "File Variables"
+          },
+          "fastolympiccoding.compiledFile": {
+            "type": "string",
+            "default": "${fileDirname}/${fileBasenameNoExtension}.${exeSuffix}",
+            "description": "The full path for the compiled file (variables are resolved in the context of file being compiled).",
+            "scope": "File Variables"
+          }
+        }
+      },
+      {
+        "title": "Run",
+        "properties": {
+          "fastolympiccoding.runSettings": {
+            "type": "object",
+            "patternProperties": {
+              "\\.[a-zA-Z]+": {
+                "type": "object",
+                "properties": {
+                  "compileCommand": {
+                    "type": "string",
+                    "description": "Command to compile the solution (empty to avoid compilation)."
+                  },
+                  "runCommand": {
+                    "type": "string",
+                    "description": "Command to run the solution."
+                  }
+                },
+                "required": [
+                  "runCommand"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "scope": "Run"
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "fastolympiccoding.runAll",
+        "title": "Run All Testcases",
+        "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.deleteAll",
+        "title": "Delete All Testcases",
+        "category": "Fast Olympic Coding"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "fastolympiccoding.runAll",
+        "key": "ctrl+alt+b",
+        "when": "view.fastolympiccoding.testcases.visible"
+      },
+      {
+        "command": "fastolympiccoding.deleteAll",
+        "key": "ctrl+alt+d",
+        "when": "view.fastolympiccoding.testcases.visible"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "NODE_ENV=production node ./esbuild.js",
+    "build": "node ./esbuild.js",
+    "watch": "node ./esbuild.js --watch"
+  },
+  "author": "Sam Huang",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.89.0",
+    "esbuild": "^0.21.2"
+  },
+  "dependencies": {
+    "preact": "^10.21.0"
+  }
+}
