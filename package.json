@@ -132,7 +132,6 @@
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/vscode": "^1.89.0",
-    "@vscode/vsce": "^2.26.1",
     "cross-env": "^7.0.3",
     "esbuild": "^0.21.2"
   },
