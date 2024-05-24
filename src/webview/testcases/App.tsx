@@ -43,11 +43,11 @@ export default function App() {
         const message: IMessage = event.data;
         switch (message.type) {
             case 'SAVED_TESTCASES': {
-                const testcases = message.payload;
-                setTestcases(testcases);
-                setStatuses(testcases ? Array(testcases.length).fill('') : []);
-                testcaseId.current = testcases ? [...Array(message.payload.length).keys()] : [];
-                running.current = testcases ? [...Array(message.payload.length).fill(false)] : [];
+                const savedTestcases = message.payload;
+                setTestcases(savedTestcases);
+                setStatuses(savedTestcases ? Array(savedTestcases.length).fill('') : []);
+                testcaseId.current = savedTestcases ? [...Array(savedTestcases.length).keys()] : [];
+                running.current = savedTestcases ? [...Array(savedTestcases.length).fill(false)] : [];
                 break;
             }
             case 'REQUEST_RUN_ALL':
@@ -172,15 +172,20 @@ export default function App() {
             return;
         }
 
-        setTestcases(prevTestcases => prevTestcases?.map((value, index) => index === testcase ? {
-            ...value,
-            stderr: '',
-            stdout: ''
-        } : value));
+        // setTestcases(prevTestcases => prevTestcases?.map((value, index) => index === testcase ? {
+        //     ...value,
+        //     stderr: '',
+        //     stdout: ''
+        // } : value));
+        setTestcases(prevTestcases => {
+            const newTestcases = prevTestcases!.slice();
+            newTestcases[testcase].stdout = '';
+            newTestcases[testcase].stderr = '';
+            postMessage('SOURCE_CODE_RUN', { id: testcaseId.current[testcase], input: prevTestcases![testcase].input });
+            return newTestcases;
+        });
 
         running.current[testcase] = true;
-
-        postMessage('SOURCE_CODE_RUN', { id: testcaseId.current[testcase], input: testcases![testcase].input });
     };
 
     const handleStopTestcase = testcase => {
