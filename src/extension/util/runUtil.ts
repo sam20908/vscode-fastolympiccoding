@@ -16,7 +16,7 @@ export class RunningProcess {
     readonly spawnPromise: Promise<void>;
     readonly executionPromise: Promise<number>;
     private _startTime: number = 0;
-    private _endTime: number = 0;
+    private _endTime: number | undefined = undefined;
 
     constructor(commandString: string) {
         const [process, promise] = executeCommand(commandString);
@@ -34,6 +34,6 @@ export class RunningProcess {
     }
 
     public getEndTime(): number {
-        return this._endTime;
+        return this._endTime ?? this._startTime; // process can be forcefully killed
     }
 };
