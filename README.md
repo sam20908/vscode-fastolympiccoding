@@ -24,7 +24,7 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 - Built-in linter, because the official C/C++ extension can do it
 
 ## Setting Up
-- Any language can work, provided that your have settings for for it in your own `settings.json`. Here are some example configurations:
+- Any language can work, provided that your have settings for it in your own `settings.json`. Here are some example configurations:
 ```json
 {
   "fastolympiccoding.runSettings": {
