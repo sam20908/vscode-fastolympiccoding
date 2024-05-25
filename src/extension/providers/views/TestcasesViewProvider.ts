@@ -72,6 +72,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
                     const extension = path.extname(file);
                     const config = vscode.workspace.getConfiguration('fastolympiccoding');
+                    const forceCompilation: boolean = config.get('forceCompilation')!;
                     const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
                     if (!runSettings) {
                         vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
@@ -87,49 +88,49 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
                                 return;
                             }
-                        }
+                        } else {
+                            const code = await (async () => {
+                                const lastModified = fs.statSync(file).mtime.getTime();
+                                if (this._lastCompiled.get(file) === lastModified && !forceCompilation) {
+                                    return 0; // avoid recompiling the same source code
+                                }
 
-                        const code = await (async () => {
-                            const lastModified = fs.statSync(file).mtime.getTime();
-                            if (this._lastCompiled.get(file) === lastModified) {
-                                return 0; // avoid recompiling the same source code
-                            }
+                                super._postMessage('STATUS', { status: 'COMPILING', id });
+                                this._errorTerminal.get(file)?.dispose();
+                                const dummy = new DummyTerminal();
+                                const terminal = vscode.window.createTerminal({
+                                    name: path.basename(file),
+                                    pty: dummy,
+                                    iconPath: { id: 'zap' }
+                                });
+                                this._errorTerminal.set(file, terminal);
 
-                            super._postMessage('STATUS', { status: 'COMPILING', id });
-                            this._errorTerminal.get(file)?.dispose();
-                            const dummy = new DummyTerminal();
-                            const terminal = vscode.window.createTerminal({
-                                name: path.basename(file),
-                                pty: dummy,
-                                iconPath: { id: 'zap' }
-                            });
-                            this._errorTerminal.set(file, terminal);
+                                const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
+                                const process = new RunningProcess(resolvedCommand);
+                                this._compileProcess = process;
+                                process.process.stderr.on('data', data => {
+                                    dummy.write(data.toString());
+                                });
 
-                            const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
-                            const process = new RunningProcess(resolvedCommand);
-                            this._compileProcess = process;
-                            process.process.stderr.on('data', data => {
-                                dummy.write(data.toString());
-                            });
+                                const code = await process.executionPromise;
+                                this._compileProcess = undefined;
+                                if (code === null) {
+                                    return -1; // forcefully terminated
+                                }
+                                if (code) {
+                                    super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                                    terminal.show();
+                                    return -1;
+                                } else {
+                                    terminal.dispose();
+                                }
 
-                            const code = await process.executionPromise;
-                            this._compileProcess = undefined;
-                            if (code === null) {
-                                return -1; // forcefully terminated
-                            }
+                                this._lastCompiled.set(file, lastModified);
+                                return 0;
+                            })();
                             if (code) {
-                                super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
-                                terminal.show();
-                                return -1;
-                            } else {
-                                terminal.dispose();
+                                return;
                             }
-
-                            this._lastCompiled.set(file, lastModified);
-                            return 0;
-                        })();
-                        if (code) {
-                            return;
                         }
                     }
 
