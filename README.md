@@ -1,4 +1,6 @@
-# Fast Olympic Coding
+<h3 align="center">⚡ Fast Olympic Coding ⚡</h3>
+
+<br>
 
 ![Testcases Gif](media/testcases.gif)
 
@@ -8,11 +10,13 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 
 ### _Interested? [LEARN HOW TO USE RIGHT NOW!](#setting-up)_
 
+---
+
 #### Features
-- Testcases
+- Compiling, running, and testing against multiple testcases at the same time!
 
 #### Todo
-- Documentation on file variables
+- Documentation on settings
 - Time limit
 - Stress tester
 - Solution checker (*permutation problems zzzzzzzz...*)
@@ -21,10 +25,12 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 - Debugger integration
 
 #### Not Planned
-- Built-in linter, because the official C/C++ extension can do it
+- Built-in linter. Please use another extension like [Microsoft's C/C++ Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools).
+
+<br>
 
 ## Setting Up
-- Any language can work, provided that your have settings for it in your own `settings.json`. Here are some example configurations:
+Provide settings for the languages you use in `settings.json`. Here are some example configurations for C++ and Python:
 ```json
 {
   "fastolympiccoding.runSettings": {
@@ -39,13 +45,11 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 }
 ```
 
-Notice that we can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom one `${compiledFile}`, which resolves to the full path of the compiled file. The commands are normalized, meaning there's no need to worry about different path separators.
+- Notice that we can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom one `${compiledFile}`, which resolves to the full path of the compiled file. 
+- Forward/backward slashes are automatically normalized for the platform.
 
 ### Testcases
-When you open any file, the extension will load the saved testcases for that file, and the testcases view will automatically update whenever you switch files.
+- The extension will load the saved testcases for the opened file, and the testcases will automatically update whenever you switch files.
+- Any compilation errors will be displayed in a terminal.
 
-Multiple limitations have been addressed, such as running, editing, and deleting multiple testcases at the same time.
-
-If the language requires compilation and it fails, it will be displayed in a terminal window. Colors are supported given that the compile command outputs it.
-
-![Compile Error](media/compile_error.gif)
+![Compile Error Gif](media/compile_error.gif)

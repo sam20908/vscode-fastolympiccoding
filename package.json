@@ -3,6 +3,7 @@
   "displayName": "Fast Olympic Coding",
   "version": "0.1.1",
   "description": "Port of FastOlympicCoding for VSCode",
+  "categories": ["Programming Languages", "Keymaps", "Testing"],
   "engines": {
     "vscode": "^1.89.0"
   },
