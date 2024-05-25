@@ -83,7 +83,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         if (this._compileProcess) {
                             super._postMessage('STATUS', { status: 'COMPILING', id });
                             const code = await this._compileProcess.executionPromise; // another testcase is compiling
-                            if (code) {
+                            if (code !== 0) {
                                 super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
                                 return;
                             }
@@ -114,6 +114,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
                             const code = await process.executionPromise;
                             this._compileProcess = undefined;
+                            if (code === null) {
+                                return -1; // forcefully terminated
+                            }
                             if (code) {
                                 super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
                                 terminal.show();
@@ -150,7 +153,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 break;
             case 'SOURCE_CODE_STOP': {
                 const process = this._processes.find(process => process.getStartTime(), message.payload.id)!;
-                this._onExit(process, -1);
+                process.process.kill();
                 break;
             }
             case 'STDIN': {
@@ -197,27 +200,25 @@ export class TestcasesViewProvider extends BaseViewProvider {
         this._processes.splice(index, 1);
     }
 
-    private _onChangeActiveFile(): void {
-        const waiting = [];
+    private async _onChangeActiveFile(): Promise<void> {
+        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
         if (this._compileProcess) {
+            this._compileProcess.process.removeAllListeners();
             this._compileProcess.process.kill();
-            waiting.push(this._compileProcess.executionPromise);
         }
         for (const process of this._processes) {
+            process.process.removeAllListeners();
             process.process.kill();
-            waiting.push(process.executionPromise);
         }
 
-        Promise.allSettled(waiting).then(() => {
-            this._compileProcess = undefined;
-            this._processes = [];
+        this._compileProcess = undefined;
+        this._processes = [];
 
-            const file = vscode.window.activeTextEditor?.document.fileName;
-            if (!file) {
-                super._postMessage('SAVED_TESTCASES');
-                return;
-            }
-            super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
-        });
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            super._postMessage('SAVED_TESTCASES');
+            return;
+        }
+        super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
     }
 }

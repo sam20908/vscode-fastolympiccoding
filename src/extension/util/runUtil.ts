@@ -1,20 +1,20 @@
 import * as child_process from 'child_process';
 
-function executeCommand(commandString: string): [child_process.ChildProcessWithoutNullStreams, Promise<number>] {
+function executeCommand(commandString: string): [child_process.ChildProcessWithoutNullStreams, Promise<number | null>] {
     const [command, ...args] = commandString.split(' ');
     const process = child_process.spawn(command, args);
     process.stdout.setEncoding('utf-8');
     process.stderr.setEncoding('utf-8');
 
     return [process, new Promise(resolve => {
-        process.on('exit', code => resolve(code ?? 0));
+        process.on('exit', resolve);
     })];
 }
 
 export class RunningProcess {
     readonly process: child_process.ChildProcessWithoutNullStreams;
     readonly spawnPromise: Promise<void>;
-    readonly executionPromise: Promise<number>;
+    readonly executionPromise: Promise<number | null>;
     private _startTime: number = 0;
     private _endTime: number | undefined = undefined;
 
