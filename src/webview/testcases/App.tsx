@@ -107,6 +107,7 @@ export default function App() {
 
         const id = Date.now();
         testcaseId.current.push(id);
+        running.current.push(true);
         postMessage('SOURCE_CODE_RUN', { id, input: '' });
     };
 
@@ -172,11 +173,6 @@ export default function App() {
             return;
         }
 
-        // setTestcases(prevTestcases => prevTestcases?.map((value, index) => index === testcase ? {
-        //     ...value,
-        //     stderr: '',
-        //     stdout: ''
-        // } : value));
         setTestcases(prevTestcases => {
             const newTestcases = prevTestcases!.slice();
             newTestcases[testcase].stdout = '';
