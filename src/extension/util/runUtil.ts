@@ -14,17 +14,20 @@ function executeCommand(commandString: string): [child_process.ChildProcessWitho
 
 export class RunningProcess {
     readonly process: child_process.ChildProcessWithoutNullStreams;
-    readonly spawnPromise: Promise<void>;
+    readonly spawnPromise: Promise<boolean>;
     readonly executionPromise: Promise<number | null>;
     private _startTime: number = 0;
     private _endTime: number | undefined = undefined;
 
     constructor(commandString: string) {
         const [process, promise] = executeCommand(commandString);
-        this.spawnPromise = new Promise(resolve => process.on('spawn', () => {
-            this._startTime = Date.now();
-            resolve();
-        }));
+        this.spawnPromise = new Promise(resolve => {
+            process.on('spawn', () => {
+                this._startTime = Date.now();
+                resolve(true);
+            });
+            process.on('error', () => resolve(false));
+        });
         process.on('exit', () => this._endTime = Date.now());
         this.process = process;
         this.executionPromise = promise;

@@ -45,6 +45,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: RunningProcess[] = [];
     private _lastRunMutex: Mutex = new Mutex();
+    private _terminalMutex: Mutex = new Mutex();
     private _lastRun: number = -1;
 
     onMessage(message: IMessage): void {
@@ -98,27 +99,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 }
 
                                 super._postMessage('STATUS', { status: 'COMPILING', id });
-                                this._errorTerminal.get(file)?.dispose();
-                                const dummy = new DummyTerminal();
-                                const terminal = vscode.window.createTerminal({
-                                    name: path.basename(file),
-                                    pty: dummy,
-                                    iconPath: { id: 'zap' }
-                                });
-                                this._errorTerminal.set(file, terminal);
-
-                                // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
-                                await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
-
                                 const process = new RunningProcess(resolvedCommand);
                                 this._compileProcess = process;
-                                process.process.stderr.on('data', data => {
-                                    dummy.write(data.toString());
-                                });
-                                process.process.on('error', data => {
-                                    dummy.write(data.stack ?? 'Error encountered during compilation!');
-                                    dummy.write(`\n\nWhen executing command "${resolvedCommand}"`);
-                                });
+                                let compileError = '';
+                                process.process.stderr.on('data', data => compileError += data.toString());
+                                process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
                                 const code = await process.executionPromise;
                                 this._compileProcess = undefined;
@@ -127,10 +112,25 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 }
                                 if (code) {
                                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+
+                                    const unlock = await this._terminalMutex.lock();
+                                    this._errorTerminal.get(file)?.dispose();
+                                    const dummy = new DummyTerminal();
+                                    const terminal = vscode.window.createTerminal({
+                                        name: path.basename(file),
+                                        pty: dummy,
+                                        iconPath: { id: 'zap' }
+                                    });
+
+                                    // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
+                                    await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
+
+                                    dummy.write(compileError);
                                     terminal.show();
+                                    this._errorTerminal.set(file, terminal);
+                                    unlock();
+
                                     return -1;
-                                } else {
-                                    terminal.dispose();
                                 }
 
                                 this._lastCompiled.set(file, [lastModified, resolvedCommand]);
@@ -144,15 +144,20 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
 
-                    // prevent multiple processes having the same Date.now()
                     const unlock = await this._lastRunMutex.lock();
                     while (Date.now() <= this._lastRun) { } // wait until the time is different
 
                     const process = new RunningProcess(resolvedCommand);
-                    await process.spawnPromise; // wait for process to actually start
+                    process.process.on('error', this._onError.bind(this, id));
 
-                    this._processes.push(process);
+                    const spawned = await process.spawnPromise;
+                    if (!spawned) {
+                        unlock();
+                        return;
+                    }
+
                     super._postMessage('STATUS', { status: 'RUNNING', id, startTime: process.getStartTime() });
+                    this._processes.push(process);
                     process.process.stdin.write(input);
                     process.process.stdout.on('data', this._onStdout.bind(this, process));
                     process.process.stderr.on('data', this._onStderr.bind(this, process));
@@ -207,6 +212,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
         const index = this._processes.findIndex(value => value.getStartTime() === startTime);
         this._processes.splice(index, 1);
+    }
+
+    private _onError(id: number, err: Error): void {
+        super._postMessage('STDERR', { id, data: `${err.stack ?? '[No NodeJS callstack available]'}\n\nError when running the solution...` });
+        super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
     }
 
     private async _onChangeActiveFile(): Promise<void> {
