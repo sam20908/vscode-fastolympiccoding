@@ -40,7 +40,7 @@ function saveStorageState(path: string, state: IStorage): void {
 
 export class TestcasesViewProvider extends BaseViewProvider {
     private _state: IStorage;
-    private _lastCompiled: Map<string, number> = new Map();
+    private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: RunningProcess[] = [];
@@ -90,9 +90,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
                             }
                         } else {
                             const code = await (async () => {
+                                const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                                 const lastModified = fs.statSync(file).mtime.getTime();
-                                if (this._lastCompiled.get(file) === lastModified && !forceCompilation) {
-                                    return 0; // avoid recompiling the same source code
+                                const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(file) ?? [-1, ''];
+                                if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
+                                    return 0; // avoid unnecessary recompilation
                                 }
 
                                 super._postMessage('STATUS', { status: 'COMPILING', id });
@@ -108,7 +110,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
                                 await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
 
-                                const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                                 const process = new RunningProcess(resolvedCommand);
                                 this._compileProcess = process;
                                 process.process.stderr.on('data', data => {
@@ -132,7 +133,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                     terminal.dispose();
                                 }
 
-                                this._lastCompiled.set(file, lastModified);
+                                this._lastCompiled.set(file, [lastModified, resolvedCommand]);
                                 return 0;
                             })();
                             if (code) {
