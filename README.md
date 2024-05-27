@@ -12,25 +12,27 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 
 ---
 
-#### Features
-- Compiling, running, and testing against multiple testcases at the same time!
+### Features
+- Compiling, running, and editing multiple testcases at the same time
 
-#### Todo
+### Todo
 - Documentation on settings
-- Time limit
+- Integration with [Competitive Companion](https://github.com/jmerle/competitive-companion)
+  - Problem parser (and maybe contest parser)
+  - Optional time/memory limit per testcase
 - Stress tester
 - Solution checker (*permutation problems zzzzzzzz...*)
-- "Emmet" of class types (`Class Completion` functionality in original plugin)
+- "Emmet" for class types (`Class Completion` functionality in original plugin)
 - File snippets (`Auto` function in original plugin)
 - Debugger integration
 
-#### Not Planned
+### Not Planned
 - Built-in linter. Please use another extension like [Microsoft's C/C++ Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools).
 
-<br>
+---
 
-## Setting Up
-Provide settings for the languages you use in `settings.json`. Here are some example configurations for C++ and Python:
+### Setting Up
+Provide settings for the languages you use in `settings.json`. Here are some example configurations for C++, Python, and Java:
 ```json
 {
   "fastolympiccoding.runSettings": {
@@ -40,6 +42,10 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
     },
     ".py": {
       "runCommand": "python ${file}"
+    },
+    ".java": {
+      "compileCommand": "javac ${file}",
+      "runCommand": "java -cp ${fileDirname} ${fileBasenameNoExtension}"
     }
   }
 }
@@ -47,6 +53,8 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 
 - We can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom one `${exeExtname}` to resolve into `.exe` for Windows and an empty string for other platforms. 
 - Forward/backward slashes are automatically normalized for the platform.
+
+---
 
 ### Testcases
 - The extension will load the saved testcases for the opened file, and the testcases will automatically update whenever you switch files.
