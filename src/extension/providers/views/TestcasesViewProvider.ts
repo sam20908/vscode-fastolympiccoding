@@ -105,11 +105,18 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 });
                                 this._errorTerminal.set(file, terminal);
 
+                                // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
+                                await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
+
                                 const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                                 const process = new RunningProcess(resolvedCommand);
                                 this._compileProcess = process;
                                 process.process.stderr.on('data', data => {
                                     dummy.write(data.toString());
+                                });
+                                process.process.on('error', data => {
+                                    dummy.write(data.stack ?? 'Error encountered during compilation!');
+                                    dummy.write(`\n\nWhen executing command "${resolvedCommand}"`);
                                 });
 
                                 const code = await process.executionPromise;
