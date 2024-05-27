@@ -39,14 +39,18 @@
     },
     "configuration": [
       {
-        "title": "File Variables",
         "properties": {
           "fastolympiccoding.fileSnippetsBaseDirectory": {
             "type": "string",
             "default": null,
             "description": "The base directory of the file snippets (empty string to disable this functionality).",
             "scope": "File Variables"
-          },
+          }
+        }
+      },
+      {
+        "title": "File Variables",
+        "properties": {
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
             "default": "${fileDirname}/${fileBasenameNoExtension}__Good.${fileExtname}",
