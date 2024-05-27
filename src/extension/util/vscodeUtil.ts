@@ -22,7 +22,7 @@ export class DummyTerminal implements vscode.Pseudoterminal {
     close(): void { }
 }
 
-export function resolveBuiltinVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {
+export function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {
     const workspaces = vscode.workspace.workspaceFolders;
     const workspace = vscode.workspace.workspaceFolders?.at(0);
     const activeEditor = inContextOfFile ? undefined : vscode.window.activeTextEditor;
@@ -43,6 +43,7 @@ export function resolveBuiltinVariables(string: string, recursive: boolean = fal
     do {
         oldString = string;
 
+        // VSCode variables
         string = workspace ? string.replace(/\${workspaceFolder}/g, workspace.uri.fsPath) : string;
         string = workspace ? string.replace(/\${workspaceFolderBasename}/g, workspace.name) : string;
         string = absoluteFilePath ? string.replace(/\${file}/g, absoluteFilePath) : string;
@@ -60,26 +61,9 @@ export function resolveBuiltinVariables(string: string, recursive: boolean = fal
         string = activeEditor ? string.replace(/\${selectedText}/g, `${activeEditor.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end))}`) : string;
         string = string.replace(/\${env:(.*?)}/g, (match, _offset, _string) => process.env[match] ?? '');
         string = string.replace(/\${config:(.*?)}/g, (match, _offset, _string) => vscode.workspace.getConfiguration().get(match) ?? '');
+
+        // Our own variables
+        string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
     } while (recursive && oldString !== string);
-    return string;
-}
-
-export function resolveExtensionVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {
-    const compiledFile = vscode.workspace.getConfiguration('fastolympiccoding').get('compiledFile') as string;
-    const resolvedFile = resolveBuiltinVariables(compiledFile, recursive, inContextOfFile);
-
-    let oldString = '';
-    do {
-        oldString = string;
-
-        string = string.replace(/\${compiledFile}/, resolvedFile);
-        string = string.replace(/\${exeSuffix}/, os.platform() === 'win32' ? 'exe' : 'out');
-    } while (recursive && oldString !== string);
-    return string;
-}
-
-export function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {
-    string = resolveExtensionVariables(string, recursive, inContextOfFile); // extension variables into builtin variables first
-    string = resolveBuiltinVariables(string, recursive, inContextOfFile);
     return string;
 }

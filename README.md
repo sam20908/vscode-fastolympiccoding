@@ -35,8 +35,8 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 {
   "fastolympiccoding.runSettings": {
     ".cpp": {
-      "compileCommand": "g++ -std=gnu++20 -D_GLIBCXX_DEBUG ${file} -o ${compiledFile} -fdiagnostics-color=always",
-      "runCommand": "./${compiledFile}"
+      "compileCommand": "g++ -std=gnu++20 -D_GLIBCXX_DEBUG ${file} -o ${fileDirname}/${fileBasenameNoExtension}.${exeSuffix} -fdiagnostics-color=always",
+      "runCommand": "./${fileDirname}/${fileBasenameNoExtension}${exeExtname}"
     },
     ".py": {
       "runCommand": "python ${file}"
@@ -45,7 +45,7 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 }
 ```
 
-- Notice that we can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom one `${compiledFile}`, which resolves to the full path of the compiled file. 
+- We can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom one `${exeExtname}` to resolve into `.exe` for Windows and an empty string for other platforms. 
 - Forward/backward slashes are automatically normalized for the platform.
 
 ### Testcases

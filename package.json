@@ -64,12 +64,6 @@
             "default": "${fileDirname}/${fileBasenameNoExtension}__Checker.${fileExtname}",
             "description": "The full path to the solution checker file.",
             "scope": "File Variables"
-          },
-          "fastolympiccoding.compiledFile": {
-            "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}.${exeSuffix}",
-            "description": "The full path for the compiled file (variables are resolved in the context of file being compiled).",
-            "scope": "File Variables"
           }
         }
       },
