@@ -43,8 +43,7 @@
           "fastolympiccoding.fileSnippetsBaseDirectory": {
             "type": "string",
             "default": null,
-            "description": "The base directory of the file snippets (empty string to disable this functionality).",
-            "scope": "File Variables"
+            "description": "The base directory of the file snippets (empty string to disable this functionality)."
           }
         }
       },
@@ -54,20 +53,17 @@
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
             "default": "${fileDirname}/${fileBasenameNoExtension}__Good.${fileExtname}",
-            "description": "The full path to the good solution file.",
-            "scope": "File Variables"
+            "description": "The full path to the good solution file."
           },
           "fastolympiccoding.generatorFile": {
             "type": "string",
             "default": "${fileDirname}/${fileBasenameNoExtension}__Generator.${fileExtname}",
-            "description": "The full path to the generator file.",
-            "scope": "File Variables"
+            "description": "The full path to the generator file."
           },
           "fastolympiccoding.checkerFile": {
             "type": "string",
             "default": "${fileDirname}/${fileBasenameNoExtension}__Checker.${fileExtname}",
-            "description": "The full path to the solution checker file.",
-            "scope": "File Variables"
+            "description": "The full path to the solution checker file."
           }
         }
       },
@@ -94,14 +90,12 @@
                 ]
               }
             },
-            "additionalProperties": false,
-            "scope": "Run"
+            "additionalProperties": false
           },
           "fastolympiccoding.forceCompilation": {
             "type": "boolean",
             "default": false,
-            "description": "Force compilation regardless of file changes (if current extension has a compile command).",
-            "scope": "Run"
+            "description": "Force compilation regardless of file changes (if current extension has a compile command)."
           }
         }
       }
