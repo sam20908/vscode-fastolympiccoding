@@ -8,6 +8,7 @@ function executeCommand(commandString: string): [child_process.ChildProcessWitho
 
     return [process, new Promise(resolve => {
         process.on('exit', resolve);
+        process.on('error', () => resolve(-1));
     })];
 }
 
