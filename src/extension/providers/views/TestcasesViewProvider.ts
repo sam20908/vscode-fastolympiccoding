@@ -166,7 +166,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 })();
                 break;
             case 'SOURCE_CODE_STOP': {
-                const process = this._processes.find(process => process.getStartTime(), message.payload.id)!;
+                const process = this._processes.find(process => process.getStartTime() === message.payload.id)!;
                 process.process.kill();
                 break;
             }
