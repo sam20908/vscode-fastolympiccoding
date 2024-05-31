@@ -1,7 +1,5 @@
 <h3 align="center">⚡ Fast Olympic Coding ⚡</h3>
 
-<br>
-
 ![Testcases Gif](media/testcases.gif)
 
 Fast Olympic Coding is an extension to assist with various common tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin by integration various VSCode functionalities.
