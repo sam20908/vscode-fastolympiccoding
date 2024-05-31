@@ -162,6 +162,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     process.process.stdout.on('data', this._onStdout.bind(this, process));
                     process.process.stderr.on('data', this._onStderr.bind(this, process));
                     process.process.on('exit', this._onExit.bind(this, process));
+
+                    this._lastRun = Date.now();
                     unlock();
                 })();
                 break;
