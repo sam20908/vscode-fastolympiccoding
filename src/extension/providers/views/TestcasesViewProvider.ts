@@ -45,7 +45,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: RunningProcess[] = [];
     private _lastRunMutex: Mutex = new Mutex();
-    private _terminalMutex: Mutex = new Mutex();
     private _lastRun: number = -1;
 
     onMessage(message: IMessage): void {
@@ -117,7 +116,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 if (code) {
                                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
 
-                                    const unlock = await this._terminalMutex.lock();
                                     this._errorTerminal.get(file)?.dispose();
                                     const dummy = new DummyTerminal();
                                     const terminal = vscode.window.createTerminal({
@@ -132,7 +130,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                     dummy.write(compileError);
                                     terminal.show();
                                     this._errorTerminal.set(file, terminal);
-                                    unlock();
 
                                     return -1;
                                 }
