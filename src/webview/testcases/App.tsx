@@ -114,6 +114,10 @@ export default function App() {
     };
 
     const handleDeleteAllTestcases = () => {
+        for (let i = 0; i < testcaseId.current.length; i++) {
+            handleStopTestcase(i);
+        }
+
         setTestcases(() => []);
         setStatuses(() => []);
         testcaseId.current = [];
@@ -164,20 +168,25 @@ export default function App() {
 
     const handleRunTestcase = testcase => {
         if (testcaseId.current[testcase] !== -1) {
-            return;
+            handleStopTestcase(testcase);
         }
 
-        testcaseId.current[testcase] = testcase;
+        const newId = testcaseId.current[testcase] === -1 ? testcase : testcaseId.current[testcase];
+        testcaseId.current[testcase] = newId;
         setTestcases(prevTestcases => {
             const newTestcases = prevTestcases!.slice();
             newTestcases[testcase].stdout = '';
             newTestcases[testcase].stderr = '';
-            postMessage('SOURCE_CODE_RUN', { id: testcase, input: prevTestcases![testcase].input });
+            postMessage('SOURCE_CODE_RUN', { id: newId, input: prevTestcases![testcase].input });
             return newTestcases;
         });
     };
 
     const handleStopTestcase = testcase => {
+        if (testcaseId.current[testcase] === -1) {
+            return;
+        }
+
         postMessage('SOURCE_CODE_STOP', { id: testcaseId.current[testcase] });
     };
 
