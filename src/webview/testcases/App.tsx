@@ -28,7 +28,6 @@ export default function App() {
     const [testcases, setTestcases] = useState<ITestcase[] | undefined>(undefined);
     const [statuses, setStatuses] = useState<string[]>([]);
     const testcaseId = useRef<number[]>([]);
-    const running = useRef<boolean[]>([]);
 
     const updateStdio = (id: number, property: keyof ITestcase, message: string) => {
         const testcase = testcaseId.current.findIndex(value => value === id);
@@ -46,8 +45,7 @@ export default function App() {
                 const savedTestcases = message.payload;
                 setTestcases(savedTestcases);
                 setStatuses(savedTestcases ? Array(savedTestcases.length).fill('') : []);
-                testcaseId.current = savedTestcases ? [...Array(savedTestcases.length).keys()] : [];
-                running.current = savedTestcases ? [...Array(savedTestcases.length).fill(false)] : [];
+                testcaseId.current = savedTestcases ? Array(savedTestcases.length).fill(-1) : [];
                 break;
             }
             case 'REQUEST_RUN_ALL':
@@ -79,8 +77,7 @@ export default function App() {
                     return newTestcases;
                 });
                 setStatuses(prevStatuses => prevStatuses.map((value, index) => index === testcase ? '' : value));
-
-                running.current[testcase] = false;
+                testcaseId.current[testcase] = -1;
 
                 break;
             }
@@ -107,7 +104,6 @@ export default function App() {
 
         const id = Date.now();
         testcaseId.current.push(id);
-        running.current.push(true);
         postMessage('SOURCE_CODE_RUN', { id, input: '' });
     };
 
@@ -121,7 +117,6 @@ export default function App() {
         setTestcases(() => []);
         setStatuses(() => []);
         testcaseId.current = [];
-        running.current = [];
         postMessage('SAVE_TESTCASES', []);
     };
 
@@ -165,23 +160,21 @@ export default function App() {
         });
 
         testcaseId.current.splice(testcase, 1);
-        running.current.splice(testcase, 1);
     };
 
     const handleRunTestcase = testcase => {
-        if (running.current[testcase]) {
+        if (testcaseId.current[testcase] !== -1) {
             return;
         }
 
+        testcaseId.current[testcase] = testcase;
         setTestcases(prevTestcases => {
             const newTestcases = prevTestcases!.slice();
             newTestcases[testcase].stdout = '';
             newTestcases[testcase].stderr = '';
-            postMessage('SOURCE_CODE_RUN', { id: testcaseId.current[testcase], input: prevTestcases![testcase].input });
+            postMessage('SOURCE_CODE_RUN', { id: testcase, input: prevTestcases![testcase].input });
             return newTestcases;
         });
-
-        running.current[testcase] = true;
     };
 
     const handleStopTestcase = testcase => {
