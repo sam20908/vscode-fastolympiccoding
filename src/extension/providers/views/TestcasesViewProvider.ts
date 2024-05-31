@@ -59,7 +59,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     return;
                 }
 
-                this._state[file] = message.payload;
+                if (message.payload.length === 0) {
+                    delete this._state[file];
+                } else {
+                    this._state[file] = message.payload;
+                }
                 const storagePath = this._context.globalStorageUri.fsPath;
                 saveStorageState(storagePath, this._state);
                 break;
