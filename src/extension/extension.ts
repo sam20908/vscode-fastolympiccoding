@@ -16,15 +16,36 @@ function registerViewProviders(context: vscode.ExtensionContext): void {
 function registerCommands(context: vscode.ExtensionContext): void {
     const runAllDisposable = vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.runAll',
-        testcasesViewProvider.runAll.bind(testcasesViewProvider)
+        () => testcasesViewProvider.runAll()
     );
     context.subscriptions.push(runAllDisposable);
 
+    const recompileAndRunAllDisposable = vscode.commands.registerTextEditorCommand(
+        'fastolympiccoding.recompileAndRunAll',
+        () => {
+            testcasesViewProvider.removeCompileCache(vscode.window.activeTextEditor!.document.fileName);
+            testcasesViewProvider.runAll();
+        }
+    );
+    context.subscriptions.push(recompileAndRunAllDisposable);
+
     const deleteAllDisposable = vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.deleteAll',
-        testcasesViewProvider.deleteAll.bind(testcasesViewProvider)
+        () => testcasesViewProvider.deleteAll()
     );
     context.subscriptions.push(deleteAllDisposable);
+
+    const clearCacheDisposable = vscode.commands.registerTextEditorCommand(
+        'fastolympiccoding.clearTestcases',
+        async () => {
+            const files = testcasesViewProvider.getCachedFiles();
+            const pickedFiles = await vscode.window.showQuickPick(files, { canPickMany: true });
+            for (const file of (pickedFiles ?? [])) {
+                testcasesViewProvider.removeTestcases(file);
+            }
+        }
+    );
+    context.subscriptions.push(clearCacheDisposable);
 }
 
 export function activate(context: vscode.ExtensionContext): void {

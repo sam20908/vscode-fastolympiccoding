@@ -191,12 +191,55 @@ export class TestcasesViewProvider extends BaseViewProvider {
         vscode.window.onDidChangeActiveTextEditor(this._onChangeActiveFile, this);
     }
 
+    public removeCompileCache(file: string): void {
+        if (this._compileProcess) {
+            return; // already compiling
+        }
+
+        this._lastCompiled.delete(file);
+    }
+
+    public removeTestcases(file: string): void {
+        delete this._state[file];
+
+        if (file === vscode.window.activeTextEditor!.document.fileName) {
+            this._killAllProcesses();
+            super._postMessage('SAVED_TESTCASES', []);
+        }
+    }
+
     public runAll(): void {
+        if (this._compileProcess) {
+            return; // already compiling
+        }
+
         super._postMessage('REQUEST_RUN_ALL');
     }
 
     public deleteAll(): void {
+        if (this._compileProcess) {
+            return; // already compiling
+        }
+
         super._postMessage('REQUEST_DELETE_ALL');
+    }
+
+    public getCachedFiles(): string[] {
+        return Object.keys(new Object(this._state));
+    }
+
+    private _killAllProcesses(): void {
+        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
+        if (this._compileProcess) {
+            this._compileProcess.process.removeAllListeners();
+            this._compileProcess.process.kill();
+        }
+        for (const process of this._processes) {
+            process.process.removeAllListeners();
+            process.process.kill();
+        }
+        this._compileProcess = undefined;
+        this._processes = [];
     }
 
     private _onStdout(process: RunningProcess, data: string): void {
@@ -223,18 +266,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private async _onChangeActiveFile(): Promise<void> {
-        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        if (this._compileProcess) {
-            this._compileProcess.process.removeAllListeners();
-            this._compileProcess.process.kill();
-        }
-        for (const process of this._processes) {
-            process.process.removeAllListeners();
-            process.process.kill();
-        }
-
-        this._compileProcess = undefined;
-        this._processes = [];
+        this._killAllProcesses();
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {

@@ -107,8 +107,18 @@
         "category": "Fast Olympic Coding"
       },
       {
+        "command": "fastolympiccoding.recompileAndRunAll",
+        "title": "Recompile and Run All Testcases",
+        "category": "Fast Olympic Coding"
+      },
+      {
         "command": "fastolympiccoding.deleteAll",
         "title": "Delete All Testcases",
+        "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.clearTestcases",
+        "title": "Clear Saved Testcases",
         "category": "Fast Olympic Coding"
       }
     ],
@@ -116,6 +126,11 @@
       {
         "command": "fastolympiccoding.runAll",
         "key": "ctrl+alt+b",
+        "when": "view.fastolympiccoding.testcases.visible"
+      },
+      {
+        "command": "fastolympiccoding.recompileAndRunAll",
+        "key": "ctrl+alt+g",
         "when": "view.fastolympiccoding.testcases.visible"
       },
       {
