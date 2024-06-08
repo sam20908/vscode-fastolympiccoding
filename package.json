@@ -59,11 +59,6 @@
             "type": "string",
             "default": "${fileDirname}/${fileBasenameNoExtension}__Generator.${fileExtname}",
             "description": "The full path to the generator file."
-          },
-          "fastolympiccoding.checkerFile": {
-            "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}__Checker.${fileExtname}",
-            "description": "The full path to the solution checker file."
           }
         }
       },
