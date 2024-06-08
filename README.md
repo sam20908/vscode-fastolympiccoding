@@ -17,7 +17,6 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 - Documentation on settings
 - Integration with [Competitive Companion](https://github.com/jmerle/competitive-companion)
   - Problem parser (and maybe contest parser)
-  - Optional time/memory limit per testcase
 - Stress tester
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
 - File snippets (`Auto` function in original plugin)
