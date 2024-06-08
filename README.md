@@ -19,7 +19,6 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
   - Problem parser (and maybe contest parser)
   - Optional time/memory limit per testcase
 - Stress tester
-- Solution checker (*permutation problems zzzzzzzz...*)
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
 - File snippets (`Auto` function in original plugin)
 - Debugger integration
