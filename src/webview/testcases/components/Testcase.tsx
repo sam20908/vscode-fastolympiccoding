@@ -1,8 +1,8 @@
-import { deepSignal } from 'deepsignal'
+import { deepSignal, peek } from 'deepsignal'
 import AutoresizeTextarea from './AutoresizeTextarea';
+import { Signal } from '@preact/signals';
 
-interface Props {
-    index: number;
+interface ITestcaseState {
     input: string;
     stderr: string;
     stdout: string;
@@ -10,6 +10,11 @@ interface Props {
     code: number;
     acceptedOutput: string;
     status: string;
+}
+
+interface Props {
+    index: number;
+    testcase: Signal<ITestcaseState>,
     onAcceptTestcase: (testcase: number) => void;
     onEditTestcase: (testcase: number) => void;
     onSaveTestcase: (testcase: number, input: string) => void;
@@ -25,20 +30,14 @@ const state = deepSignal({ newInput: '' });
 
 const handleKeyUp = (index: number, event: KeyboardEvent, onSendNewInput: Function) => {
     if (event.key === 'Enter') {
-        onSendNewInput(index, state.newInput);
+        onSendNewInput(index, peek(state, 'newInput'));
         state.newInput = '';
     }
 };
 
 export default function App({
     index,
-    input,
-    stderr,
-    stdout,
-    elapsed,
-    code,
-    acceptedOutput,
-    status,
+    testcase,
     onAcceptTestcase,
     onEditTestcase,
     onSaveTestcase,
@@ -47,7 +46,7 @@ export default function App({
     onStopTestcase,
     onSendNewInput
 }: Props) {
-    // console.log('testcase ' + index + ' render');
+    const { input, stderr, stdout, elapsed, code, acceptedOutput, status } = testcase.value;
     const output =
         <div>
             <div class="flex flex-row">
