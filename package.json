@@ -149,6 +149,8 @@
     "esbuild": "^0.21.2"
   },
   "dependencies": {
+    "@preact/signals": "^1.2.3",
+    "deepsignal": "^1.5.0",
     "preact": "^10.21.0"
   }
 }

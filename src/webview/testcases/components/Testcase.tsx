@@ -1,4 +1,4 @@
-import React, { useState } from "preact/compat";
+import { deepSignal } from 'deepsignal'
 import AutoresizeTextarea from './AutoresizeTextarea';
 
 interface Props {
@@ -11,12 +11,23 @@ interface Props {
     acceptedOutput: string;
     status: string;
     onAcceptTestcase: (testcase: number) => void;
-    onEditTestcase: (testcase: number) => string;
+    onEditTestcase: (testcase: number) => void;
     onSaveTestcase: (testcase: number, input: string) => void;
     onDeleteTestcase: (testcase: number) => void;
     onRunTestcase: (testcase: number) => void;
     onStopTestcase: (testcase: number) => void;
     onSendNewInput: (testcase: number, input: string) => void;
+};
+
+const AC_COLOR = '#475B45';
+const WA_COLOR = '#6C4549';
+const state = deepSignal({ newInput: '' });
+
+const handleKeyUp = (index: number, event: KeyboardEvent, onSendNewInput: Function) => {
+    if (event.key === 'Enter') {
+        onSendNewInput(index, state.newInput);
+        state.newInput = '';
+    }
 };
 
 export default function App({
@@ -36,15 +47,7 @@ export default function App({
     onStopTestcase,
     onSendNewInput
 }: Props) {
-    const [currentInput, setCurrentInput] = useState('');
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
-            onSendNewInput(index, currentInput);
-            setCurrentInput('');
-        }
-    };
-
+    // console.log('testcase ' + index + ' render');
     const output =
         <div>
             <div class="flex flex-row">
@@ -58,7 +61,7 @@ export default function App({
             {status === 'RUNNING' &&
                 <div class="flex flex-row">
                     <div class="w-6"></div>
-                    <AutoresizeTextarea input={currentInput} onSetInput={setCurrentInput} onKeyUp={handleKeyUp} />
+                    <AutoresizeTextarea input={state.$newInput!} onKeyUp={event => handleKeyUp(index, event, onSendNewInput)} />
                 </div>
             }
             {stderr !== "" &&
@@ -81,39 +84,34 @@ export default function App({
             </div>
         </div>;
 
-    if (acceptedOutput !== '' && stdout === acceptedOutput) {
-        return <div class="container mx-auto mb-6">
-            <div class="flex flex-row">
-                <div class="w-6"></div>
-                <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                    <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#475B45" }}>test {index}</p>
-                    <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => setCurrentInput(onEditTestcase(index))}>edit</button>
-                    <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => onRunTestcase(index)}>run</button>
-                    <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
-                </div>
-            </div>
-        </div>;
-    }
-
     if (status === '') {
         return <div class="container mx-auto mb-6">
             <div class="flex flex-row">
                 <div class="w-6"></div>
                 <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                    <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: !code && acceptedOutput === '' ? null : "#6C4549" }}>test {index}</p>
-                    <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => setCurrentInput(onEditTestcase(index))}>edit</button>
+                    <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{
+                        backgroundColor: !code ? null : (acceptedOutput !== '' || stdout === acceptedOutput ? AC_COLOR : WA_COLOR)
+                    }}>test {index}</p>
+                    <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => {
+                        state.newInput = input;
+                        onEditTestcase(index);
+                    }}>edit</button>
                     <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => {
-                        setCurrentInput(''); // may be adding additional inputs, so clear out previous inputs
+                        state.newInput = ''; // may be adding additional inputs, so clear out previous inputs
                         onRunTestcase(index);
                     }}>run</button>
                     <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
                 </div>
             </div>
-            {output}
-            <div class="flex flex-row">
-                <div class="w-6"></div>
-                <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#475B45" }} onClick={() => onAcceptTestcase(index)}>accept</button>
-            </div>
+            {(acceptedOutput === '' || stdout !== acceptedOutput) &&
+                <div>
+                    {output}
+                    <div class="flex flex-row">
+                        <div class="w-6"></div>
+                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#475B45" }} onClick={() => onAcceptTestcase(index)}>accept</button>
+                    </div>
+                </div>
+            }
         </div>;
     }
 
@@ -144,13 +142,13 @@ export default function App({
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">test {index}</p>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => onSaveTestcase(index, currentInput)}>save</button>
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => onSaveTestcase(index, state.newInput)}>save</button>
                         <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={() => onDeleteTestcase(index)}>delete</button>
                     </div>
                 </div>
                 <div class="flex flex-row">
                     <div class="w-6"></div>
-                    <AutoresizeTextarea input={currentInput} onSetInput={setCurrentInput} onKeyUp={() => { }} />
+                    <AutoresizeTextarea input={state.$newInput!} onKeyUp={() => { }} />
                 </div>
             </div>;
         default:
