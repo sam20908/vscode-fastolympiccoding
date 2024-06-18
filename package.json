@@ -115,6 +115,11 @@
         "command": "fastolympiccoding.clearTestcases",
         "title": "Clear Saved Testcases",
         "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.clearData",
+        "title": "Clear Saved Data",
+        "category": "Fast Olympic Coding"
       }
     ],
     "keybindings": [

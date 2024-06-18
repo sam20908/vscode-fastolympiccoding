@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
@@ -35,7 +36,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
     );
     context.subscriptions.push(deleteAllDisposable);
 
-    const clearCacheDisposable = vscode.commands.registerTextEditorCommand(
+    const clearTestcasesDisposable = vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.clearTestcases',
         async () => {
             const files = testcasesViewProvider.getCachedFiles();
@@ -45,7 +46,17 @@ function registerCommands(context: vscode.ExtensionContext): void {
             }
         }
     );
-    context.subscriptions.push(clearCacheDisposable);
+    context.subscriptions.push(clearTestcasesDisposable);
+
+    const clearDataDisposable = vscode.commands.registerTextEditorCommand(
+        'fastolympiccoding.clearData',
+        () => {
+            const path = testcasesViewProvider.storagePath;
+            fs.writeFileSync(path, '{}');
+            testcasesViewProvider.readSavedData();
+        }
+    );
+    context.subscriptions.push(clearDataDisposable);
 }
 
 export function activate(context: vscode.ExtensionContext): void {

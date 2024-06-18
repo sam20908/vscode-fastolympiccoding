@@ -15,9 +15,12 @@ export interface IMessage {
 };
 
 export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
+    readonly storagePath: string;
     private _webview?: vscode.Webview = undefined;
 
-    constructor(public readonly view: string, protected readonly _context: vscode.ExtensionContext) { }
+    constructor(public readonly view: string, private _context: vscode.ExtensionContext) {
+        this.storagePath = _context.globalStorageUri.fsPath;
+    }
 
     abstract onMessage(message: IMessage): void;
 

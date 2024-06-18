@@ -39,7 +39,7 @@ function saveStorageState(path: string, state: IStorage): void {
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
-    private _state: IStorage;
+    private _state: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
@@ -63,8 +63,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 } else {
                     this._state[file] = message.payload;
                 }
-                const storagePath = this._context.globalStorageUri.fsPath;
-                saveStorageState(storagePath, this._state);
+                saveStorageState(this.storagePath, this._state);
                 break;
             case 'SOURCE_CODE_RUN':
                 (async () => {
@@ -184,11 +183,15 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     constructor(context: vscode.ExtensionContext) {
         super('testcases', context);
-
-        const storagePath = this._context.globalStorageUri.fsPath;
-        this._state = readStorageState(storagePath);
+        this.readSavedData();
 
         vscode.window.onDidChangeActiveTextEditor(this._onChangeActiveFile, this);
+    }
+
+    public readSavedData() {
+        this._killAllProcesses();
+        this._state = readStorageState(this.storagePath);
+        this._onChangeActiveFile();
     }
 
     public removeCompileCache(file: string): void {
