@@ -1,49 +1,35 @@
-import { Shallow, deepSignal, shallow } from 'deepsignal';
+import { deepSignal } from 'deepsignal';
 import { useEffect } from 'preact/hooks'
-import { batch } from '@preact/signals';
+import { batch, signal } from '@preact/signals';
+
 import Testcase from './components/Testcase';
+import { IState, IMessage, ITestcase, ITestcaseState } from './Types';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 
-interface ITestcase {
-    input: string;
-    stderr: string;
-    stdout: string;
-    elapsed: number;
-    code: number;
-    acceptedOutput: string;
-}
-
-interface IMessage {
-    type: string;
-    payload?: any;
-};
-
-interface ITestcaseState extends ITestcase {
-    status: string;
-};
-
-interface IState {
-    hasEditor: boolean,
-    testcases: ITestcaseState[],
-    id: Shallow<number[]>,
-    running: Shallow<boolean[]>
-};
-
+let id: number[] = [];
+let running: boolean[] = [];
 const state = deepSignal<IState>({
     hasEditor: false,
-    testcases: [],
-    id: shallow([]),
-    running: shallow([])
+    testcases: []
 });
-const newTestcase: ITestcase = {
+
+const TESTCASE_TEMPLATE: any = {
     input: '',
     stderr: '',
     stdout: '',
     elapsed: 0,
     code: 0,
     acceptedOutput: ''
+};
+const newTestcaseState = (): ITestcaseState => {
+    const newState: any = {};
+    for (const [k, v] of Object.entries(TESTCASE_TEMPLATE)) {
+        newState[k] = signal(v);
+    }
+    newState.status = '';
+    return newState;
 };
 
 const postMessage = (type: string, payload?: any) => {
@@ -55,12 +41,12 @@ const saveTestcases = () => {
     // we create a new array of raw testcase data ourselves
 
     const testcases: ITestcase[] = [];
-    for (const testcase of state.$testcases!.peek()) {
-        const obj: any = newTestcase;
-        for (const key of Object.keys(newTestcase)) {
-            (obj[key] as any) = (testcase as any)[key];
+    for (const testcase of state.testcases) {
+        const copy: any = Object.create(TESTCASE_TEMPLATE);
+        for (const key of Object.keys(TESTCASE_TEMPLATE)) {
+            (copy[key] as any) = (testcase as any)[key].value;
         }
-        testcases.push(obj);
+        testcases.push(copy);
     }
     postMessage('SAVE_TESTCASES', testcases);
 };
@@ -93,16 +79,17 @@ const handleMessage = (event: MessageEvent) => {
 };
 
 const handleNextTestcase = () => {
-    state.testcases.push({ ...newTestcase, status: '' });
+    state.testcases.push(newTestcaseState());
 
-    const id = Date.now();
-    state.id.push(id);
-    postMessage('SOURCE_CODE_RUN', { id, input: '' });
+    const time = Date.now();
+    id.push(time);
+    running.push(false);
+    postMessage('SOURCE_CODE_RUN', { id: time, input: '' });
 };
 
 const handleRunAllTestcases = () => {
     batch(() => {
-        for (let i = 0; i < state.id.length; i++) {
+        for (let i = 0; i < id.length; i++) {
             handleRunTestcase(i);
         }
     });
@@ -110,111 +97,108 @@ const handleRunAllTestcases = () => {
 
 const handleDeleteAllTestcases = () => {
     batch(() => {
-        for (let i = 0; i < state.id.length; i++) {
+        for (let i = 0; i < id.length; i++) {
             handleStopTestcase(i);
         }
         state.testcases = [];
     });
 
-    state.id = shallow([]);
+    id = [];
     postMessage('SAVE_TESTCASES', []);
 };
 
 const handleAcceptTestcase = (testcase: number) => {
-    batch(() => {
-        state.testcases[testcase].acceptedOutput = state.testcases[testcase].stdout;
-        state.testcases[testcase].code = 1;
-    });
+    state.testcases[testcase].acceptedOutput.value = state.testcases[testcase].stdout.value;
     saveTestcases();
 };
 
 const handleEditTestcase = (testcase: number) => {
     batch(() => {
-        state.testcases[testcase].acceptedOutput = '';
-        state.testcases[testcase].code = 0;
+        state.testcases[testcase].acceptedOutput.value = '';
+        state.testcases[testcase].code.value = 0;
         state.testcases[testcase].status = 'EDITING';
     });
 };
 
 const handleSaveTestcase = (testcase: number, input: string) => {
     batch(() => {
-        state.testcases[testcase].input = input;
+        state.testcases[testcase].input.value = input;
         state.testcases[testcase].status = '';
-        saveTestcases();
     });
+    saveTestcases();
 };
 
 const handleDeleteTestcase = (testcase: number) => {
     state.testcases.splice(testcase, 1);
-    state.id.splice(testcase, 1);
+    id.splice(testcase, 1);
     saveTestcases();
 };
 
 const handleRunTestcase = (testcase: number) => {
-    if (state.running[testcase]) {
+    if (running[testcase]) {
         handleStopTestcase(testcase); // already running, stop it first and then rerun
     }
 
-    const id = state.id[testcase] === -1 ? testcase : state.id[testcase]; // re-use existing unique id if possible
-    state.id[testcase] = id;
     batch(() => {
-        state.testcases[testcase].stdout = '';
-        state.testcases[testcase].stderr = '';
+        state.testcases[testcase].stdout.value = '';
+        state.testcases[testcase].stderr.value = '';
     });
-    postMessage('SOURCE_CODE_RUN', { id, input: state.testcases[testcase].input });
+    postMessage('SOURCE_CODE_RUN', { id: id[testcase], input: state.testcases[testcase].input.value });
 };
 
 const handleStopTestcase = (testcase: number) => {
-    if (state.running[testcase]) {
-        postMessage('SOURCE_CODE_STOP', { id: state.id[testcase] });
+    if (running[testcase]) {
+        postMessage('SOURCE_CODE_STOP', { id: id[testcase] });
     }
 };
 
-const updateStdio = (id: number, property: keyof ITestcase, message: string) => {
-    const testcase = state.id.findIndex(value => value === id);
-    (state.testcases[testcase][property] as string) += message;
+const updateStdio = (payloadId: number, property: keyof ITestcase, message: string) => {
+    const testcase = id.findIndex(value => value === payloadId);
+    (state.testcases[testcase][property].value as string) += message;
 };
 
 const handleSavedTestcasesMessage = (payload: any) => {
     state.hasEditor = !!payload;
-    state.testcases = payload?.map((value: ITestcase): ITestcaseState => {
-        return {
-            ...value,
-            status: ''
-        };
+    state.testcases = payload?.map((value: any): ITestcaseState => {
+        const copy: any = newTestcaseState();
+        for (const [k, v] of Object.entries(value)) {
+            copy[k].value = v;
+        }
+        copy.status = '';
+        return copy;
     }) ?? [];
-    state.id = shallow(Array(payload?.length ?? 0).fill(-1));
-    state.running = shallow(Array(payload?.length ?? 0).fill(false));
+    id = Array.from({ length: payload?.length ?? 0 }, (_, i) => i);
+    running = Array(payload?.length ?? 0).fill(false);
 };
 
 const handleStatusMessage = (payload: any) => {
-    const { id, status, startTime } = payload;
-    const testcase = state.id.findIndex(value => value === id);
+    const { id: payloadId, status, startTime } = payload;
+    const testcase = id.findIndex(value => value === payloadId);
 
     state.testcases[testcase].status = status;
     if (status === 'RUNNING') {
-        state.id[testcase] = startTime; // ID becomes start time of the source code for later events
-        state.running[testcase] = true;
+        id[testcase] = startTime; // ID becomes start time of the source code for later events
+        running[testcase] = true;
     }
 };
 
 const handleExitMessage = (payload: any) => {
-    const { id, code, elapsed } = payload;
-    const testcase = state.id.findIndex(value => value === id);
+    const { id: payloadId, code, elapsed } = payload;
+    const testcase = id.findIndex(value => value === payloadId);
 
     batch(() => {
-        state.testcases[testcase].code = code;
-        state.testcases[testcase].elapsed = elapsed;
+        state.testcases[testcase].code.value = code;
+        state.testcases[testcase].elapsed.value = elapsed;
         state.testcases[testcase].status = '';
-        state.running[testcase] = false;
+        running[testcase] = false;
     });
     saveTestcases();
 };
 
 const handleSendNewInput = (testcase: number, input: string) => {
-    state.testcases[testcase].input += input;
+    state.testcases[testcase].input.value += input;
     saveTestcases();
-    postMessage('STDIN', { id: state.id[testcase], input });
+    postMessage('STDIN', { id: id[testcase], input });
 };
 
 window.addEventListener('message', handleMessage);
