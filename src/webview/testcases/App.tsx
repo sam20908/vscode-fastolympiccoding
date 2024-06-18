@@ -211,7 +211,7 @@ export default function App() {
     }
 
     return (
-        <div>
+        <>
             {state.testcases.map((_, index) =>
                 <Testcase
                     index={index}
@@ -236,6 +236,6 @@ export default function App() {
                     delete all
                 </button>
             </div>
-        </div>
+        </>
     );
 }
