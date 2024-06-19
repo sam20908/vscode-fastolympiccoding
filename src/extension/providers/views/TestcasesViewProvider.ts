@@ -83,9 +83,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     if (runSettings.compileCommand) {
                         if (this._compileProcess) {
                             super._postMessage('STATUS', { status: 'COMPILING', id });
-                            const code = await this._compileProcess.executionPromise; // another testcase is compiling
-                            if (code !== 0) {
-                                super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                            const code = await this._compileProcess.promise; // another testcase is compiling
+                            if (code) {
+                                super._postMessage('EXIT', { id, code, elapsed: 0 });
                                 return;
                             }
                         } else {
@@ -104,14 +104,13 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 process.process.stderr.on('data', data => compileError += data.toString());
                                 process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
-                                const code = await process.executionPromise;
-                                this._compileProcess = undefined;
-                                if (code === null) {
-                                    return -1; // forcefully terminated
+                                const code = await process.promise;
+                                if (code) {
+                                    return -1;
                                 }
 
                                 this._errorTerminal.get(file)?.dispose();
-                                if (code) {
+                                if (compileError) {
                                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
 
                                     const dummy = new DummyTerminal();
@@ -139,28 +138,23 @@ export class TestcasesViewProvider extends BaseViewProvider {
                             }
                         }
                     }
+                    this._compileProcess = undefined;
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
                     const process = new RunningProcess(resolvedCommand);
-                    process.process.on('error', this._onError.bind(this, id));
-
-                    const spawned = await process.spawnPromise;
-                    if (!spawned) {
-                        return;
-                    }
-
                     this._processes.set(id, process);
                     super._postMessage('STATUS', { status: 'RUNNING', id });
+
                     process.process.stdin.write(input);
                     process.process.stdout.on('data', this._onStdout.bind(this, id));
                     process.process.stderr.on('data', this._onStderr.bind(this, id));
+                    process.process.on('error', this._onError.bind(this, id));
                     process.process.on('exit', this._onExit.bind(this, id, process));
                 })();
                 break;
             case 'SOURCE_CODE_STOP': {
                 const { id, removeListeners } = message.payload;
                 const process = this._processes.get(id)!;
-                
                 if (removeListeners) {
                     process.process.removeAllListeners();
                 }
@@ -247,9 +241,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
-        const code = exitCode ?? 0;
-        const elapsed = process.getEndTime() - process.getStartTime();
-        super._postMessage('EXIT', { id, code, elapsed });
+        super._postMessage('EXIT', { id, elapsed: process.elapsed, code: exitCode ?? 0 });
         this._processes.delete(id);
     }
 

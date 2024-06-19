@@ -1,43 +1,24 @@
 import * as child_process from 'child_process';
 
-function executeCommand(commandString: string): [child_process.ChildProcessWithoutNullStreams, Promise<number | null>] {
-    const [command, ...args] = commandString.split(' ');
-    const process = child_process.spawn(command, args);
-    process.stdout.setEncoding('utf-8');
-    process.stderr.setEncoding('utf-8');
-
-    return [process, new Promise(resolve => {
-        process.on('exit', resolve);
-        process.on('error', () => resolve(-1));
-    })];
-}
-
 export class RunningProcess {
     readonly process: child_process.ChildProcessWithoutNullStreams;
-    readonly spawnPromise: Promise<boolean>;
-    readonly executionPromise: Promise<number | null>;
+    readonly promise: Promise<number>;
     private _startTime: number = 0;
-    private _endTime: number | undefined = undefined;
+    private _endTime: number = 0;
 
     constructor(commandString: string) {
-        const [process, promise] = executeCommand(commandString);
-        this.spawnPromise = new Promise(resolve => {
-            process.on('spawn', () => {
-                this._startTime = Date.now();
-                resolve(true);
-            });
-            process.on('error', () => resolve(false));
+        const [command, ...args] = commandString.trim().split(' ');
+        this.process = child_process.spawn(command, args);
+        this.process.stdout.setEncoding('utf-8');
+        this.process.stderr.setEncoding('utf-8');
+        this.promise = new Promise(resolve => {
+            this.process.on('spawn', () => this._startTime = Date.now());
+            this.process.on('error', () => resolve(-1));
+            this.process.on('exit', code => { this._endTime = Date.now(); resolve(code ?? 0); });
         });
-        process.on('exit', () => this._endTime = Date.now());
-        this.process = process;
-        this.executionPromise = promise;
     }
 
-    public getStartTime(): number {
-        return this._startTime;
-    }
-
-    public getEndTime(): number {
-        return this._endTime ?? this._startTime; // process can be forcefully killed
+    get elapsed(): number {
+        return this._endTime - this._startTime;
     }
 };
