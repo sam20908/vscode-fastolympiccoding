@@ -1,4 +1,4 @@
-import { Signal, signal, useComputed } from '@preact/signals';
+import { Signal, useComputed, useSignal } from '@preact/signals';
 
 import { ITestcaseState } from '../Types';
 import AutoresizeTextarea from './AutoresizeTextarea';
@@ -17,14 +17,6 @@ interface Props {
 
 const AC_COLOR = '#475B45';
 const WA_COLOR = '#6C4549';
-const newInput = signal('');
-
-const handleKeyUp = (index: number, event: KeyboardEvent, onSendNewInput: Function) => {
-    if (event.key === 'Enter') {
-        onSendNewInput(index, newInput.value);
-        newInput.value = '';
-    }
-};
 
 export default function App({
     index,
@@ -38,6 +30,8 @@ export default function App({
     onSendNewInput
 }: Props) {
     const { input, stderr, stdout, elapsed, code, acceptedOutput, status } = testcase.value;
+    const newInput = useSignal('');
+
     const statusColor = useComputed(() => {
         if (code.value)
             return WA_COLOR;
@@ -45,6 +39,12 @@ export default function App({
             return stdout.value === acceptedOutput.value ? AC_COLOR : WA_COLOR;
         return null;
     });
+    const handleKeyUp = (index: number, event: KeyboardEvent, onSendNewInput: Function) => {
+        if (event.key === 'Enter') {
+            onSendNewInput(index, newInput.value);
+            newInput.value = '';
+        }
+    };
 
     if (status === '') {
         return <div class="container mx-auto mb-6">
