@@ -1,4 +1,4 @@
-import { Signal, useComputed, useSignal } from '@preact/signals';
+import { useComputed, useSignal } from '@preact/signals';
 
 import { ITestcaseState } from '../Types';
 import AutoresizeTextarea from './AutoresizeTextarea';
