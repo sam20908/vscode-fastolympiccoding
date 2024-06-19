@@ -10,6 +10,7 @@ export interface ITestcase {
 }
 
 export interface ITestcaseState extends ITestcase {
+    id: number;
     status: string;
 };
 

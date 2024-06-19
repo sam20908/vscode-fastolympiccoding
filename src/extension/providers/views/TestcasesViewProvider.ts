@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { Mutex } from '../../util/mutex';
 import { RunningProcess } from '../../util/runUtil';
 import { DummyTerminal, resolveVariables } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
@@ -43,9 +42,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
-    private _processes: RunningProcess[] = [];
-    private _lastRunMutex: Mutex = new Mutex();
-    private _lastRun: number = -1;
+    private _processes: Map<number, RunningProcess> = new Map();
 
     onMessage(message: IMessage): void {
         switch (message.type) {
@@ -144,41 +141,36 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     }
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-
-                    const unlock = await this._lastRunMutex.lock();
-                    while (Date.now() <= this._lastRun) { } // wait until the time is different
-
                     const process = new RunningProcess(resolvedCommand);
                     process.process.on('error', this._onError.bind(this, id));
 
                     const spawned = await process.spawnPromise;
                     if (!spawned) {
-                        unlock();
                         return;
                     }
 
-                    super._postMessage('STATUS', { status: 'RUNNING', id, startTime: process.getStartTime() });
-                    this._processes.push(process);
+                    this._processes.set(id, process);
+                    super._postMessage('STATUS', { status: 'RUNNING', id });
                     process.process.stdin.write(input);
-                    process.process.stdout.on('data', this._onStdout.bind(this, process));
-                    process.process.stderr.on('data', this._onStderr.bind(this, process));
-                    process.process.on('exit', this._onExit.bind(this, process));
-
-                    this._lastRun = Date.now();
-                    unlock();
+                    process.process.stdout.on('data', this._onStdout.bind(this, id));
+                    process.process.stderr.on('data', this._onStderr.bind(this, id));
+                    process.process.on('exit', this._onExit.bind(this, id, process));
                 })();
                 break;
             case 'SOURCE_CODE_STOP': {
-                const process = this._processes.find(process => process.getStartTime() === message.payload.id)!;
+                const { id, removeListeners } = message.payload;
+                const process = this._processes.get(id)!;
+                
+                if (removeListeners) {
+                    process.process.removeAllListeners();
+                }
                 process.process.kill();
+                this._processes.delete(id);
                 break;
             }
-            case 'STDIN': {
-                const { id, input } = message.payload;
-                const process = this._processes.find(process => process.getStartTime() === id)!;
-                process.process.stdin.write(input);
+            case 'STDIN':
+                this._processes.get(message.payload.id)!.process.stdin.write(message.payload.input);
                 break;
-            }
         }
     }
 
@@ -238,30 +230,27 @@ export class TestcasesViewProvider extends BaseViewProvider {
             this._compileProcess.process.removeAllListeners();
             this._compileProcess.process.kill();
         }
-        for (const process of this._processes) {
+        for (const process of this._processes.values()) {
             process.process.removeAllListeners();
             process.process.kill();
         }
         this._compileProcess = undefined;
-        this._processes = [];
+        this._processes.clear();
     }
 
-    private _onStdout(process: RunningProcess, data: string): void {
-        super._postMessage('STDOUT', { id: process.getStartTime(), data });
+    private _onStdout(id: number, data: string): void {
+        super._postMessage('STDOUT', { id, data });
     }
 
-    private _onStderr(process: RunningProcess, data: string): void {
-        super._postMessage('STDERR', { id: process.getStartTime(), data });
+    private _onStderr(id: number, data: string): void {
+        super._postMessage('STDERR', { id, data });
     }
 
-    private _onExit(process: RunningProcess, exitCode: number | null): void {
+    private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         const code = exitCode ?? 0;
         const elapsed = process.getEndTime() - process.getStartTime();
-        const startTime = process.getStartTime();
-        super._postMessage('EXIT', { id: startTime, code, elapsed });
-
-        const index = this._processes.findIndex(value => value.getStartTime() === startTime);
-        this._processes.splice(index, 1);
+        super._postMessage('EXIT', { id, code, elapsed });
+        this._processes.delete(id);
     }
 
     private _onError(id: number, err: Error): void {

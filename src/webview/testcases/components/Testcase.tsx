@@ -4,22 +4,20 @@ import { ITestcaseState } from '../Types';
 import AutoresizeTextarea from './AutoresizeTextarea';
 
 interface Props {
-    index: number;
-    testcase: Signal<ITestcaseState>,
-    onAcceptTestcase: (testcase: number) => void;
-    onEditTestcase: (testcase: number) => void;
-    onSaveTestcase: (testcase: number, input: string) => void;
-    onDeleteTestcase: (testcase: number) => void;
-    onRunTestcase: (testcase: number) => void;
-    onStopTestcase: (testcase: number) => void;
-    onSendNewInput: (testcase: number, input: string) => void;
+    testcase: ITestcaseState,
+    onAcceptTestcase: (id: number) => void;
+    onEditTestcase: (id: number) => void;
+    onSaveTestcase: (id: number, input: string) => void;
+    onDeleteTestcase: (id: number, isIndex: boolean) => void;
+    onRunTestcase: (id: number, isIndex: boolean) => void;
+    onStopTestcase: (id: number, removeListeners: boolean) => void;
+    onSendNewInput: (id: number, input: string) => void;
 };
 
 const AC_COLOR = '#475B45';
 const WA_COLOR = '#6C4549';
 
 export default function App({
-    index,
     testcase,
     onAcceptTestcase,
     onEditTestcase,
@@ -29,7 +27,7 @@ export default function App({
     onStopTestcase,
     onSendNewInput
 }: Props) {
-    const { input, stderr, stdout, elapsed, code, acceptedOutput, status } = testcase.value;
+    const { input, stderr, stdout, elapsed, code, acceptedOutput, id, status } = testcase;
     const newInput = useSignal('');
 
     const statusColor = useComputed(() => {
@@ -51,14 +49,14 @@ export default function App({
             <div class="flex flex-row">
                 <div class="w-6"></div>
                 <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                    <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: statusColor.value }}>test {index}</p>
+                    {/* <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: statusColor.value }}>test {index}</p> */}
                     <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => {
                         newInput.value = input.value;
-                        onEditTestcase(index);
+                        onEditTestcase(id);
                     }}>edit</button>
                     <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => {
                         newInput.value = ''; // may be adding additional inputs, so clear out previous inputs
-                        onRunTestcase(index);
+                        onRunTestcase(id, false);
                     }}>run</button>
                     <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
                 </div>
@@ -93,7 +91,7 @@ export default function App({
                     </div>
                     <div class="flex flex-row">
                         <div class="w-6"></div>
-                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#475B45" }} onClick={() => onAcceptTestcase(index)}>accept</button>
+                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#475B45" }} onClick={() => onAcceptTestcase(id)}>accept</button>
                     </div>
                 </div>
             }
@@ -115,8 +113,8 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">test {index}</p>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={() => onStopTestcase(index)}>stop</button>
+                        {/* <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">test {index}</p> */}
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={() => onStopTestcase(id, false)}>stop</button>
                     </div>
                 </div>
                 <div>
@@ -130,7 +128,7 @@ export default function App({
                     </div>
                     <div class="flex flex-row">
                         <div class="w-6"></div>
-                        <AutoresizeTextarea input={newInput} onKeyUp={event => handleKeyUp(index, event, onSendNewInput)} />
+                        <AutoresizeTextarea input={newInput} onKeyUp={event => handleKeyUp(id, event, onSendNewInput)} />
                     </div>
                     <div class="flex flex-row">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
@@ -155,9 +153,9 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">test {index}</p>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => onSaveTestcase(index, newInput.value)}>save</button>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={() => onDeleteTestcase(index)}>delete</button>
+                        {/* <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">test {index}</p> */}
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={() => onSaveTestcase(id, newInput.value)}>save</button>
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
                     </div>
                 </div>
                 <div class="flex flex-row">
