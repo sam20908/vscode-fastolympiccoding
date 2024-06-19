@@ -19,7 +19,9 @@ export class DummyTerminal implements vscode.Pseudoterminal {
         this._writeEmitter.fire(text.replace(/\n/g, '\r\n'));
     }
 
-    close(): void { }
+    close(): void {
+        this._closeEmitter.fire(0);
+    }
 }
 
 export function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {

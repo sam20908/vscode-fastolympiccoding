@@ -115,6 +115,11 @@
         "command": "fastolympiccoding.clearTestcases",
         "title": "Clear Saved Testcases",
         "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.clearData",
+        "title": "Clear Saved Data",
+        "category": "Fast Olympic Coding"
       }
     ],
     "keybindings": [
@@ -149,6 +154,8 @@
     "esbuild": "^0.21.2"
   },
   "dependencies": {
+    "@preact/signals": "^1.2.3",
+    "deepsignal": "^1.5.0",
     "preact": "^10.21.0"
   }
 }

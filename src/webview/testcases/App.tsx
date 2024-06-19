@@ -1,227 +1,230 @@
-import React, { useEffect, useRef, useState } from "preact/compat";
-import useEventListener from '../hooks/useEventListener';
+import { deepSignal } from 'deepsignal';
+import { useEffect } from 'preact/hooks'
+import { batch, signal } from '@preact/signals';
 
 import Testcase from './components/Testcase';
+import { Mex } from './util/Mex';
+import { IState, IMessage, ITestcase, ITestcaseState } from './Types';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 
-interface ITestcase {
-    input: string;
-    stderr: string;
-    stdout: string;
-    elapsed: number;
-    code: number;
-    acceptedOutput: string;
-}
+let running: boolean[] = [];
+const mex = new Mex();
+const state = deepSignal<IState>({
+    hasEditor: false,
+    testcases: []
+});
 
-interface IMessage {
-    type: string;
-    payload?: any;
+const TESTCASE_TEMPLATE: any = {
+    input: '',
+    stderr: '',
+    stdout: '',
+    elapsed: 0,
+    code: 0,
+    acceptedOutput: ''
+};
+const newTestcaseState = (): ITestcaseState => {
+    const newState: any = {};
+    for (const [k, v] of Object.entries(TESTCASE_TEMPLATE)) {
+        newState[k] = signal(v);
+    }
+    newState.id = mex.get();
+    mex.add(newState.id);
+    newState.status = '';
+    return newState;
 };
 
-function postMessage(type: string, payload?: any) {
+const findIndexFromId = (id: number): number => {
+    return state.testcases.findIndex(value => value.id === id);
+};
+
+const postMessage = (type: string, payload?: any) => {
     vscode.postMessage({ type, payload });
 }
 
+const saveTestcases = () => {
+    // deepsignal has proxies setup, and those cannot be cloned
+    // we create a new array of raw testcase data ourselves
+
+    const testcases: ITestcase[] = [];
+    for (const testcase of state.testcases) {
+        const copy: any = Object.create(TESTCASE_TEMPLATE);
+        for (const key of Object.keys(TESTCASE_TEMPLATE)) {
+            (copy[key] as any) = (testcase as any)[key].value;
+        }
+        testcases.push(copy);
+    }
+    postMessage('SAVE_TESTCASES', testcases);
+};
+
+const handleMessage = (event: MessageEvent) => {
+    const message: IMessage = event.data;
+    switch (message.type) {
+        case 'SAVED_TESTCASES':
+            handleSavedTestcasesMessage(message.payload);
+            break;
+        case 'REQUEST_RUN_ALL':
+            handleRunAllTestcases();
+            break;
+        case 'REQUEST_DELETE_ALL':
+            handleDeleteAllTestcases();
+            break;
+        case 'STATUS':
+            handleStatusMessage(message.payload);
+            break;
+        case 'EXIT':
+            handleExitMessage(message.payload);
+            break;
+        case 'STDOUT':
+            updateStdio(message.payload.id, 'stdout', message.payload.data);
+            break;
+        case 'STDERR':
+            updateStdio(message.payload.id, 'stderr', message.payload.data);
+            break;
+    }
+};
+
+const handleNextTestcase = () => {
+    state.testcases.push(newTestcaseState());
+    running.push(false);
+    postMessage('SOURCE_CODE_RUN', { id: state.testcases.at(-1)!.id, input: '' });
+};
+
+const handleRunAllTestcases = () => {
+    batch(() => {
+        for (let i = 0; i < running.length; i++) {
+            handleRunTestcase(i, true);
+        }
+    });
+};
+
+const handleDeleteAllTestcases = () => {
+    batch(() => {
+        for (let i = 0; i < running.length; i++) {
+            handleStopTestcase(i, true);
+        }
+        state.testcases = [];
+    });
+
+    running = [];
+    postMessage('SAVE_TESTCASES', []);
+};
+
+const handleAcceptTestcase = (id: number) => {
+    const index = findIndexFromId(id);
+    state.testcases[index].acceptedOutput.value = state.testcases[index].stdout.value;
+    saveTestcases();
+};
+
+const handleEditTestcase = (id: number) => {
+    const index = findIndexFromId(id);
+    batch(() => {
+        state.testcases[index].acceptedOutput.value = '';
+        state.testcases[index].code.value = 0;
+        state.testcases[index].status = 'EDITING';
+    });
+};
+
+const handleSaveTestcase = (id: number, input: string) => {
+    const index = findIndexFromId(id);
+    batch(() => {
+        state.testcases[index].input.value = input;
+        state.testcases[index].status = '';
+    });
+    saveTestcases();
+};
+
+const handleDeleteTestcase = (id: number, isIndex: boolean) => {
+    const index = isIndex ? id : findIndexFromId(id);
+    mex.remove(state.testcases[index].id);
+    state.testcases.splice(index, 1);
+    running.splice(index, 1);
+    saveTestcases();
+};
+
+const handleRunTestcase = (id: number, isIndex: boolean) => {
+    const index = isIndex ? id : findIndexFromId(id);
+    if (running[index]) {
+        return; // already running
+    }
+
+    batch(() => {
+        state.testcases[index].stdout.value = '';
+        state.testcases[index].stderr.value = '';
+    });
+    postMessage('SOURCE_CODE_RUN', { id: state.testcases[index].id, input: state.testcases[index].input.value });
+};
+
+const handleStopTestcase = (id: number, removeListeners: boolean) => {
+    const index = findIndexFromId(id);
+    if (running[index]) {
+        postMessage('SOURCE_CODE_STOP', { id: state.testcases[index].id, removeListeners });
+    }
+};
+
+const updateStdio = (payloadId: number, property: keyof ITestcase, message: string) => {
+    const index = findIndexFromId(payloadId);
+    (state.testcases[index][property].value as string) += message;
+};
+
+const handleSavedTestcasesMessage = (payload: any) => {
+    state.hasEditor = !!payload;
+    state.testcases = payload?.map((value: any): ITestcaseState => {
+        const copy: any = newTestcaseState();
+        for (const [k, v] of Object.entries(value)) {
+            copy[k].value = v;
+        }
+        return copy;
+    }) ?? [];
+    running = Array(payload?.length ?? 0).fill(false);
+};
+
+const handleStatusMessage = (payload: any) => {
+    const { id: payloadId, status } = payload;
+    const index = findIndexFromId(payloadId);
+
+    state.testcases[index].status = status;
+    if (status === 'RUNNING') {
+        running[index] = true;
+    }
+};
+
+const handleExitMessage = (payload: any) => {
+    const { id: payloadId, code, elapsed } = payload;
+    const index = findIndexFromId(payloadId);
+
+    batch(() => {
+        state.testcases[index].code.value = code;
+        state.testcases[index].elapsed.value = elapsed;
+        state.testcases[index].status = '';
+    });
+    running[index] = false;
+    saveTestcases();
+};
+
+const handleSendNewInput = (id: number, input: string) => {
+    const index = findIndexFromId(id);
+    state.testcases[index].input.value += input;
+    saveTestcases();
+    postMessage('STDIN', { id: state.testcases[index].id, input });
+};
+
+window.addEventListener('message', handleMessage);
+
 export default function App() {
-    const [testcases, setTestcases] = useState<ITestcase[] | undefined>(undefined);
-    const [statuses, setStatuses] = useState<string[]>([]);
-    const testcaseId = useRef<number[]>([]);
+    useEffect(() => postMessage('REQUEST_TESTCASES'), []);
 
-    const updateStdio = (id: number, property: keyof ITestcase, message: string) => {
-        const testcase = testcaseId.current.findIndex(value => value === id);
-
-        setTestcases(prevTestcases => prevTestcases?.map((value, index) => index === testcase ? {
-            ...value,
-            [property]: value[property] + message
-        } : value));
-    };
-
-    const handleMessage = event => {
-        const message: IMessage = event.data;
-        switch (message.type) {
-            case 'SAVED_TESTCASES': {
-                const savedTestcases = message.payload;
-                setTestcases(savedTestcases);
-                setStatuses(savedTestcases ? Array(savedTestcases.length).fill('') : []);
-                testcaseId.current = savedTestcases ? Array(savedTestcases.length).fill(-1) : [];
-                break;
-            }
-            case 'REQUEST_RUN_ALL':
-                handleRunAllTestcases();
-                break;
-            case 'REQUEST_DELETE_ALL':
-                handleDeleteAllTestcases();
-                break;
-            case 'STATUS': {
-                const { id, status, startTime } = message.payload;
-                const testcase = testcaseId.current.findIndex(value => value === id);
-
-                setStatuses(prevStatuses => prevStatuses.map((value, index) => index === testcase ? status : value));
-
-                if (status === 'RUNNING') {
-                    testcaseId.current[testcase] = startTime; // ID becomes start time of the source code for later events
-                }
-                break;
-            }
-            case 'EXIT': {
-                const { id, code, elapsed } = message.payload;
-                const testcase = testcaseId.current.findIndex(value => value === id);
-
-                setTestcases(prevTestcases => {
-                    const newTestcases = prevTestcases!.slice();
-                    newTestcases[testcase].code = code;
-                    newTestcases[testcase].elapsed = elapsed;
-                    postMessage('SAVE_TESTCASES', newTestcases);
-                    return newTestcases;
-                });
-                setStatuses(prevStatuses => prevStatuses.map((value, index) => index === testcase ? '' : value));
-                testcaseId.current[testcase] = -1;
-
-                break;
-            }
-            case 'STDOUT':
-                updateStdio(message.payload.id, 'stdout', message.payload.data);
-                break;
-            case 'STDERR':
-                updateStdio(message.payload.id, 'stderr', message.payload.data);
-                break;
-        }
-    };
-
-    const handleNextTestcase = () => {
-        const newTestcase: ITestcase = {
-            input: '',
-            stderr: '',
-            stdout: '',
-            elapsed: 0,
-            code: 0,
-            acceptedOutput: ''
-        };
-        setTestcases([...testcases ?? [], newTestcase]);
-        setStatuses([...statuses, '']);
-
-        const id = Date.now();
-        testcaseId.current.push(id);
-        postMessage('SOURCE_CODE_RUN', { id, input: '' });
-    };
-
-    const handleRunAllTestcases = () => {
-        for (let i = 0; i < (testcases?.length ?? 0); i++) {
-            handleRunTestcase(i);
-        }
-    };
-
-    const handleDeleteAllTestcases = () => {
-        for (let i = 0; i < testcaseId.current.length; i++) {
-            handleStopTestcase(i);
-        }
-
-        setTestcases(() => []);
-        setStatuses(() => []);
-        testcaseId.current = [];
-        postMessage('SAVE_TESTCASES', []);
-    };
-
-    const handleAcceptTestcase = testcase => {
-        setTestcases(prevTestcases => {
-            const newTestcases = prevTestcases!.slice();
-            newTestcases[testcase].acceptedOutput = newTestcases[testcase].stdout;
-            newTestcases[testcase].code = 1;
-            postMessage('SAVE_TESTCASES', newTestcases);
-            return newTestcases;
-        });
-    };
-
-    const handleEditTestcase = testcase => {
-        setStatuses(prevStatuses => prevStatuses.map((value, index) => index === testcase ? 'EDITING' : value));
-        setTestcases(prevTestcases => prevTestcases?.map((value, index) => index === testcase ? {
-            ...value,
-            code: 0,
-            acceptedOutput: ''
-        } : value));
-
-        return testcases![testcase].input;
-    };
-
-    const handleSaveTestcase = (testcase, input) => {
-        setStatuses(prevStatuses => prevStatuses.map((value, index) => index === testcase ? '' : value));
-        setTestcases(prevTestcases => {
-            const newTestcases = prevTestcases!;
-            newTestcases[testcase].input = input;
-            postMessage('SAVE_TESTCASES', newTestcases);
-            return newTestcases;
-        });
-    };
-
-    const handleDeleteTestcase = testcase => {
-        setStatuses(prevStatuses => [...prevStatuses.slice(0, testcase), ...prevStatuses.slice(testcase + 1)]);
-        setTestcases(prevTestcases => {
-            const newTestcases = [...prevTestcases!.slice(0, testcase), ...prevTestcases!.slice(testcase + 1)];
-            postMessage('SAVE_TESTCASES', newTestcases);
-            return newTestcases;
-        });
-
-        testcaseId.current.splice(testcase, 1);
-    };
-
-    const handleRunTestcase = testcase => {
-        if (testcaseId.current[testcase] !== -1) {
-            handleStopTestcase(testcase);
-        }
-
-        const newId = testcaseId.current[testcase] === -1 ? testcase : testcaseId.current[testcase];
-        testcaseId.current[testcase] = newId;
-        setTestcases(prevTestcases => {
-            const newTestcases = prevTestcases!.slice();
-            newTestcases[testcase].stdout = '';
-            newTestcases[testcase].stderr = '';
-            postMessage('SOURCE_CODE_RUN', { id: newId, input: prevTestcases![testcase].input });
-            return newTestcases;
-        });
-    };
-
-    const handleStopTestcase = testcase => {
-        if (testcaseId.current[testcase] === -1) {
-            return;
-        }
-
-        postMessage('SOURCE_CODE_STOP', { id: testcaseId.current[testcase] });
-    };
-
-    const handleSendNewInput = (testcase: number, input: string) => {
-        setTestcases(prevTestcases => {
-            const newTestcases = prevTestcases!.slice();
-            newTestcases[testcase].input += input;
-            postMessage('SAVE_TESTCASES', newTestcases);
-            return newTestcases;
-        });
-
-        postMessage('STDIN', { id: testcaseId.current[testcase], input });
-    };
-
-    useEventListener('message', handleMessage);
-    useEffect(() => {
-        postMessage('REQUEST_TESTCASES');
-    }, []);
-
-    if (!testcases) {
+    if (!state.hasEditor) {
         return <div></div>;
     }
 
     return (
-        <div>
-            {testcases.map(({ input, stderr, stdout, elapsed, code, acceptedOutput }, index) =>
+        <>
+            {state.testcases.map((_, index) =>
                 <Testcase
-                    index={index}
-                    input={input}
-                    stderr={stderr}
-                    stdout={stdout}
-                    elapsed={elapsed}
-                    code={code}
-                    status={statuses[index]}
-                    acceptedOutput={acceptedOutput}
+                    key={state.testcases[index].id}
+                    testcase={state.testcases[index]}
                     onAcceptTestcase={handleAcceptTestcase}
                     onEditTestcase={handleEditTestcase}
                     onSaveTestcase={handleSaveTestcase}
@@ -242,6 +245,6 @@ export default function App() {
                     delete all
                 </button>
             </div>
-        </div>
+        </>
     );
 }
