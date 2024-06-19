@@ -136,7 +136,7 @@ const handleDeleteTestcase = (testcase: number) => {
 
 const handleRunTestcase = (testcase: number) => {
     if (running[testcase]) {
-        handleStopTestcase(testcase); // already running, stop it first and then rerun
+        return; // already running
     }
 
     batch(() => {
