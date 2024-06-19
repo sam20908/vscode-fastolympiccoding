@@ -112,24 +112,25 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 if (code === null) {
                                     return -1; // forcefully terminated
                                 }
+
+                                this._errorTerminal.get(file)?.dispose();
                                 if (code) {
                                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
 
-                                    this._errorTerminal.get(file)?.dispose();
                                     const dummy = new DummyTerminal();
                                     const terminal = vscode.window.createTerminal({
                                         name: path.basename(file),
                                         pty: dummy,
-                                        iconPath: { id: 'zap' }
+                                        iconPath: { id: 'zap' },
+                                        location: { viewColumn: vscode.ViewColumn.Beside }
                                     });
+                                    this._errorTerminal.set(file, terminal);
 
                                     // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
                                     await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
 
                                     dummy.write(compileError);
-                                    terminal.show();
-                                    this._errorTerminal.set(file, terminal);
-
+                                    terminal.show(true);
                                     return -1;
                                 }
 
