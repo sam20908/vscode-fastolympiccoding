@@ -92,11 +92,22 @@ const handleNextTestcase = () => {
 };
 
 const handleRunAllTestcases = () => {
+    const ids: number[] = [];
+    const inputs: string[] = [];
+
     batch(() => {
         for (let i = 0; i < running.length; i++) {
-            handleRunTestcase(i, true);
+            if (running[i]) {
+                continue;
+            }
+
+            ids.push(state.testcases[i].id);
+            inputs.push(state.testcases[i].input.value);
+            state.testcases[i].stdout.value = '';
+            state.testcases[i].stderr.value = '';
         }
     });
+    postMessage('SOURCE_CODE_RUN', { ids, inputs });
 };
 
 const handleDeleteAllTestcases = () => {
@@ -153,7 +164,7 @@ const handleRunTestcase = (id: number, isIndex: boolean) => {
         state.testcases[index].stdout.value = '';
         state.testcases[index].stderr.value = '';
     });
-    postMessage('SOURCE_CODE_RUN', { id: state.testcases[index].id, input: state.testcases[index].input.value });
+    postMessage('SOURCE_CODE_RUN', { ids: [state.testcases[index].id], inputs: [state.testcases[index].input.value] });
 };
 
 const handleStopTestcase = (id: number, removeListeners: boolean) => {
@@ -181,25 +192,31 @@ const handleSavedTestcasesMessage = (payload: any) => {
 };
 
 const handleStatusMessage = (payload: any) => {
-    const { id: payloadId, status } = payload;
-    const index = findIndexFromId(payloadId);
+    const { ids, status } = payload;
 
-    state.testcases[index].status = status;
-    if (status === 'RUNNING') {
-        running[index] = true;
-    }
+    batch(() => {
+        for (const payloadId of ids) {
+            const index = findIndexFromId(payloadId);
+            state.testcases[index].status = status;
+            if (status === 'RUNNING') {
+                running[index] = true;
+            }
+        }
+    });
 };
 
 const handleExitMessage = (payload: any) => {
-    const { id: payloadId, code, elapsed } = payload;
-    const index = findIndexFromId(payloadId);
+    const { ids, code, elapsed } = payload;
 
     batch(() => {
-        state.testcases[index].code.value = code;
-        state.testcases[index].elapsed.value = elapsed;
-        state.testcases[index].status = '';
+        for (const payloadId of ids) {
+            const index = findIndexFromId(payloadId);
+            state.testcases[index].code.value = code;
+            state.testcases[index].elapsed.value = elapsed;
+            state.testcases[index].status = '';
+            running[index] = false;
+        }
     });
-    running[index] = false;
     saveTestcases();
 };
 

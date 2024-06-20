@@ -64,7 +64,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 break;
             case 'SOURCE_CODE_RUN':
                 (async () => {
-                    const { id, input } = message.payload;
+                    const { ids, inputs } = message.payload;
                     const file = vscode.window.activeTextEditor?.document.fileName;
                     if (!file) {
                         return;
@@ -76,16 +76,16 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
                     if (!runSettings) {
                         vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-                        super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                        super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
                         return;
                     }
 
                     if (runSettings.compileCommand) {
                         if (this._compileProcess) {
-                            super._postMessage('STATUS', { status: 'COMPILING', id });
+                            super._postMessage('STATUS', { status: 'COMPILING', ids });
                             const code = await this._compileProcess.promise; // another testcase is compiling
                             if (code) {
-                                super._postMessage('EXIT', { id, code, elapsed: 0 });
+                                super._postMessage('EXIT', { ids, code, elapsed: 0 });
                                 return;
                             }
                         } else {
@@ -97,7 +97,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                     return 0; // avoid unnecessary recompilation
                                 }
 
-                                super._postMessage('STATUS', { status: 'COMPILING', id });
+                                super._postMessage('STATUS', { status: 'COMPILING', ids });
                                 const process = new RunningProcess(resolvedCommand);
                                 this._compileProcess = process;
                                 let compileError = '';
@@ -111,7 +111,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
                                 this._errorTerminal.get(file)?.dispose();
                                 if (compileError) {
-                                    super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                                    super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
 
                                     const dummy = new DummyTerminal();
                                     const terminal = vscode.window.createTerminal({
@@ -139,17 +139,19 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         }
                     }
                     this._compileProcess = undefined;
+                    super._postMessage('STATUS', { status: 'RUNNING', ids });
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-                    const process = new RunningProcess(resolvedCommand);
-                    this._processes.set(id, process);
-                    super._postMessage('STATUS', { status: 'RUNNING', id });
+                    for (let i = 0; i < ids.length; i++) {
+                        const process = new RunningProcess(resolvedCommand);
+                        this._processes.set(ids[i], process);
 
-                    process.process.stdin.write(input);
-                    process.process.stdout.on('data', this._onStdout.bind(this, id));
-                    process.process.stderr.on('data', this._onStderr.bind(this, id));
-                    process.process.on('error', this._onError.bind(this, id));
-                    process.process.on('exit', this._onExit.bind(this, id, process));
+                        process.process.stdin.write(inputs[i]);
+                        process.process.stdout.on('data', this._onStdout.bind(this, ids[i]));
+                        process.process.stderr.on('data', this._onStderr.bind(this, ids[i]));
+                        process.process.on('error', this._onError.bind(this, ids[i]));
+                        process.process.on('exit', this._onExit.bind(this, ids[i], process));
+                    }
                 })();
                 break;
             case 'SOURCE_CODE_STOP': {
@@ -241,13 +243,13 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
-        super._postMessage('EXIT', { id, elapsed: process.elapsed, code: exitCode ?? 0 });
+        super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 0 });
         this._processes.delete(id);
     }
 
     private _onError(id: number, err: Error): void {
         super._postMessage('STDERR', { id, data: `${err.stack ?? '[No NodeJS callstack available]'}\n\nError when running the solution...` });
-        super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+        super._postMessage('EXIT', { ids: [id], code: -1, elapsed: 0 });
     }
 
     private async _onChangeActiveFile(): Promise<void> {
