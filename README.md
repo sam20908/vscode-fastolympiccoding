@@ -1,17 +1,24 @@
 <h3 align="center">⚡ Fast Olympic Coding ⚡</h3>
 
-![Testcases Gif](media/testcases.gif)
+![Testcases Gif](media/demo.gif)
 
 Fast Olympic Coding is an extension to assist with various common tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin by integration various VSCode functionalities.
 
+⚡ What other goodies does this extension offer?
+  - Concurrently run, edit, and delete multiple testcases
+  - Heavily optimized: avoid any unnecessary re-rendering, batching `stdout` and `stderr` messages, etc...
+
 *Full credit goes to the original Sublime Text plugin https://github.com/Jatana/FastOlympicCoding*
 
-### _Interested? [LEARN HOW TO USE RIGHT NOW!](#setting-up)_
+### Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
 
 ---
 
-### Features
-- Compiling, running, and editing multiple testcases at the same time
+### How to Install
+- Via VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
+- Via a command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
+
+---
 
 ### Todo
 - Documentation on settings
@@ -53,6 +60,15 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 
 ### Testcases
 - The extension will load the saved testcases for the opened file, and the testcases will automatically update whenever you switch files.
+
+- Accept outputs to detect wrong answers later!
+
+![AC Gif](media/ac.gif)
+
 - Any compilation errors will be displayed in a terminal.
 
 ![Compile Error Gif](media/compile_error.gif)
+
+- Super long outputs will be truncated automatically (limit can be adjusted in settings)
+
+![Truncated Messages Gif](media/truncated_messages.gif)
