@@ -3,7 +3,7 @@
   "displayName": "Fast Olympic Coding",
   "version": "0.1.6",
   "description": "Port of FastOlympicCoding for VSCode",
-  "icon": "media/icon.png",
+  "icon": "./media/icon.png",
   "categories": [
     "Programming Languages",
     "Keymaps",
