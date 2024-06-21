@@ -1,7 +1,7 @@
 {
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Port of FastOlympicCoding for VSCode",
   "icon": "./media/icon.png",
   "categories": [
