@@ -52,8 +52,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     onMessage(message: IMessage): void {
         switch (message.type) {
-            case 'REQUEST_TESTCASES':
-                this._onChangeActiveFile(); // give webview saved data
+            case 'LOADED':
+                this._onLoaded();
                 break;
             case 'SAVE_TESTCASES':
                 const file = vscode.window.activeTextEditor?.document.fileName;
@@ -174,6 +174,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
             case 'STDIN':
                 this._processes.get(message.payload.id)!.process.stdin.write(message.payload.input);
                 break;
+            case 'VIEW_TEXT':
+                this._onViewText(message.payload);
+                break;
         }
     }
 
@@ -261,6 +264,20 @@ export class TestcasesViewProvider extends BaseViewProvider {
             return;
         }
         super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+    }
+
+    private _onLoaded(): void {
+        this._onChangeActiveFile(); // give webview saved data
+
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const testcaseViewSettings: any = {};
+        testcaseViewSettings.maxCharactersForOutput = config.get('maxCharactersForOutput');
+        super._postMessage('SETTINGS', testcaseViewSettings);
+    }
+
+    private async _onViewText({ content }: { content: string }): Promise<void> {
+        const document = await vscode.workspace.openTextDocument({ content });
+        await vscode.window.showTextDocument(document);
     }
 
     private _sendCombinedData(type: string, id: number, combinedTime: Map<number, number>, combinedData: Map<number, string>, data: string): void {

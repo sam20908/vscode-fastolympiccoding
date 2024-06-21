@@ -93,6 +93,17 @@
             "description": "Force compilation regardless of file changes (if current extension has a compile command)."
           }
         }
+      },
+      {
+        "title": "Testcase Window",
+        "properties": {
+          "fastolympiccoding.maxCharactersForOutput": {
+            "type": "integer",
+            "default": 2000,
+            "description": "Number of characters to truncate stdout and stderr to (restart webview for change to take effect).",
+            "minimum": 3
+          }
+        }
       }
     ],
     "commands": [

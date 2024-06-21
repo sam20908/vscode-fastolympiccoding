@@ -4,7 +4,7 @@ import { batch, signal } from '@preact/signals';
 
 import Testcase from './components/Testcase';
 import { Mex } from './util/Mex';
-import { IState, IMessage, ITestcase, ITestcaseState } from './Types';
+import { IState, IMessage, ITestcase, ITestcaseState, ISettings } from './common';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
@@ -12,9 +12,11 @@ const vscode = acquireVsCodeApi();
 let running: boolean[] = [];
 const mex = new Mex();
 const state = deepSignal<IState>({
+    loaded: false,
     hasEditor: false,
     testcases: []
 });
+let settings: ISettings;
 
 const TESTCASE_TEMPLATE: any = {
     input: '',
@@ -63,6 +65,9 @@ const handleMessage = (event: MessageEvent) => {
     switch (message.type) {
         case 'SAVED_TESTCASES':
             handleSavedTestcasesMessage(message.payload);
+            break;
+        case 'SETTINGS':
+            handleSettingsMessage(message.payload);
             break;
         case 'REQUEST_RUN_ALL':
             handleRunAllTestcases();
@@ -191,6 +196,11 @@ const handleSavedTestcasesMessage = (payload: any) => {
     running = Array(payload?.length ?? 0).fill(false);
 };
 
+const handleSettingsMessage = (_settings: ISettings) => {
+    state.loaded = true;
+    settings = _settings;
+};
+
 const handleStatusMessage = (payload: any) => {
     const { ids, status } = payload;
 
@@ -227,13 +237,20 @@ const handleSendNewInput = (id: number, input: string) => {
     postMessage('STDIN', { id: state.testcases[index].id, input });
 };
 
+const handleViewText = (content: string) => {
+    postMessage('VIEW_TEXT', { content });
+};
+
 window.addEventListener('message', handleMessage);
 
 export default function App() {
-    useEffect(() => postMessage('REQUEST_TESTCASES'), []);
+    useEffect(() => postMessage('LOADED'), []);
 
     if (!state.hasEditor) {
         return <div></div>;
+    }
+    if (!state.loaded) {
+        return <p>Loading...</p>;
     }
 
     return (
@@ -242,6 +259,7 @@ export default function App() {
                 <Testcase
                     key={state.testcases[index].id}
                     testcase={state.testcases[index]}
+                    settings={settings}
                     onAcceptTestcase={handleAcceptTestcase}
                     onEditTestcase={handleEditTestcase}
                     onSaveTestcase={handleSaveTestcase}
@@ -249,6 +267,7 @@ export default function App() {
                     onRunTestcase={handleRunTestcase}
                     onStopTestcase={handleStopTestcase}
                     onSendNewInput={handleSendNewInput}
+                    onViewText={handleViewText}
                 />)
             }
             <div class="flex flex-row justify-start gap-x-2 ml-6">
