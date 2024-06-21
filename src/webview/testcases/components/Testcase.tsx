@@ -29,14 +29,18 @@ export default function App({
 }: Props) {
     const { input, stderr, stdout, elapsed, code, acceptedOutput, id, status } = testcase;
     const newInput = useSignal('');
-
-    const statusColor = useComputed(() => {
+    const statusItem = useComputed(() => {
+        if (code.value === -1)
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: WA_COLOR }}>CTE</p>
         if (code.value)
-            return WA_COLOR;
-        if (acceptedOutput.value !== '')
-            return stdout.value === acceptedOutput.value ? AC_COLOR : WA_COLOR;
-        return null;
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: WA_COLOR }}>RTE</p>
+        if (acceptedOutput.value === '')
+            return <></>;
+        if (stdout.value === acceptedOutput.value)
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: AC_COLOR }}>AC</p>
+        return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: WA_COLOR }}>WA</p>
     });
+
     const handleKeyUp = (index: number, event: KeyboardEvent, onSendNewInput: Function) => {
         if (event.key === 'Enter') {
             onSendNewInput(index, newInput.value);
@@ -50,6 +54,7 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+                        {statusItem}
                         <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => {
                             newInput.value = input.value;
                             onEditTestcase(id);
@@ -62,7 +67,7 @@ export default function App({
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
                     </div>
                 </div>
-                {(acceptedOutput.value === '' || stdout !== acceptedOutput) &&
+                {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) &&
                     <div>
                         <div>
                             <div class="flex flex-row">

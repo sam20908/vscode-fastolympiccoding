@@ -96,6 +96,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
                             }
                         } else {
                             const code = await (async () => {
+                                this._errorTerminal.get(file)?.dispose();
+
                                 const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                                 const lastModified = fs.statSync(file).mtime.getTime();
                                 const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(file) ?? [-1, ''];
@@ -111,35 +113,32 @@ export class TestcasesViewProvider extends BaseViewProvider {
                                 process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
                                 const code = await process.promise;
-                                if (code) {
-                                    return -1;
+                                this._compileProcess = undefined;
+                                if (!code) {
+                                    this._lastCompiled.set(file, [lastModified, resolvedCommand]);
+                                    return 0;
                                 }
 
-                                this._errorTerminal.get(file)?.dispose();
-                                if (compileError) {
-                                    super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+                                super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
 
-                                    const dummy = new DummyTerminal();
-                                    const terminal = vscode.window.createTerminal({
-                                        name: path.basename(file),
-                                        pty: dummy,
-                                        iconPath: { id: 'zap' },
-                                        location: { viewColumn: vscode.ViewColumn.Beside }
-                                    });
-                                    this._errorTerminal.set(file, terminal);
+                                const dummy = new DummyTerminal();
+                                const terminal = vscode.window.createTerminal({
+                                    name: path.basename(file),
+                                    pty: dummy,
+                                    iconPath: { id: 'zap' },
+                                    location: { viewColumn: vscode.ViewColumn.Beside }
+                                });
+                                this._errorTerminal.set(file, terminal);
 
-                                    // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
-                                    await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
+                                // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
+                                await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
 
-                                    dummy.write(compileError);
-                                    terminal.show(true);
-                                    return -1;
-                                }
-
-                                this._lastCompiled.set(file, [lastModified, resolvedCommand]);
-                                return 0;
+                                dummy.write(compileError);
+                                terminal.show(true);
+                                return -1;
                             })();
                             if (code) {
+                                super._postMessage('EXIT', { ids, code, elapsed: 0 });
                                 return;
                             }
                         }
@@ -243,7 +242,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
-        super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 0 });
+        // if exitCode is null, the process crashed
+        super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 1 });
         this._processes.delete(id);
     }
 
