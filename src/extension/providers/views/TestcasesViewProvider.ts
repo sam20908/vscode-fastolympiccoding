@@ -38,11 +38,17 @@ function saveStorageState(path: string, state: IStorage): void {
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
+    private static readonly IO_SEND_INTERVAL_MS = 20;
+
     private _state: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: Map<number, RunningProcess> = new Map();
+    private _combinedStdoutTime: Map<number, number> = new Map();
+    private _combinedStderrTime: Map<number, number> = new Map();
+    private _combinedStdout: Map<number, string> = new Map();
+    private _combinedStderr: Map<number, string> = new Map();
 
     onMessage(message: IMessage): void {
         switch (message.type) {
@@ -147,8 +153,10 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         this._processes.set(ids[i], process);
 
                         process.process.stdin.write(inputs[i]);
-                        process.process.stdout.on('data', this._onStdout.bind(this, ids[i]));
-                        process.process.stderr.on('data', this._onStderr.bind(this, ids[i]));
+                        process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
+                        process.process.stderr.on('data', this._sendCombinedData.bind(this, 'STDERR', ids[i], this._combinedStderrTime, this._combinedStderr));
+                        process.process.stdout.on('end', () => this._sendLeftoverData('STDOUT', ids[i], this._combinedStdout));
+                        process.process.stderr.on('end', () => this._sendLeftoverData('STDERR', ids[i], this._combinedStderr));
                         process.process.on('error', this._onError.bind(this, ids[i]));
                         process.process.on('exit', this._onExit.bind(this, ids[i], process));
                     }
@@ -234,14 +242,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
         this._processes.clear();
     }
 
-    private _onStdout(id: number, data: string): void {
-        super._postMessage('STDOUT', { id, data });
-    }
-
-    private _onStderr(id: number, data: string): void {
-        super._postMessage('STDERR', { id, data });
-    }
-
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 0 });
         this._processes.delete(id);
@@ -261,5 +261,25 @@ export class TestcasesViewProvider extends BaseViewProvider {
             return;
         }
         super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+    }
+
+    private _sendCombinedData(type: string, id: number, combinedTime: Map<number, number>, combinedData: Map<number, string>, data: string): void {
+        const lastCombinedTime = combinedTime.get(id) ?? -Infinity;
+        const combinedMessage = (combinedData.get(id) ?? '') + data;
+        const now = Date.now();
+        if (now - lastCombinedTime >= TestcasesViewProvider.IO_SEND_INTERVAL_MS) {
+            super._postMessage(type, { id, data: combinedMessage });
+            combinedData.set(id, '');
+            combinedTime.set(id, now);
+        } else {
+            combinedData.set(id, combinedMessage);
+        }
+    }
+
+    private _sendLeftoverData(type: string, id: number, combinedData: Map<number, string>): void {
+        if (combinedData.has(id)) {
+            super._postMessage(type, { id, data: combinedData.get(id) });
+            combinedData.set(id, '');
+        }
     }
 }
