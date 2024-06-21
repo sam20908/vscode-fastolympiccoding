@@ -88,7 +88,7 @@ const handleMessage = (event: MessageEvent) => {
 const handleNextTestcase = () => {
     state.testcases.push(newTestcaseState());
     running.push(false);
-    postMessage('SOURCE_CODE_RUN', { id: state.testcases.at(-1)!.id, input: '' });
+    postMessage('SOURCE_CODE_RUN', { ids: [state.testcases.at(-1)!.id], inputs: [''] });
 };
 
 const handleRunAllTestcases = () => {
