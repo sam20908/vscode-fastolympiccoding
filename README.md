@@ -15,8 +15,8 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 ---
 
 ### How to Install
-- Via VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
-- Via a command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
+- VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
+- Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
 
 ---
 
