@@ -8,7 +8,7 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
   - Concurrently run, edit, and delete multiple testcases
   - Heavily optimized: avoid any unnecessary re-rendering, batching `stdout` and `stderr` messages, etc...
 
-*Full credit goes to the original Sublime Text plugin https://github.com/Jatana/FastOlympicCoding*
+
 
 ### Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
 
@@ -72,3 +72,10 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 - Super long outputs will be truncated automatically (limit can be adjusted in settings)
 
 ![Truncated Messages Gif](media/truncated_messages.gif)
+
+---
+
+### Attributions
+
+- [CppFastOlympicCoding](https://github.com/Jatana/FastOlympicCoding): The original Sublime Text package that inspired this extension 💖
+- [Flaticon](https://www.flaticon.com/): Icon for this extension 💖
