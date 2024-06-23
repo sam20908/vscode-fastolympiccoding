@@ -289,7 +289,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     private async _onViewText({ content }: { content: string }): Promise<void> {
         const document = await vscode.workspace.openTextDocument({ content });
-        await vscode.window.showTextDocument(document);
+        vscode.window.showTextDocument(document);
     }
 
     private _sendCombinedData(type: string, id: number, combinedTime: Map<number, number>, combinedData: Map<number, string>, data: string): void {
