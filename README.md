@@ -13,17 +13,11 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 ---
 
 ### Keybinds
-- Compile (only if necessary) and run all testcases: `Ctrl+Alt+B`
+- Compile (only if file changed) and run all testcases: `Ctrl+Alt+B`
 - Compile (Always) and run all testcases: `Ctrl+Alt+G`
 - Delete all testcases: `Ctrl+Alt+D`
 - Insert file template: `Ctrl+Alt+I`
-  - Control whether to fold the content at `fastolympiccoding.foldFileTemplate` (**Default: `true`**)
-
----
-
-### How to Install
-- VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
-- Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
+  - Control if the content should be folded `fastolympiccoding.foldFileTemplate` (**Default: `true`**)
 
 ---
 
@@ -34,8 +28,11 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 - Stress tester
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
 
-### Not Planned
-- Built-in linter. Please use another extension like [Microsoft's C/C++ Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools).
+---
+
+### How to Install
+- VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
+- Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
 
 ---
 
@@ -77,6 +74,13 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 - Very long outputs will be truncated (adjustable character limit at `fastolympiccoding.maxCharactersForOutput`)
 
 ![Truncated Messages Gif](media/truncated_messages.gif)
+
+---
+
+### Other Goodies
+- Insert code from a pre-written library and automatically folded by VSCode!
+
+![File Template Gif](media/file_template.gif)
 
 ---
 
