@@ -12,6 +12,15 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 
 ---
 
+### Keybinds
+- Compile (only if necessary) and run all testcases: `Ctrl+Alt+B`
+- Compile (Always) and run all testcases: `Ctrl+Alt+G`
+- Delete all testcases: `Ctrl+Alt+D`
+- Insert file template: `Ctrl+Alt+I`
+  - Control whether to fold the content at `fastolympiccoding.foldFileTemplate` (**Default: `true`**)
+
+---
+
 ### How to Install
 - VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
 - Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
@@ -24,7 +33,6 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
   - Problem parser (and maybe contest parser)
 - Stress tester
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
-- File snippets (`Auto` function in original plugin)
 
 ### Not Planned
 - Built-in linter. Please use another extension like [Microsoft's C/C++ Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools).

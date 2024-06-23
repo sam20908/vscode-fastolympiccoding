@@ -40,12 +40,17 @@
     },
     "configuration": [
       {
-        "title": "File Snippets",
+        "title": "File Templates",
         "properties": {
-          "fastolympiccoding.fileSnippetsBaseDirectory": {
+          "fastolympiccoding.fileTemplatesBaseDirectory": {
             "type": "string",
             "default": null,
             "description": "The base directory of the file snippets (empty string to disable this functionality)."
+          },
+          "fastolympiccoding.foldFileTemplate": {
+            "type": "boolean",
+            "default": true,
+            "description": "Controls if the copied content would be folded by VSCode (only the first foldable content is folded)"
           }
         }
       },
@@ -65,7 +70,7 @@
         }
       },
       {
-        "title": "Run",
+        "title": "Compile and Run",
         "properties": {
           "fastolympiccoding.runSettings": {
             "type": "object",
@@ -133,6 +138,11 @@
         "command": "fastolympiccoding.clearData",
         "title": "Clear Saved Data",
         "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.insertFileTemplate",
+        "title": "Insert File Template",
+        "category": "Fast Olympic Coding"
       }
     ],
     "keybindings": [
@@ -150,6 +160,10 @@
         "command": "fastolympiccoding.deleteAll",
         "key": "ctrl+alt+d",
         "when": "view.fastolympiccoding.testcases.visible"
+      },
+      {
+        "command": "fastolympiccoding.insertFileTemplate",
+        "key": "ctrl+alt+i"
       }
     ]
   },
