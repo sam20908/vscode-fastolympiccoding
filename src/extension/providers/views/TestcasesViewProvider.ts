@@ -24,7 +24,7 @@ interface ILanguageRunSettings {
     runCommand: string;
 }
 
-function readStorageState(path: string): IStorage {
+function readFileJson(path: string): any {
     try {
         const content = fs.readFileSync(path, { encoding: 'utf-8' });
         return JSON.parse(content);
@@ -33,8 +33,22 @@ function readStorageState(path: string): IStorage {
     }
 }
 
-function saveStorageState(path: string, state: IStorage): void {
-    fs.writeFileSync(path, JSON.stringify(state));
+function readStorageState(path: string): IStorage {
+    const state: IStorage = {};
+    for (const [file, obj] of Object.entries(readFileJson(path))) {
+        state[file] = (obj as any).testcases;
+    }
+    return state;
+}
+
+function updateStorageState(path: string, file: string, testcases: ITestcase[] | undefined): void {
+    const fileData = readFileJson(path);
+    if (!testcases) {
+        delete fileData[file];
+    } else {
+        fileData[file] = { ...fileData[file], testcases };
+    }
+    fs.writeFileSync(path, JSON.stringify(fileData));
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
@@ -165,7 +179,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         } else {
             this._state[file] = data;
         }
-        saveStorageState(this.storagePath, this._state);
+        updateStorageState(this.storagePath, file, this._state[file]);
     }
 
     private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): Promise<void> {
