@@ -40,6 +40,7 @@
     },
     "configuration": [
       {
+        "title": "File Snippets",
         "properties": {
           "fastolympiccoding.fileSnippetsBaseDirectory": {
             "type": "string",
@@ -49,7 +50,7 @@
         }
       },
       {
-        "title": "File Variables",
+        "title": "Stress Test",
         "properties": {
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
@@ -91,7 +92,7 @@
           "fastolympiccoding.forceCompilation": {
             "type": "boolean",
             "default": false,
-            "description": "Force compilation regardless of file changes (if current extension has a compile command)."
+            "description": "Force compilation regardless of file changes (if current file extension has a compile command)."
           }
         }
       },
