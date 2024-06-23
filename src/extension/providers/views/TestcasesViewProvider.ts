@@ -44,11 +44,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
-    private _processes: Map<number, RunningProcess> = new Map();
-    private _combinedStdoutTime: Map<number, number> = new Map();
-    private _combinedStderrTime: Map<number, number> = new Map();
-    private _combinedStdout: Map<number, string> = new Map();
-    private _combinedStderr: Map<number, string> = new Map();
+    private _processes: (RunningProcess | undefined)[] = [];
+    private _combinedStdoutTime: number[] = [];
+    private _combinedStderrTime: number[] = [];
+    private _combinedStdout: string[] = [];
+    private _combinedStderr: string[] = [];
 
     onMessage(message: IMessage): void {
         switch (message.type) {
@@ -125,22 +125,20 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     private _killAllProcesses(): void {
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        if (this._compileProcess) {
-            this._compileProcess.process.removeAllListeners();
-            this._compileProcess.process.kill();
-        }
-        for (const process of this._processes.values()) {
-            process.process.removeAllListeners();
-            process.process.kill();
-        }
+        this._compileProcess?.process.removeAllListeners();
+        this._compileProcess?.process.kill();
         this._compileProcess = undefined;
-        this._processes.clear();
+        for (let i = 0; i < this._processes.length; i++) {
+            this._processes[i]?.process.removeAllListeners();
+            this._processes[i]?.process.kill();
+            this._processes[i] = undefined;
+        }
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         // if exitCode is null, the process crashed
         super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 1 });
-        this._processes.delete(id);
+        this._processes[id] = undefined;
     }
 
     private _onError(id: number, err: Error): void {
@@ -182,7 +180,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         saveStorageState(this.storagePath, this._state);
     }
 
-    private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): void {
+    private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -261,7 +259,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
         for (let i = 0; i < ids.length; i++) {
             const process = new RunningProcess(resolvedCommand);
-            this._processes.set(ids[i], process);
+            this._expandArraysIfNecesssary(ids[i]);
+            this._processes[ids[i]] = process;
 
             process.process.stdin.write(inputs[i]);
             process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
@@ -275,16 +274,15 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _onSourceCodeStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
-        const process = this._processes.get(id)!;
         if (removeListeners) {
-            process.process.removeAllListeners();
+            this._processes[id]!.process.removeAllListeners();
         }
-        process.process.kill();
-        this._processes.delete(id);
+        this._processes[id]!.process.kill();
+        this._processes[id] = undefined;
     }
 
     private _onStdin({ id, input }: { id: number, input: string }): void {
-        this._processes.get(id)!.process.stdin.write(input);
+        this._processes[id]!.process.stdin.write(input);
     }
 
     private async _onViewText({ content }: { content: string }): Promise<void> {
@@ -292,23 +290,29 @@ export class TestcasesViewProvider extends BaseViewProvider {
         vscode.window.showTextDocument(document);
     }
 
-    private _sendCombinedData(type: string, id: number, combinedTime: Map<number, number>, combinedData: Map<number, string>, data: string): void {
-        const lastCombinedTime = combinedTime.get(id) ?? -Infinity;
-        const combinedMessage = (combinedData.get(id) ?? '') + data;
+    private _sendCombinedData(type: string, id: number, combinedTime: number[], combinedData: string[], data: string): void {
         const now = Date.now();
-        if (now - lastCombinedTime >= TestcasesViewProvider.IO_SEND_INTERVAL_MS) {
-            super._postMessage(type, { id, data: combinedMessage });
-            combinedData.set(id, '');
-            combinedTime.set(id, now);
+        if (now - combinedTime[id] >= TestcasesViewProvider.IO_SEND_INTERVAL_MS) {
+            super._postMessage(type, { id, data: combinedData[id] + data });
+            combinedTime[id] = now;
+            combinedData[id] = '';
         } else {
-            combinedData.set(id, combinedMessage);
+            combinedData[id] += data;
         }
     }
 
-    private _sendLeftoverData(type: string, id: number, combinedData: Map<number, string>): void {
-        if (combinedData.has(id)) {
-            super._postMessage(type, { id, data: combinedData.get(id) });
-            combinedData.set(id, '');
+    private _sendLeftoverData(type: string, id: number, combinedData: string[]): void {
+        super._postMessage(type, { id, data: combinedData[id] });
+        combinedData[id] = '';
+    }
+
+    private _expandArraysIfNecesssary(id: number): void {
+        if (id === this._processes.length) {
+            this._processes.push(undefined);
+            this._combinedStdoutTime.push(-Infinity);
+            this._combinedStderrTime.push(-Infinity);
+            this._combinedStdout.push('');
+            this._combinedStderr.push('');
         }
     }
 }
