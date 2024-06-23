@@ -56,123 +56,16 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 this._onLoaded();
                 break;
             case 'SAVE_TESTCASES':
-                const file = vscode.window.activeTextEditor?.document.fileName;
-                if (!file) {
-                    return;
-                }
-
-                if (message.payload.length === 0) {
-                    delete this._state[file];
-                } else {
-                    this._state[file] = message.payload;
-                }
-                saveStorageState(this.storagePath, this._state);
+                this._onSaveTestcases(message.payload);
                 break;
             case 'SOURCE_CODE_RUN':
-                (async () => {
-                    const { ids, inputs } = message.payload;
-                    const file = vscode.window.activeTextEditor?.document.fileName;
-                    if (!file) {
-                        return;
-                    }
-
-                    const extension = path.extname(file);
-                    const config = vscode.workspace.getConfiguration('fastolympiccoding');
-                    const forceCompilation: boolean = config.get('forceCompilation')!;
-                    const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
-                    if (!runSettings) {
-                        vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-                        super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
-                        return;
-                    }
-
-                    if (runSettings.compileCommand) {
-                        if (this._compileProcess) {
-                            super._postMessage('STATUS', { status: 'COMPILING', ids });
-                            const code = await this._compileProcess.promise; // another testcase is compiling
-                            if (code) {
-                                super._postMessage('EXIT', { ids, code, elapsed: 0 });
-                                return;
-                            }
-                        } else {
-                            const code = await (async () => {
-                                this._errorTerminal.get(file)?.dispose();
-
-                                const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
-                                const lastModified = fs.statSync(file).mtime.getTime();
-                                const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(file) ?? [-1, ''];
-                                if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
-                                    return 0; // avoid unnecessary recompilation
-                                }
-
-                                super._postMessage('STATUS', { status: 'COMPILING', ids });
-                                const process = new RunningProcess(resolvedCommand);
-                                this._compileProcess = process;
-                                let compileError = '';
-                                process.process.stderr.on('data', data => compileError += data.toString());
-                                process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
-
-                                const code = await process.promise;
-                                this._compileProcess = undefined;
-                                if (!code) {
-                                    this._lastCompiled.set(file, [lastModified, resolvedCommand]);
-                                    return 0;
-                                }
-
-                                super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
-
-                                const dummy = new DummyTerminal();
-                                const terminal = vscode.window.createTerminal({
-                                    name: path.basename(file),
-                                    pty: dummy,
-                                    iconPath: { id: 'zap' },
-                                    location: { viewColumn: vscode.ViewColumn.Beside }
-                                });
-                                this._errorTerminal.set(file, terminal);
-
-                                // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
-                                await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
-
-                                dummy.write(compileError);
-                                terminal.show(true);
-                                return -1;
-                            })();
-                            if (code) {
-                                super._postMessage('EXIT', { ids, code, elapsed: 0 });
-                                return;
-                            }
-                        }
-                    }
-                    this._compileProcess = undefined;
-                    super._postMessage('STATUS', { status: 'RUNNING', ids });
-
-                    const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-                    for (let i = 0; i < ids.length; i++) {
-                        const process = new RunningProcess(resolvedCommand);
-                        this._processes.set(ids[i], process);
-
-                        process.process.stdin.write(inputs[i]);
-                        process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
-                        process.process.stderr.on('data', this._sendCombinedData.bind(this, 'STDERR', ids[i], this._combinedStderrTime, this._combinedStderr));
-                        process.process.stdout.on('end', () => this._sendLeftoverData('STDOUT', ids[i], this._combinedStdout));
-                        process.process.stderr.on('end', () => this._sendLeftoverData('STDERR', ids[i], this._combinedStderr));
-                        process.process.on('error', this._onError.bind(this, ids[i]));
-                        process.process.on('exit', this._onExit.bind(this, ids[i], process));
-                    }
-                })();
+                this._onSourceCodeRun(message.payload);
                 break;
-            case 'SOURCE_CODE_STOP': {
-                const { id, removeListeners } = message.payload;
-                const process = this._processes.get(id)!;
-                if (removeListeners) {
-                    process.process.removeAllListeners();
-                }
-                process.process.kill();
-                this._processes.delete(id);
+            case 'SOURCE_CODE_STOP':
+                this._onSourceCodeStop(message.payload);
                 break;
-            }
             case 'STDIN':
-                this._processes.get(message.payload.id)!.process.stdin.write(message.payload.input);
+                this._onStdin(message.payload);
                 break;
             case 'VIEW_TEXT':
                 this._onViewText(message.payload);
@@ -273,6 +166,125 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const testcaseViewSettings: any = {};
         testcaseViewSettings.maxCharactersForOutput = config.get('maxCharactersForOutput');
         super._postMessage('SETTINGS', testcaseViewSettings);
+    }
+
+    private _onSaveTestcases(data: ITestcase[]): void {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            return;
+        }
+
+        if (data.length === 0) {
+            delete this._state[file];
+        } else {
+            this._state[file] = data;
+        }
+        saveStorageState(this.storagePath, this._state);
+    }
+
+    private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): void {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            return;
+        }
+
+        const extension = path.extname(file);
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const forceCompilation: boolean = config.get('forceCompilation')!;
+        const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
+        if (!runSettings) {
+            vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
+            super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+            return;
+        }
+
+        if (runSettings.compileCommand) {
+            if (this._compileProcess) {
+                super._postMessage('STATUS', { status: 'COMPILING', ids });
+                const code = await this._compileProcess.promise; // another testcase is compiling
+                if (code) {
+                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    return;
+                }
+            } else {
+                const code = await (async () => {
+                    this._errorTerminal.get(file)?.dispose();
+
+                    const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
+                    const lastModified = fs.statSync(file).mtime.getTime();
+                    const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(file) ?? [-1, ''];
+                    if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
+                        return 0; // avoid unnecessary recompilation
+                    }
+
+                    super._postMessage('STATUS', { status: 'COMPILING', ids });
+                    const process = new RunningProcess(resolvedCommand);
+                    this._compileProcess = process;
+                    let compileError = '';
+                    process.process.stderr.on('data', data => compileError += data.toString());
+                    process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
+
+                    const code = await process.promise;
+                    this._compileProcess = undefined;
+                    if (!code) {
+                        this._lastCompiled.set(file, [lastModified, resolvedCommand]);
+                        return 0;
+                    }
+
+                    super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+
+                    const dummy = new DummyTerminal();
+                    const terminal = vscode.window.createTerminal({
+                        name: path.basename(file),
+                        pty: dummy,
+                        iconPath: { id: 'zap' },
+                        location: { viewColumn: vscode.ViewColumn.Beside }
+                    });
+                    this._errorTerminal.set(file, terminal);
+
+                    // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
+                    await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
+
+                    dummy.write(compileError);
+                    terminal.show(true);
+                    return -1;
+                })();
+                if (code) {
+                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    return;
+                }
+            }
+        }
+        this._compileProcess = undefined;
+        super._postMessage('STATUS', { status: 'RUNNING', ids });
+
+        const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
+        for (let i = 0; i < ids.length; i++) {
+            const process = new RunningProcess(resolvedCommand);
+            this._processes.set(ids[i], process);
+
+            process.process.stdin.write(inputs[i]);
+            process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
+            process.process.stderr.on('data', this._sendCombinedData.bind(this, 'STDERR', ids[i], this._combinedStderrTime, this._combinedStderr));
+            process.process.stdout.on('end', () => this._sendLeftoverData('STDOUT', ids[i], this._combinedStdout));
+            process.process.stderr.on('end', () => this._sendLeftoverData('STDERR', ids[i], this._combinedStderr));
+            process.process.on('error', this._onError.bind(this, ids[i]));
+            process.process.on('exit', this._onExit.bind(this, ids[i], process));
+        }
+
+    }
+
+    private _onSourceCodeStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
+        const process = this._processes.get(id)!;
+        if (removeListeners) {
+            process.process.removeAllListeners();
+        }
+        process.process.kill();
+        this._processes.delete(id);
+    }
+
+    private _onStdin({ id, input }: { id: number, input: string }): void {
+        this._processes.get(id)!.process.stdin.write(input);
     }
 
     private async _onViewText({ content }: { content: string }): Promise<void> {
