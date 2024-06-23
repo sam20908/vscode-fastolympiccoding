@@ -2,13 +2,11 @@
 
 ![Testcases Gif](media/demo.gif)
 
-Fast Olympic Coding is an extension to assist with various common tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin by integration various VSCode functionalities.
+Fast Olympic Coding is an extension to assist with various common tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin by integrating various VSCode functionalities.
 
 ⚡ What other goodies does this extension offer?
   - Concurrently run, edit, and delete multiple testcases
   - Heavily optimized: avoid any unnecessary re-rendering, batching `stdout` and `stderr` messages, etc...
-
-
 
 ### Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
 
@@ -34,7 +32,7 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 ---
 
 ### Setting Up
-Provide settings for the languages you use in `settings.json`. Here are some example configurations for C++, Python, and Java:
+Provide run settings for the languages you use in `settings.json`. Here are some examples for C++, Python, and Java:
 ```json
 {
   "fastolympiccoding.runSettings": {
@@ -53,23 +51,22 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 }
 ```
 
-- We can use all of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) and a custom `${exeExtname}` to resolve into `.exe` for Windows and an empty string for other platforms. 
-- Forward/backward slashes are automatically normalized for the platform.
+- We can use [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) as well as `${exeExtname}` that resolves into `.exe` for Windows and an empty string for other platforms. 
+- Forward/backward slashes are automatically normalized when being executed.
 
 ---
 
-### Testcases
+### Testcase Window
 - The extension will load the saved testcases for the opened file, and the testcases will automatically update whenever you switch files.
-
 - Accept outputs to detect wrong answers later!
 
 ![AC Gif](media/ac.gif)
 
-- Any compilation errors will be displayed in a terminal.
+- Compilation errors will be displayed in a popup window.
 
 ![Compile Error Gif](media/compile_error.gif)
 
-- Super long outputs will be truncated automatically (limit can be adjusted in settings)
+- Very long outputs will be truncated (adjustable character limit at `fastolympiccoding.maxCharactersForOutput`)
 
 ![Truncated Messages Gif](media/truncated_messages.gif)
 
@@ -77,5 +74,5 @@ Provide settings for the languages you use in `settings.json`. Here are some exa
 
 ### Attributions
 
-- [CppFastOlympicCoding](https://github.com/Jatana/FastOlympicCoding): The original Sublime Text package that inspired this extension 💖
+- [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding): The original Sublime Text package that inspired this extension 💖
 - [Flaticon](https://www.flaticon.com/): Icon for this extension 💖

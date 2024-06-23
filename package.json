@@ -2,7 +2,7 @@
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
   "version": "0.1.7",
-  "description": "Port of FastOlympicCoding for VSCode",
+  "description": "Competitive programming in VSCode made easy",
   "icon": "./media/icon.png",
   "categories": [
     "Programming Languages",
