@@ -123,18 +123,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
         return Object.keys(new Object(this._state));
     }
 
-    private _killAllProcesses(): void {
-        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        this._compileProcess?.process.removeAllListeners();
-        this._compileProcess?.process.kill();
-        this._compileProcess = undefined;
-        for (let i = 0; i < this._processes.length; i++) {
-            this._processes[i]?.process.removeAllListeners();
-            this._processes[i]?.process.kill();
-            this._processes[i] = undefined;
-        }
-    }
-
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         // if exitCode is null, the process crashed
         super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 1 });
@@ -304,6 +292,18 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _sendLeftoverData(type: string, id: number, combinedData: string[]): void {
         super._postMessage(type, { id, data: combinedData[id] });
         combinedData[id] = '';
+    }
+
+    private _killAllProcesses(): void {
+        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
+        this._compileProcess?.process.removeAllListeners();
+        this._compileProcess?.process.kill();
+        this._compileProcess = undefined;
+        for (let i = 0; i < this._processes.length; i++) {
+            this._processes[i]?.process.removeAllListeners();
+            this._processes[i]?.process.kill();
+            this._processes[i] = undefined;
+        }
     }
 
     private _expandArraysIfNecesssary(id: number): void {
