@@ -1,5 +1,5 @@
 import { Signal, useComputed } from "@preact/signals";
-import { BLUE_COLOR } from "../common";
+import { BLUE_COLOR } from "../../common";
 
 interface Props {
     maxLength: number;
@@ -9,10 +9,11 @@ interface Props {
 
 export default function App({ text, maxLength, onViewText }: Props) {
     const truncatedText = useComputed(() => {
-        if (text.value.length > maxLength)
+        if (text.value.length > maxLength) {
             return text.value.substring(0, maxLength - 3) + '...';
-        else
+        } else {
             return text.value;
+        }
     });
     const isTruncated = useComputed(() => {
         return truncatedText.value.endsWith('...');

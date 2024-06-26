@@ -35,6 +35,11 @@
           "id": "fastolympiccoding.testcases",
           "type": "webview",
           "name": "Testcases"
+        },
+        {
+          "id": "fastolympiccoding.stress-tester",
+          "type": "webview",
+          "name": "Stress Tester"
         }
       ]
     },

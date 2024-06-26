@@ -2,10 +2,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
 import { resolveVariables } from './util/vscodeUtil';
+import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
+import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
 
 let testcasesViewProvider: TestcasesViewProvider;
+let stressTesterViewProvider: StressTesterViewProvider;
 
 function registerViewProviders(context: vscode.ExtensionContext): void {
     testcasesViewProvider = new TestcasesViewProvider(context);
@@ -14,6 +16,13 @@ function registerViewProviders(context: vscode.ExtensionContext): void {
         testcasesViewProvider
     );
     context.subscriptions.push(testcasesDisposable);
+
+    stressTesterViewProvider = new StressTesterViewProvider(context);
+    const stressTesterDisposable = vscode.window.registerWebviewViewProvider(
+        stressTesterViewProvider.getViewId(),
+        stressTesterViewProvider
+    );
+    context.subscriptions.push(stressTesterDisposable);
 }
 
 function registerCommands(context: vscode.ExtensionContext): void {

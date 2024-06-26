@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { RunningProcess } from '../../util/runUtil';
 import { DummyTerminal, resolveVariables } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
+import { ILanguageRunSettings } from '../../common';
 
 interface ITestcase {
     input: string;
@@ -18,11 +19,6 @@ interface ITestcase {
 interface IStorage {
     [name: string]: ITestcase[];
 };
-
-interface ILanguageRunSettings {
-    compileCommand?: string;
-    runCommand: string;
-}
 
 function readFileJson(path: string): any {
     try {
@@ -321,7 +317,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _expandArraysIfNecesssary(id: number): void {
-        if (id === this._processes.length) {
+        while (id >= this._processes.length) {
             this._processes.push(undefined);
             this._combinedStdoutTime.push(-Infinity);
             this._combinedStderrTime.push(-Infinity);

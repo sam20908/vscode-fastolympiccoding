@@ -3,8 +3,14 @@ import { useEffect } from 'preact/hooks'
 import { batch, signal } from '@preact/signals';
 
 import Testcase from './components/Testcase';
-import { Mex } from './util/Mex';
-import { IState, IMessage, ITestcase, ITestcaseState, ISettings } from './common';
+import { Mex } from '../util/Mex';
+import { IMessage, ITestcase, ITestcaseState, ISettings } from '../common';
+
+interface IState {
+    loaded: boolean;
+    hasEditor: boolean;
+    testcases: ITestcaseState[]
+};
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
@@ -179,9 +185,9 @@ const handleStopTestcase = (id: number, removeListeners: boolean) => {
     }
 };
 
-const updateStdio = (payloadId: number, property: keyof ITestcase, message: string) => {
+const updateStdio = (payloadId: number, property: keyof ITestcase, data: string) => {
     const index = findIndexFromId(payloadId);
-    (state.testcases[index][property].value as string) += message;
+    (state.testcases[index][property].value as string) += data;
 };
 
 const handleSavedTestcasesMessage = (payload: any) => {

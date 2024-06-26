@@ -14,15 +14,19 @@ export interface ITestcaseState extends ITestcase {
     status: string;
 };
 
+export interface IStressTestData {
+    input: string;
+    stdout: string;
+    goodStdout: string;
+};
+
+export interface IStressTestDataState extends IStressTestData {
+    id: number;
+};
+
 export interface IMessage {
     type: string;
     payload?: any;
-};
-
-export interface IState {
-    loaded: boolean;
-    hasEditor: boolean;
-    testcases: ITestcaseState[]
 };
 
 export interface ISettings {
