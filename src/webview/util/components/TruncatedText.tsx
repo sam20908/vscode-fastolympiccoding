@@ -1,4 +1,4 @@
-import { Signal, useComputed } from "@preact/signals";
+import { Signal, computed, useComputed } from "@preact/signals";
 import { BLUE_COLOR } from "../../common";
 
 interface Props {
@@ -8,16 +8,8 @@ interface Props {
 }
 
 export default function App({ text, maxLength, onViewText }: Props) {
-    const truncatedText = useComputed(() => {
-        if (text.value.length > maxLength) {
-            return text.value.substring(0, maxLength - 3) + '...';
-        } else {
-            return text.value;
-        }
-    });
-    const isTruncated = useComputed(() => {
-        return truncatedText.value.endsWith('...');
-    });
+    const truncatedText = useComputed(() => text.value.length > maxLength ? text.value.substring(0, maxLength - 3) + '...' : text.value);
+    const isTruncated = useComputed(() => truncatedText.value.endsWith('...'));
 
     return <>
         <span class="text-base" style={{ whiteSpace: "pre-line" }}>{truncatedText}</span>
