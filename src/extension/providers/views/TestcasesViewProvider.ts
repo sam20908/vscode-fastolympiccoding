@@ -2,8 +2,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { RunningProcess } from '../../util/runUtil';
-import { DummyTerminal, resolveVariables } from '../../util/vscodeUtil';
+import { BatchedSender, RunningProcess } from '../../util/runUtil';
+import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
 import { ILanguageRunSettings } from '../../common';
 
@@ -48,17 +48,13 @@ function updateStorageState(path: string, file: string, testcases: ITestcase[] |
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
-    private static readonly IO_SEND_INTERVAL_MS = 20;
-
     private _state: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: (RunningProcess | undefined)[] = [];
-    private _combinedStdoutTime: number[] = [];
-    private _combinedStderrTime: number[] = [];
-    private _combinedStdout: string[] = [];
-    private _combinedStderr: string[] = [];
+    private _stdoutSenders: BatchedSender[] = [];
+    private _stderrSenders: BatchedSender[] = [];
 
     onMessage(message: IMessage): void {
         switch (message.type) {
@@ -78,7 +74,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 this._onStdin(message.payload);
                 break;
             case 'VIEW_TEXT':
-                this._onViewText(message.payload);
+                viewLargeTextAsFile(message.payload.content);
                 break;
         }
     }
@@ -259,12 +255,14 @@ export class TestcasesViewProvider extends BaseViewProvider {
             const process = new RunningProcess(resolvedCommand);
             this._expandArraysIfNecesssary(ids[i]);
             this._processes[ids[i]] = process;
+            this._stdoutSenders[ids[i]].callback = data => super._postMessage('STDOUT', { id: ids[i], data });
+            this._stderrSenders[ids[i]].callback = data => super._postMessage('STDERR', { id: ids[i], data });
 
             process.process.stdin.write(inputs[i]);
-            process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
-            process.process.stderr.on('data', this._sendCombinedData.bind(this, 'STDERR', ids[i], this._combinedStderrTime, this._combinedStderr));
-            process.process.stdout.on('end', () => this._sendLeftoverData('STDOUT', ids[i], this._combinedStdout));
-            process.process.stderr.on('end', () => this._sendLeftoverData('STDERR', ids[i], this._combinedStderr));
+            process.process.stdout.on('data', this._stdoutSenders[ids[i]].send);
+            process.process.stderr.on('data', this._stderrSenders[ids[i]].send);
+            process.process.stdout.on('end', () => this._stdoutSenders[ids[i]].send('', true));
+            process.process.stderr.on('end', () => this._stderrSenders[ids[i]].send('', true));
             process.process.on('error', this._onError.bind(this, ids[i]));
             process.process.on('exit', this._onExit.bind(this, ids[i], process));
         }
@@ -283,27 +281,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
         this._processes[id]!.process.stdin.write(input);
     }
 
-    private async _onViewText({ content }: { content: string }): Promise<void> {
-        const document = await vscode.workspace.openTextDocument({ content });
-        vscode.window.showTextDocument(document);
-    }
-
-    private _sendCombinedData(type: string, id: number, combinedTime: number[], combinedData: string[], data: string): void {
-        const now = Date.now();
-        if (now - combinedTime[id] >= TestcasesViewProvider.IO_SEND_INTERVAL_MS) {
-            super._postMessage(type, { id, data: combinedData[id] + data });
-            combinedTime[id] = now;
-            combinedData[id] = '';
-        } else {
-            combinedData[id] += data;
-        }
-    }
-
-    private _sendLeftoverData(type: string, id: number, combinedData: string[]): void {
-        super._postMessage(type, { id, data: combinedData[id] });
-        combinedData[id] = '';
-    }
-
     private _killAllProcesses(): void {
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
         this._compileProcess?.process.removeAllListeners();
@@ -319,10 +296,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _expandArraysIfNecesssary(id: number): void {
         while (id >= this._processes.length) {
             this._processes.push(undefined);
-            this._combinedStdoutTime.push(-Infinity);
-            this._combinedStderrTime.push(-Infinity);
-            this._combinedStdout.push('');
-            this._combinedStderr.push('');
+            this._stdoutSenders.push(new BatchedSender());
+            this._stderrSenders.push(new BatchedSender());
         }
     }
 }

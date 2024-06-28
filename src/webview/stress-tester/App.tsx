@@ -2,34 +2,43 @@ import { deepSignal } from "deepsignal";
 import { useEffect } from "preact/hooks";
 import { Signal, batch, signal, useComputed } from "@preact/signals";
 
-import TruncatedText from "../util/components/TruncatedText";
-import { Mex } from '../util/Mex';
-import { BLUE_COLOR, RED_COLOR, IMessage, ISettings, IStressTestData, IStressTestDataState } from "../common";
+import FileData from './components/FileData';
+import { BLUE_COLOR, IMessage, ISettings, RED_COLOR } from "../common";
+
+interface IFileState<T> {
+    generator: T;
+    solution: T;
+    goodSolution: T;
+}
 
 interface IState {
     loaded: boolean;
-    hasEditor: boolean;
-    input: Signal<string>;
-    stdout: Signal<string>;
-    goodStdout: Signal<string>;
-    code: number;
-    status: string;
-    data: IStressTestDataState[]
-};
+    data: IFileState<string>;
+    code: IFileState<number>;
+    status: IFileState<string>;
+}
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 
-const mex = new Mex();
 const state = deepSignal<IState>({
     loaded: false,
-    hasEditor: false,
-    input: signal(''),
-    stdout: signal(''),
-    goodStdout: signal(''),
-    code: 0,
-    status: '',
-    data: []
+    data: {
+        generator: '',
+        solution: '',
+        goodSolution: ''
+    },
+    code: {
+        generator: 0,
+        solution: 0,
+        goodSolution: 0
+
+    },
+    status: {
+        generator: '',
+        solution: '',
+        goodSolution: ''
+    }
 });
 let settings: ISettings;
 
@@ -52,21 +61,37 @@ const handleMessage = (event: MessageEvent) => {
         case 'EXIT':
             handleExitMessage(message.payload);
             break;
+        case 'DATA':
+            handleDataMessage(message.payload);
+            break;
+        case 'CLEAR':
+            handleClearMessage();
+            break;
     }
 };
 
 const handleStressTest = () => {
-    postMessage('STRESS_TEST');
+    postMessage('RUN');
 };
 
-const handleViewText = (data: string) => {
-
+const handleStop = () => {
+    batch(() => {
+        state.status.generator = '';
+        state.status.solution = '';
+        state.status.goodSolution = '';
+    });
+    postMessage('STOP');
 };
 
-const handleSavedDataMessage = (data: IStressTestData) => {
-    const newId = mex.get();
-    mex.add(newId);
-    state.data.push({ ...data, id: newId });
+const handleViewText = (content: string) => {
+    postMessage('VIEW_TEXT', { content });
+};
+
+const handleSavedDataMessage = (data: any) => {
+    state.code = data.code;
+    state.data.solution = data.data.solution;
+    state.data.goodSolution = data.data.goodSolution;
+    state.data.generator = data.data.generator;
 };
 
 const handleSettingsMessage = (_settings: ISettings) => {
@@ -74,14 +99,26 @@ const handleSettingsMessage = (_settings: ISettings) => {
     settings = _settings;
 };
 
-const handleStatusMessage = ({ status }: { status: string }) => {
-    state.status = status;
+const handleStatusMessage = ({ status, from }: { status: string, from: keyof IFileState<string> }) => {
+    state.status[from] = status;
 };
 
-const handleExitMessage = ({ code }: { code: number }) => {
+const handleExitMessage = ({ code, from }: { code: number, from: keyof IFileState<number> }) => {
     batch(() => {
-        state.code = code;
-        state.status = '';
+        state.code[from] = code;
+        state.status[from] = '';
+    });
+};
+
+const handleDataMessage = ({ from, data }: { from: keyof IFileState<string>, data: string }) => {
+    state.data[from] += data;
+};
+
+const handleClearMessage = () => {
+    batch(() => {
+        state.data.generator = '';
+        state.data.solution = '';
+        state.data.goodSolution = '';
     });
 };
 
@@ -89,60 +126,26 @@ window.addEventListener('message', handleMessage);
 
 export default function App() {
     useEffect(() => postMessage('LOADED'), []);
-    const statusItem = useComputed(() => {
-        if (state.code === -1)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>CTE</p>
-        if (state.code)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>RTE</p>
-        return <></>;
-    });
+    const isRunning = useComputed(() => state.status.generator === 'RUNNING' && state.status.solution === 'RUNNING' && state.status.goodSolution === 'RUNNING');
 
-    switch (state.status) {
-        case '':
-            return <div class="container mx-auto mb-6">
-                <div class="flex flex-row">
-                    <div class="w-6"></div>
-                    <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        {statusItem}
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: BLUE_COLOR }} onClick={handleStressTest}>stress test</button>
-                    </div>
-                </div>
-            </div>;
-        case 'COMPILING':
-            return <div class="container mx-auto mb-6">
-                <div class="flex flex-row">
-                    <div class="w-6"></div>
-                    <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">compiling</p>
-                    </div>
-                </div>
-            </div>;
-        default:
-            return <>
-                <div class="flex flex-row">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
-                        <path fill={"#AAD94C"} fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-                    </svg>
-                    <div class="grow">
-                        <span class="text-base" style={{ whiteSpace: "pre-line" }}>{state.input}</span>
-                    </div>
-                </div>
-                <div class="flex flex-row">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
-                        <path fill={RED_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-                    </svg>
-                    <div class="grow">
-                        <TruncatedText maxLength={settings.maxCharactersForOutput} text={state.stdout} onViewText={handleViewText} />
-                    </div>
-                </div>
-                <div class="flex flex-row">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
-                        <path fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-                    </svg>
-                    <div class="grow">
-                        <TruncatedText maxLength={settings.maxCharactersForOutput} text={state.goodStdout} onViewText={handleViewText} />
-                    </div>
-                </div>
-            </>;
+    if (!state.loaded) {
+        return <></>;
     }
+
+    return <>
+        <div class="container mx-auto mb-6">
+            <div class="flex flex-row">
+                <div class="w-6"></div>
+                <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+                    {isRunning.value ?
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={handleStop}>stop</button> :
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: BLUE_COLOR }} onClick={handleStressTest}>stress test</button>
+                    }
+                </div>
+            </div>
+        </div>
+        <FileData settings={settings} code={state.code.generator} status={state.status.generator} filetype="Generator" data={state.data.$generator!} onViewText={handleViewText} />
+        <FileData settings={settings} code={state.code.solution} status={state.status.solution} filetype="Solution" data={state.data.$solution!} onViewText={handleViewText} />
+        <FileData settings={settings} code={state.code.goodSolution} status={state.status.goodSolution} filetype="Good Solution" data={state.data.$goodSolution!} onViewText={handleViewText} />
+    </>;
 }

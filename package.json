@@ -64,13 +64,19 @@
         "properties": {
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}__Good.${fileExtname}",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Good${fileExtname}",
             "description": "The full path to the good solution file."
           },
           "fastolympiccoding.generatorFile": {
             "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}__Generator.${fileExtname}",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Generator${fileExtname}",
             "description": "The full path to the generator file."
+          },
+          "fastolympiccoding.delayBetweenTestcases": {
+            "type": "integer",
+            "default": 5,
+            "description": "Delay (in milliseconds) between each generated testcases",
+            "minimum": 5
           }
         }
       },
@@ -107,7 +113,7 @@
         }
       },
       {
-        "title": "Testcase Window",
+        "title": "Miscellaneous",
         "properties": {
           "fastolympiccoding.maxCharactersForOutput": {
             "type": "integer",
