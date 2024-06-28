@@ -62,10 +62,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
     onMessage(message: IMessage): void {
         switch (message.type) {
             case 'LOADED':
-                this._onLoaded();
-                break;
-            case 'SAVE':
-                this._onSave(message.payload);
+                this._onChangeActiveFile();
                 break;
             case 'RUN':
                 this._onRun();
@@ -89,7 +86,6 @@ export class StressTesterViewProvider extends BaseViewProvider {
     public readSavedData() {
         this._killAllProcesses();
         this._state = readStorageState(this.storagePath);
-        this._onChangeActiveFile();
     }
 
     private async _onChangeActiveFile(): Promise<void> {
@@ -100,7 +96,12 @@ export class StressTesterViewProvider extends BaseViewProvider {
             super._postMessage('SAVED_DATA');
             return;
         }
-        super._postMessage('SAVED_DATA', this._state[file] ?? {
+
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const settings: any = {
+            maxCharactersForOutput: config.get('maxCharactersForOutput')
+        };
+        const data = this._state[file] ?? {
             data: {
                 solution: '',
                 goodSolution: '',
@@ -111,32 +112,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 goodSolution: 0,
                 generator: 0,
             },
-        });
-    }
-
-    private _onLoaded(): void {
-        this._onChangeActiveFile();
-
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const testcaseViewSettings: any = {};
-        testcaseViewSettings.maxCharactersForOutput = config.get('maxCharactersForOutput');
-        super._postMessage('SETTINGS', testcaseViewSettings);
-    }
-
-    private _onSave(data?: IStressTestData): void {
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            return;
-        }
-
-        if (!data) {
-            delete this._state[file];
-        } else {
-            this._state[file] = data;
-        }
-        updateStorageState(this.storagePath, file, this._state[file] ?? {
-
-        });
+        };
+        const payload: any = { settings, ...data };
+        super._postMessage('SAVED_DATA', payload);
     }
 
     private async _onRun(): Promise<void> {

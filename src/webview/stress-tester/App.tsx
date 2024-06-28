@@ -1,6 +1,6 @@
 import { deepSignal } from "deepsignal";
 import { useEffect } from "preact/hooks";
-import { Signal, batch, signal, useComputed } from "@preact/signals";
+import { Signal, batch, effect, signal, useComputed } from "@preact/signals";
 
 import FileData from './components/FileData';
 import { BLUE_COLOR, IMessage, ISettings, RED_COLOR } from "../common";
@@ -12,7 +12,7 @@ interface IFileState<T> {
 }
 
 interface IState {
-    loaded: boolean;
+    settings?: ISettings;
     data: IFileState<string>;
     code: IFileState<number>;
     status: IFileState<string>;
@@ -21,8 +21,8 @@ interface IState {
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 
-const state = deepSignal<IState>({
-    loaded: false,
+const initialState: IState = {
+    settings: undefined,
     data: {
         generator: '',
         solution: '',
@@ -39,8 +39,8 @@ const state = deepSignal<IState>({
         solution: '',
         goodSolution: ''
     }
-});
-let settings: ISettings;
+};
+const state = deepSignal<IState>({ ...initialState });
 
 const postMessage = (type: string, payload?: any) => {
     vscode.postMessage({ type, payload });
@@ -51,9 +51,6 @@ const handleMessage = (event: MessageEvent) => {
     switch (message.type) {
         case 'SAVED_DATA':
             handleSavedDataMessage(message.payload);
-            break;
-        case 'SETTINGS':
-            handleSettingsMessage(message.payload);
             break;
         case 'STATUS':
             handleStatusMessage(message.payload);
@@ -87,16 +84,8 @@ const handleViewText = (content: string) => {
     postMessage('VIEW_TEXT', { content });
 };
 
-const handleSavedDataMessage = (data: any) => {
-    state.code = data.code;
-    state.data.solution = data.data.solution;
-    state.data.goodSolution = data.data.goodSolution;
-    state.data.generator = data.data.generator;
-};
-
-const handleSettingsMessage = (_settings: ISettings) => {
-    state.loaded = true;
-    settings = _settings;
+const handleSavedDataMessage = (payload: any) => {
+    Object.assign(state, payload ?? initialState);
 };
 
 const handleStatusMessage = ({ status, from }: { status: string, from: keyof IFileState<string> }) => {
@@ -128,7 +117,7 @@ export default function App() {
     useEffect(() => postMessage('LOADED'), []);
     const isRunning = useComputed(() => state.status.generator === 'RUNNING' && state.status.solution === 'RUNNING' && state.status.goodSolution === 'RUNNING');
 
-    if (!state.loaded) {
+    if (!state.settings) {
         return <></>;
     }
 
@@ -144,8 +133,8 @@ export default function App() {
                 </div>
             </div>
         </div>
-        <FileData settings={settings} code={state.code.generator} status={state.status.generator} filetype="Generator" data={state.data.$generator!} onViewText={handleViewText} />
-        <FileData settings={settings} code={state.code.solution} status={state.status.solution} filetype="Solution" data={state.data.$solution!} onViewText={handleViewText} />
-        <FileData settings={settings} code={state.code.goodSolution} status={state.status.goodSolution} filetype="Good Solution" data={state.data.$goodSolution!} onViewText={handleViewText} />
+        <FileData settings={state.settings} code={state.code.generator} status={state.status.generator} filetype="Generator" data={state.data.$generator!} onViewText={handleViewText} />
+        <FileData settings={state.settings} code={state.code.solution} status={state.status.solution} filetype="Solution" data={state.data.$solution!} onViewText={handleViewText} />
+        <FileData settings={state.settings} code={state.code.goodSolution} status={state.status.goodSolution} filetype="Good Solution" data={state.data.$goodSolution!} onViewText={handleViewText} />
     </>;
 }
