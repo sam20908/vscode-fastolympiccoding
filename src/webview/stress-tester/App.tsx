@@ -72,11 +72,6 @@ const handleStressTest = () => {
 };
 
 const handleStop = () => {
-    batch(() => {
-        state.status.generator = '';
-        state.status.solution = '';
-        state.status.goodSolution = '';
-    });
     postMessage('STOP');
 };
 

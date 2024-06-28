@@ -86,6 +86,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
     public readSavedData() {
         this._killAllProcesses();
         this._state = readStorageState(this.storagePath);
+        this._onChangeActiveFile();
     }
 
     private async _onChangeActiveFile(): Promise<void> {
@@ -288,7 +289,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
         const resolvedCommand = path.normalize(resolveVariables(compileCommand, false, resolvedFile));
         const lastModified = fs.statSync(resolvedFile).mtime.getTime();
-        const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(fileVariable) ?? [-1, ''];
+        const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(resolvedFile) ?? [-1, ''];
         if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
             super._postMessage('EXIT', { code: 0, from });
             return 0; // avoid unnecessary recompilation
