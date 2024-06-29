@@ -32,6 +32,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
             case 'LOADED':
                 this.loadSavedData();
                 break;
+            case 'SAVE':
+                this._onSave(message.payload);
+                break;
             case 'RUN':
                 this._onRun();
                 break;
@@ -65,7 +68,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         const settings: any = {
             maxDisplayCharacters: config.get('maxDisplayCharacters')
         };
-        const data = storage[file] ?? {
+        const data: IStressTestData = storage[file] ?? {
             data: {
                 solution: '',
                 goodSolution: '',
@@ -79,6 +82,13 @@ export class StressTesterViewProvider extends BaseViewProvider {
         };
         const payload: any = { settings, ...data };
         super._postMessage('SAVED_DATA', payload);
+    }
+
+    private _onSave(data: IStressTestData): void {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (file) {
+            super._writeStorage(file, data);
+        }
     }
 
     private async _onRun(): Promise<void> {
@@ -175,11 +185,8 @@ export class StressTesterViewProvider extends BaseViewProvider {
             generatorProcess.process.stdout.on('end', () => generatorSender.send('', true));
 
             this._runningProcesses = [solutionProcess, goodSolutionProcess, generatorProcess];
-            const codes = await Promise.allSettled([
-                solutionProcess.promise,
-                goodSolutionProcess.promise,
-                generatorProcess.promise
-            ]);
+            const codes = await Promise.allSettled(this._runningProcesses.map(value => value.promise));
+            this._runningProcesses = [];
             let anyFailed = false;
             for (let i = 0; i < codes.length; i++) {
                 const code = (codes[i] as PromiseFulfilledResult<number>).value;
@@ -219,7 +226,6 @@ export class StressTesterViewProvider extends BaseViewProvider {
         for (const process of this._runningProcesses) {
             process.process.kill();
         }
-        this._runningProcesses = [];
         this._stopFlag = true;
 
         const file = vscode.window.activeTextEditor?.document.fileName;
