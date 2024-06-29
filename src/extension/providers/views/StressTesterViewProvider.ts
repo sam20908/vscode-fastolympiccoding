@@ -86,7 +86,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
     public async run(): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file || !this._stopFlag) {
+        if (!file) {
             return;
         }
         if (this._compilePromises.length > 0 || !this._stopFlag) {
@@ -107,7 +107,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         }
 
         if (runSettings.compileCommand) {
-            if (this._compileProcesses.length > 0) {
+            if (this._compilePromises.length > 0) {
                 super._postMessage('STATUS', { status: 'COMPILING' });
                 const codes = await Promise.allSettled(this._compilePromises);
                 let anyFailed = false;
@@ -128,6 +128,8 @@ export class StressTesterViewProvider extends BaseViewProvider {
                     this._doCompile(runSettings.compileCommand!, config.get('generatorFile')!, 'generator', forceCompilation),
                 ]
                 const codes = await Promise.allSettled(this._compilePromises);
+                this._compileProcesses = [];
+                this._compilePromises = [];
                 let anyFailed = false;
                 for (const codeResult of codes) {
                     const code = (codeResult as PromiseFulfilledResult<number>).value;
@@ -216,6 +218,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 super._postMessage('CLEAR');
             }
         }
+        this._stopFlag = true;
     }
 
     private _onSave(data: IStressTestData): void {
