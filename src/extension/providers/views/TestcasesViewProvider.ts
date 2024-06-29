@@ -74,7 +74,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const storage = super._readStorage();
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const settings: any = {
-            maxCharactersForOutput: config.get('maxCharactersForOutput')
+            maxDisplayCharacters: config.get('maxDisplayCharacters')
         };
         const data = storage[file] ?? { testcases: [] };
         const payload: any = { settings, ...data };
@@ -221,7 +221,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _killAllProcesses(): void {
-        console.log('killing processes');
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
         this._compileProcess?.process.removeAllListeners();
         this._compileProcess?.process.kill();

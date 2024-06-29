@@ -18,7 +18,7 @@ export interface IMessage {
 };
 
 export interface ISettings {
-    maxCharactersForOutput: number;
+    maxDisplayCharacters: number;
 };
 
 export const GREEN_COLOR = '#475B45';
