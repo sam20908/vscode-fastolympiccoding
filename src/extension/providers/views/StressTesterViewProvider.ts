@@ -18,39 +18,7 @@ interface IStressTestData {
     code: IFileState<number>;
 }
 
-interface IStorage {
-    [name: string]: IStressTestData
-}
-
-function readFileJson(path: string): any {
-    try {
-        const content = fs.readFileSync(path, { encoding: 'utf-8' });
-        return JSON.parse(content);
-    } catch (_) {
-        return {};
-    }
-}
-
-function readStorageState(path: string): IStorage {
-    const state: IStorage = {};
-    for (const [file, obj] of Object.entries(readFileJson(path))) {
-        state[file] = (obj as any).stressTestData;
-    }
-    return state;
-}
-
-function updateStorageState(path: string, file: string, stressTestData?: IStressTestData): void {
-    const fileData = readFileJson(path);
-    if (!stressTestData) {
-        delete fileData[file];
-    } else {
-        fileData[file] = { ...fileData[file], stressTestData };
-    }
-    fs.writeFileSync(path, JSON.stringify(fileData));
-}
-
 export class StressTesterViewProvider extends BaseViewProvider {
-    private _state: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcesses: RunningProcess[] = [];
@@ -62,7 +30,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
     onMessage(message: IMessage): void {
         switch (message.type) {
             case 'LOADED':
-                this._onChangeActiveFile();
+                this.loadSavedData();
                 break;
             case 'RUN':
                 this._onRun();
@@ -78,18 +46,12 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
     constructor(context: vscode.ExtensionContext) {
         super('stress-tester', context);
-        this.readSavedData();
 
-        vscode.window.onDidChangeActiveTextEditor(this._onChangeActiveFile, this);
+        vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
+        this.loadSavedData();
     }
 
-    public readSavedData() {
-        this._killAllProcesses();
-        this._state = readStorageState(this.storagePath);
-        this._onChangeActiveFile();
-    }
-
-    private async _onChangeActiveFile(): Promise<void> {
+    public async loadSavedData(): Promise<void> {
         this._killAllProcesses();
 
         const file = vscode.window.activeTextEditor?.document.fileName;
@@ -98,11 +60,12 @@ export class StressTesterViewProvider extends BaseViewProvider {
             return;
         }
 
+        const storage = super._readStorage();
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const settings: any = {
-            maxCharactersForOutput: config.get('maxCharactersForOutput')
+            maxDisplayCharacters: config.get('maxDisplayCharacters')
         };
-        const data = this._state[file] ?? {
+        const data = storage[file] ?? {
             data: {
                 solution: '',
                 goodSolution: '',
@@ -232,7 +195,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 super._postMessage('EXIT', { code: -2, from: 'solution' });
                 super._postMessage('EXIT', { code: -2, from: 'goodSolution' });
                 super._postMessage('EXIT', { code: -2, from: 'generator' });
-                updateStorageState(this.storagePath, vscode.window.activeTextEditor!.document.fileName, {
+                super._writeStorage(vscode.window.activeTextEditor!.document.fileName, {
                     data: {
                         solution: output,
                         goodSolution: goodOutput,
@@ -259,9 +222,10 @@ export class StressTesterViewProvider extends BaseViewProvider {
         this._runningProcesses = [];
         this._stopFlag = true;
 
-        const file = vscode.window.activeTextEditor!.document.fileName;
-        delete this._state[file];
-        updateStorageState(this.storagePath, file);
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (file) {
+            super._writeStorage(file); // no counterexample found, don't need to save anything
+        }
     }
 
     private _killAllProcesses(): void {

@@ -20,10 +20,6 @@ interface IFileStorage {
     testcases: ITestcase[];
 }
 
-interface IStorage {
-    [name: string]: IFileStorage;
-};
-
 export class TestcasesViewProvider extends BaseViewProvider {
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();

@@ -40,7 +40,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
             const path = testcasesViewProvider.storagePath;
             fs.writeFileSync(path, '{}');
             testcasesViewProvider.loadSavedData();
-            stressTesterViewProvider.readSavedData();
+            stressTesterViewProvider.loadSavedData();
         }
     ));
 
