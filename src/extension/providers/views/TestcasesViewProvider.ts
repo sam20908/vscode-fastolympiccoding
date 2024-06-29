@@ -25,7 +25,6 @@ interface IStorage {
 };
 
 export class TestcasesViewProvider extends BaseViewProvider {
-    private _storage: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
@@ -58,51 +57,40 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     constructor(context: vscode.ExtensionContext) {
         super('testcases', context);
-        this.readSavedData();
 
-        vscode.window.onDidChangeActiveTextEditor(this._onChangeActiveFile, this);
+        vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
+        this.loadSavedData();
     }
 
-    public readSavedData() {
+    public async loadSavedData(): Promise<void> {
         this._killAllProcesses();
-        this._storage = super._readStorage();
-        this._onChangeActiveFile();
-    }
 
-    public removeCompileCache(file: string): void {
-        if (!this._compileProcess) {
-            this._lastCompiled.delete(file);
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            super._postMessage('SAVED_DATA');
+            return;
         }
-    }
 
-    public removeTestcases(file: string): void {
-        delete this._storage[file];
-
-        if (file === vscode.window.activeTextEditor!.document.fileName) {
-            this._killAllProcesses();
-            super._writeStorage(file, { testcases: [] });
-            super._postMessage('SAVED_DATA', { testcases: [] });
-        }
+        const storage = super._readStorage();
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const settings: any = {
+            maxCharactersForOutput: config.get('maxCharactersForOutput')
+        };
+        const data = storage[file] ?? { testcases: [] };
+        const payload: any = { settings, ...data };
+        super._postMessage('SAVED_DATA', payload);
     }
 
     public runAll(): void {
-        if (this._compileProcess) {
-            return;
+        if (!this._compileProcess) {
+            super._postMessage('RUN_ALL');
         }
-
-        super._postMessage('RUN_ALL');
     }
 
     public deleteAll(): void {
-        if (this._compileProcess) {
-            return;
+        if (!this._compileProcess) {
+            super._postMessage('DELETE_ALL');
         }
-
-        super._postMessage('DELETE_ALL');
-    }
-
-    public getCachedFiles(): string[] {
-        return Object.keys(new Object(this._storage));
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
@@ -116,26 +104,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
         super._postMessage('EXIT', { id: id, code: -1, elapsed: 0 });
     }
 
-    private async _onChangeActiveFile(): Promise<void> {
-        this._killAllProcesses();
-
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            super._postMessage('SAVED_DATA');
-            return;
-        }
-
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const settings: any = {
-            maxCharactersForOutput: config.get('maxCharactersForOutput')
-        };
-        const data = this._storage[file] ?? { testcases: [] };
-        const payload: any = { settings, ...data };
-        super._postMessage('SAVED_DATA', payload);
-    }
-
     private _onLoaded(): void {
-        this._onChangeActiveFile();
+        this.loadSavedData();
     }
 
     private _onSave(data?: IFileStorage): void {
@@ -251,6 +221,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _killAllProcesses(): void {
+        console.log('killing processes');
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
         this._compileProcess?.process.removeAllListeners();
         this._compileProcess?.process.kill();

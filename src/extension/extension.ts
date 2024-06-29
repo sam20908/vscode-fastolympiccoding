@@ -30,27 +30,8 @@ function registerCommands(context: vscode.ExtensionContext): void {
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
-        'fastolympiccoding.recompileAndRunAll',
-        () => {
-            testcasesViewProvider.removeCompileCache(vscode.window.activeTextEditor!.document.fileName);
-            testcasesViewProvider.runAll();
-        }
-    ));
-
-    context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.deleteAll',
         () => testcasesViewProvider.deleteAll()
-    ));
-
-    context.subscriptions.push(vscode.commands.registerTextEditorCommand(
-        'fastolympiccoding.clearTestcases',
-        async () => {
-            const files = testcasesViewProvider.getCachedFiles();
-            const pickedFiles = await vscode.window.showQuickPick(files, { canPickMany: true, title: 'File(s) To Clear Testcases' });
-            for (const file of (pickedFiles ?? [])) {
-                testcasesViewProvider.removeTestcases(file);
-            }
-        }
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
@@ -58,7 +39,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
         () => {
             const path = testcasesViewProvider.storagePath;
             fs.writeFileSync(path, '{}');
-            testcasesViewProvider.readSavedData();
+            testcasesViewProvider.loadSavedData();
             stressTesterViewProvider.readSavedData();
         }
     ));

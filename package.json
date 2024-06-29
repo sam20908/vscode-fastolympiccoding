@@ -108,17 +108,17 @@
           "fastolympiccoding.forceCompilation": {
             "type": "boolean",
             "default": false,
-            "description": "Force compilation regardless of file changes (if current file extension has a compile command)."
+            "description": "Force compilation regardless of file changes."
           }
         }
       },
       {
         "title": "Miscellaneous",
         "properties": {
-          "fastolympiccoding.maxCharactersForOutput": {
+          "fastolympiccoding.maxDisplayCharacters": {
             "type": "integer",
             "default": 2000,
-            "description": "Number of characters to truncate stdout and stderr to (restart webview for change to take effect).",
+            "description": "Number of characters to limit displayed text to.",
             "minimum": 3
           }
         }
@@ -131,18 +131,8 @@
         "category": "Fast Olympic Coding"
       },
       {
-        "command": "fastolympiccoding.recompileAndRunAll",
-        "title": "Recompile and Run All Testcases",
-        "category": "Fast Olympic Coding"
-      },
-      {
         "command": "fastolympiccoding.deleteAll",
         "title": "Delete All Testcases",
-        "category": "Fast Olympic Coding"
-      },
-      {
-        "command": "fastolympiccoding.clearTestcases",
-        "title": "Clear Saved Testcases",
         "category": "Fast Olympic Coding"
       },
       {

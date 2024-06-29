@@ -13,8 +13,7 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 ---
 
 ### Keybinds
-- Compile (only if file changed) and run all testcases: `Ctrl+Alt+B`
-- Compile (Always) and run all testcases: `Ctrl+Alt+G`
+- Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
 - Delete all testcases: `Ctrl+Alt+D`
 - Insert file template: `Ctrl+Alt+I`
   - Control if the content should be folded `fastolympiccoding.foldFileTemplate` (**Default: `true`**)

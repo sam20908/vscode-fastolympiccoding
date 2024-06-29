@@ -58,7 +58,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
 
     protected _writeStorage(file: string, data?: any): void {
         const fileData = this._readStorage();
-        fileData[this.view] = {...fileData[this.view] ?? {}};
+        fileData[this.view] = {...fileData[this.view]};
         if (!data) {
             delete fileData[this.view][file];
         } else {
