@@ -36,7 +36,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 this._onSave(message.payload);
                 break;
             case 'RUN':
-                this._onRun();
+                this.run();
                 break;
             case 'STOP':
                 this._onStop();
@@ -84,16 +84,12 @@ export class StressTesterViewProvider extends BaseViewProvider {
         super._postMessage('SAVED_DATA', payload);
     }
 
-    private _onSave(data: IStressTestData): void {
+    public async run(): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
-        if (file) {
-            super._writeStorage(file, data);
+        if (!file || !this._stopFlag) {
+            return;
         }
-    }
-
-    private async _onRun(): Promise<void> {
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
+        if (this._compilePromises.length > 0 || !this._stopFlag) {
             return;
         }
 
@@ -219,6 +215,13 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
                 super._postMessage('CLEAR');
             }
+        }
+    }
+
+    private _onSave(data: IStressTestData): void {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (file) {
+            super._writeStorage(file, data);
         }
     }
 

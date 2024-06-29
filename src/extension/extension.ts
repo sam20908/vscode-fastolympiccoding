@@ -30,6 +30,11 @@ function registerCommands(context: vscode.ExtensionContext): void {
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
+        'fastolympiccoding.stressTest',
+        () => stressTesterViewProvider.run()
+    ));
+
+    context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.deleteAll',
         () => testcasesViewProvider.deleteAll()
     ));

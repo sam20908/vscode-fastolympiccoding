@@ -131,6 +131,11 @@
         "category": "Fast Olympic Coding"
       },
       {
+        "command": "fastolympiccoding.stressTest",
+        "title": "Run Stress Test",
+        "category": "Fast Olympic Coding"
+      },
+      {
         "command": "fastolympiccoding.deleteAll",
         "title": "Delete All Testcases",
         "category": "Fast Olympic Coding"
@@ -153,9 +158,9 @@
         "when": "view.fastolympiccoding.testcases.visible"
       },
       {
-        "command": "fastolympiccoding.recompileAndRunAll",
+        "command": "fastolympiccoding.stressTest",
         "key": "ctrl+alt+g",
-        "when": "view.fastolympiccoding.testcases.visible"
+        "when": "view.fastolympiccoding.stress-tester.visible"
       },
       {
         "command": "fastolympiccoding.deleteAll",
