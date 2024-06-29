@@ -1,12 +1,10 @@
-import { Signal } from "@preact/signals";
-
 export interface ITestcase {
-    input: Signal<string>;
-    stderr: Signal<string>;
-    stdout: Signal<string>;
-    elapsed: Signal<number>;
-    code: Signal<number>;
-    acceptedOutput: Signal<string>;
+    stdin: string;
+    stderr: string;
+    stdout: string;
+    elapsed: number;
+    code: number;
+    acceptedOutput: string;
 }
 
 export interface ITestcaseState extends ITestcase {

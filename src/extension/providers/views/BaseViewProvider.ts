@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 function getNonce(): string {
@@ -40,6 +41,30 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
 
     protected _postMessage(type: string, payload?: any): void {
         this._webview?.postMessage({ type, payload });
+    }
+
+    protected _readStorage(): any {
+        const json = (() => {
+            try {
+                const content = fs.readFileSync(this.storagePath, { encoding: 'utf-8' });
+                return JSON.parse(content);
+            } catch (_) {
+                return {};
+            }
+        })();
+
+        return json[this.view] ?? {};
+    }
+
+    protected _writeStorage(file: string, data?: any): void {
+        const fileData = this._readStorage();
+        fileData[this.view] = {...fileData[this.view] ?? {}};
+        if (!data) {
+            delete fileData[this.view][file];
+        } else {
+            fileData[this.view][file] = { ...fileData[this.view][file], ...data };
+        }
+        fs.writeFileSync(this.storagePath, JSON.stringify(fileData));
     }
 
     private _getWebviewContent(webview: vscode.Webview): string {

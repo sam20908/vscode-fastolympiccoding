@@ -32,10 +32,8 @@ export class BatchedSender {
 
     public send(data: string, force: boolean = false): void {
         const now = Date.now();
-        if (now - this._lastSent >= BatchedSender.BATCH_MS || force) {
-            if (this.callback) {
-                this.callback(this._pending + data);
-            }
+        if (!this.callback || now - this._lastSent >= BatchedSender.BATCH_MS || force) {
+            this.callback!(this._pending + data);
             this._lastSent = now;
             this._pending = '';
         } else {

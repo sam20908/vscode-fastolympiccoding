@@ -16,39 +16,16 @@ interface ITestcase {
     acceptedOutput: string;
 }
 
+interface IFileStorage {
+    testcases: ITestcase[];
+}
+
 interface IStorage {
-    [name: string]: ITestcase[];
+    [name: string]: IFileStorage;
 };
 
-function readFileJson(path: string): any {
-    try {
-        const content = fs.readFileSync(path, { encoding: 'utf-8' });
-        return JSON.parse(content);
-    } catch (_) {
-        return {};
-    }
-}
-
-function readStorageState(path: string): IStorage {
-    const state: IStorage = {};
-    for (const [file, obj] of Object.entries(readFileJson(path))) {
-        state[file] = (obj as any).testcases;
-    }
-    return state;
-}
-
-function updateStorageState(path: string, file: string, testcases: ITestcase[] | undefined): void {
-    const fileData = readFileJson(path);
-    if (!testcases) {
-        delete fileData[file];
-    } else {
-        fileData[file] = { ...fileData[file], testcases };
-    }
-    fs.writeFileSync(path, JSON.stringify(fileData));
-}
-
 export class TestcasesViewProvider extends BaseViewProvider {
-    private _state: IStorage = {};
+    private _storage: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
@@ -61,14 +38,14 @@ export class TestcasesViewProvider extends BaseViewProvider {
             case 'LOADED':
                 this._onLoaded();
                 break;
-            case 'SAVE_TESTCASES':
-                this._onSaveTestcases(message.payload);
+            case 'SAVE':
+                this._onSave(message.payload);
                 break;
-            case 'SOURCE_CODE_RUN':
-                this._onSourceCodeRun(message.payload);
+            case 'RUN':
+                this._onRun(message.payload);
                 break;
-            case 'SOURCE_CODE_STOP':
-                this._onSourceCodeStop(message.payload);
+            case 'STOP':
+                this._onStop(message.payload);
                 break;
             case 'STDIN':
                 this._onStdin(message.payload);
@@ -88,56 +65,55 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     public readSavedData() {
         this._killAllProcesses();
-        this._state = readStorageState(this.storagePath);
+        this._storage = super._readStorage();
         this._onChangeActiveFile();
     }
 
     public removeCompileCache(file: string): void {
-        if (this._compileProcess) {
-            return; // already compiling
+        if (!this._compileProcess) {
+            this._lastCompiled.delete(file);
         }
-
-        this._lastCompiled.delete(file);
     }
 
     public removeTestcases(file: string): void {
-        delete this._state[file];
+        delete this._storage[file];
 
         if (file === vscode.window.activeTextEditor!.document.fileName) {
             this._killAllProcesses();
-            super._postMessage('SAVED_TESTCASES', []);
+            super._writeStorage(file, { testcases: [] });
+            super._postMessage('SAVED_DATA', { testcases: [] });
         }
     }
 
     public runAll(): void {
         if (this._compileProcess) {
-            return; // already compiling
+            return;
         }
 
-        super._postMessage('REQUEST_RUN_ALL');
+        super._postMessage('RUN_ALL');
     }
 
     public deleteAll(): void {
         if (this._compileProcess) {
-            return; // already compiling
+            return;
         }
 
-        super._postMessage('REQUEST_DELETE_ALL');
+        super._postMessage('DELETE_ALL');
     }
 
     public getCachedFiles(): string[] {
-        return Object.keys(new Object(this._state));
+        return Object.keys(new Object(this._storage));
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         // if exitCode is null, the process crashed
-        super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 1 });
+        super._postMessage('EXIT', { id, elapsed: process.elapsed, code: exitCode ?? 1 });
         this._processes[id] = undefined;
     }
 
     private _onError(id: number, err: Error): void {
         super._postMessage('STDERR', { id, data: `${err.stack ?? '[No NodeJS callstack available]'}\n\nError when running the solution...` });
-        super._postMessage('EXIT', { ids: [id], code: -1, elapsed: 0 });
+        super._postMessage('EXIT', { id: id, code: -1, elapsed: 0 });
     }
 
     private async _onChangeActiveFile(): Promise<void> {
@@ -145,36 +121,31 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
-            super._postMessage('SAVED_TESTCASES');
+            super._postMessage('SAVED_DATA');
             return;
         }
-        super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const settings: any = {
+            maxCharactersForOutput: config.get('maxCharactersForOutput')
+        };
+        const data = this._storage[file] ?? { testcases: [] };
+        const payload: any = { settings, ...data };
+        super._postMessage('SAVED_DATA', payload);
     }
 
     private _onLoaded(): void {
-        this._onChangeActiveFile(); // give webview saved data
-
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const testcaseViewSettings: any = {};
-        testcaseViewSettings.maxCharactersForOutput = config.get('maxCharactersForOutput');
-        super._postMessage('SETTINGS', testcaseViewSettings);
+        this._onChangeActiveFile();
     }
 
-    private _onSaveTestcases(data: ITestcase[]): void {
+    private _onSave(data?: IFileStorage): void {
         const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            return;
+        if (file) {
+            super._writeStorage(file, data);
         }
-
-        if (data.length === 0) {
-            delete this._state[file];
-        } else {
-            this._state[file] = data;
-        }
-        updateStorageState(this.storagePath, file, this._state[file]);
     }
 
-    private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): Promise<void> {
+    private async _onRun({ id, stdin }: { id: number, stdin: string }): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -186,16 +157,16 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-            super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+            super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
             return;
         }
 
         if (runSettings.compileCommand) {
             if (this._compileProcess) {
-                super._postMessage('STATUS', { status: 'COMPILING', ids });
+                super._postMessage('STATUS', { status: 'COMPILING', id });
                 const code = await this._compileProcess.promise; // another testcase is compiling
                 if (code) {
-                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code, elapsed: 0 });
                     return;
                 }
             } else {
@@ -209,7 +180,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0; // avoid unnecessary recompilation
                     }
 
-                    super._postMessage('STATUS', { status: 'COMPILING', ids });
+                    super._postMessage('STATUS', { status: 'COMPILING', id });
                     const process = new RunningProcess(resolvedCommand);
                     this._compileProcess = process;
                     let compileError = '';
@@ -223,7 +194,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0;
                     }
 
-                    super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
 
                     const dummy = new DummyTerminal();
                     const terminal = vscode.window.createTerminal({
@@ -242,34 +213,32 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     return -1;
                 })();
                 if (code) {
-                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code, elapsed: 0 });
                     return;
                 }
             }
         }
         this._compileProcess = undefined;
-        super._postMessage('STATUS', { status: 'RUNNING', ids });
+        super._postMessage('STATUS', { status: 'RUNNING', id });
 
         const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-        for (let i = 0; i < ids.length; i++) {
-            const process = new RunningProcess(resolvedCommand);
-            this._expandArraysIfNecesssary(ids[i]);
-            this._processes[ids[i]] = process;
-            this._stdoutSenders[ids[i]].callback = data => super._postMessage('STDOUT', { id: ids[i], data });
-            this._stderrSenders[ids[i]].callback = data => super._postMessage('STDERR', { id: ids[i], data });
+        const process = new RunningProcess(resolvedCommand);
+        this._expandArraysIfNecesssary(id);
+        this._processes[id] = process;
+        this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data });
+        this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data });
 
-            process.process.stdin.write(inputs[i]);
-            process.process.stdout.on('data', this._stdoutSenders[ids[i]].send);
-            process.process.stderr.on('data', this._stderrSenders[ids[i]].send);
-            process.process.stdout.on('end', () => this._stdoutSenders[ids[i]].send('', true));
-            process.process.stderr.on('end', () => this._stderrSenders[ids[i]].send('', true));
-            process.process.on('error', this._onError.bind(this, ids[i]));
-            process.process.on('exit', this._onExit.bind(this, ids[i], process));
-        }
+        process.process.stdin.write(stdin);
+        process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));
+        process.process.stderr.on('data', data => this._stderrSenders[id].send(data));
+        process.process.stdout.on('end', () => this._stdoutSenders[id].send('', true));
+        process.process.stderr.on('end', () => this._stderrSenders[id].send('', true));
+        process.process.on('error', this._onError.bind(this, id));
+        process.process.on('exit', this._onExit.bind(this, id, process));
 
     }
 
-    private _onSourceCodeStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
+    private _onStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
         if (removeListeners) {
             this._processes[id]!.process.removeAllListeners();
         }
@@ -277,8 +246,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
         this._processes[id] = undefined;
     }
 
-    private _onStdin({ id, input }: { id: number, input: string }): void {
-        this._processes[id]!.process.stdin.write(input);
+    private _onStdin({ id, stdin }: { id: number, stdin: string }): void {
+        this._processes[id]!.process.stdin.write(stdin);
     }
 
     private _killAllProcesses(): void {
