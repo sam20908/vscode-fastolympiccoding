@@ -2,9 +2,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { RunningProcess } from '../../util/runUtil';
-import { DummyTerminal, resolveVariables } from '../../util/vscodeUtil';
+import { BatchedSender, RunningProcess } from '../../util/runUtil';
+import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
+import { ILanguageRunSettings } from '../../common';
 
 interface ITestcase {
     input: string;
@@ -15,160 +16,102 @@ interface ITestcase {
     acceptedOutput: string;
 }
 
-interface IStorage {
-    [name: string]: ITestcase[];
-};
-
-interface ILanguageRunSettings {
-    compileCommand?: string;
-    runCommand: string;
-}
-
-function readStorageState(path: string): IStorage {
-    try {
-        const content = fs.readFileSync(path, { encoding: 'utf-8' });
-        return JSON.parse(content);
-    } catch (_) {
-        return {};
-    }
-}
-
-function saveStorageState(path: string, state: IStorage): void {
-    fs.writeFileSync(path, JSON.stringify(state));
+interface IFileStorage {
+    testcases: ITestcase[];
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
-    private static readonly IO_SEND_INTERVAL_MS = 20;
-
-    private _state: IStorage = {};
     private _lastCompiled: Map<string, [number, string]> = new Map();
     private _errorTerminal: Map<string, vscode.Terminal> = new Map();
     private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: (RunningProcess | undefined)[] = [];
-    private _combinedStdoutTime: number[] = [];
-    private _combinedStderrTime: number[] = [];
-    private _combinedStdout: string[] = [];
-    private _combinedStderr: string[] = [];
+    private _stdoutSenders: BatchedSender[] = [];
+    private _stderrSenders: BatchedSender[] = [];
 
     onMessage(message: IMessage): void {
         switch (message.type) {
             case 'LOADED':
                 this._onLoaded();
                 break;
-            case 'SAVE_TESTCASES':
-                this._onSaveTestcases(message.payload);
+            case 'SAVE':
+                this._onSave(message.payload);
                 break;
-            case 'SOURCE_CODE_RUN':
-                this._onSourceCodeRun(message.payload);
+            case 'RUN':
+                this._onRun(message.payload);
                 break;
-            case 'SOURCE_CODE_STOP':
-                this._onSourceCodeStop(message.payload);
+            case 'STOP':
+                this._onStop(message.payload);
                 break;
             case 'STDIN':
                 this._onStdin(message.payload);
                 break;
             case 'VIEW_TEXT':
-                this._onViewText(message.payload);
+                viewLargeTextAsFile(message.payload.content);
                 break;
         }
     }
 
     constructor(context: vscode.ExtensionContext) {
         super('testcases', context);
-        this.readSavedData();
 
-        vscode.window.onDidChangeActiveTextEditor(this._onChangeActiveFile, this);
+        vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
+        this.loadSavedData();
     }
 
-    public readSavedData() {
+    public async loadSavedData(): Promise<void> {
         this._killAllProcesses();
-        this._state = readStorageState(this.storagePath);
-        this._onChangeActiveFile();
-    }
 
-    public removeCompileCache(file: string): void {
-        if (this._compileProcess) {
-            return; // already compiling
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            super._postMessage('SAVED_DATA');
+            return;
         }
 
-        this._lastCompiled.delete(file);
-    }
-
-    public removeTestcases(file: string): void {
-        delete this._state[file];
-
-        if (file === vscode.window.activeTextEditor!.document.fileName) {
-            this._killAllProcesses();
-            super._postMessage('SAVED_TESTCASES', []);
-        }
+        const storage = super._readStorage();
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const settings: any = {
+            maxDisplayCharacters: config.get('maxDisplayCharacters')
+        };
+        const data = storage[file] ?? { testcases: [] };
+        const payload: any = { settings, ...data };
+        super._postMessage('SAVED_DATA', payload);
     }
 
     public runAll(): void {
-        if (this._compileProcess) {
-            return; // already compiling
+        if (!this._compileProcess) {
+            super._postMessage('RUN_ALL');
         }
-
-        super._postMessage('REQUEST_RUN_ALL');
     }
 
     public deleteAll(): void {
-        if (this._compileProcess) {
-            return; // already compiling
+        if (!this._compileProcess) {
+            super._postMessage('DELETE_ALL');
         }
-
-        super._postMessage('REQUEST_DELETE_ALL');
-    }
-
-    public getCachedFiles(): string[] {
-        return Object.keys(new Object(this._state));
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
         // if exitCode is null, the process crashed
-        super._postMessage('EXIT', { ids: [id], elapsed: process.elapsed, code: exitCode ?? 1 });
+        super._postMessage('EXIT', { id, elapsed: process.elapsed, code: exitCode ?? 1 });
         this._processes[id] = undefined;
     }
 
     private _onError(id: number, err: Error): void {
         super._postMessage('STDERR', { id, data: `${err.stack ?? '[No NodeJS callstack available]'}\n\nError when running the solution...` });
-        super._postMessage('EXIT', { ids: [id], code: -1, elapsed: 0 });
-    }
-
-    private async _onChangeActiveFile(): Promise<void> {
-        this._killAllProcesses();
-
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            super._postMessage('SAVED_TESTCASES');
-            return;
-        }
-        super._postMessage('SAVED_TESTCASES', this._state[file] ?? []);
+        super._postMessage('EXIT', { id: id, code: -1, elapsed: 0 });
     }
 
     private _onLoaded(): void {
-        this._onChangeActiveFile(); // give webview saved data
-
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const testcaseViewSettings: any = {};
-        testcaseViewSettings.maxCharactersForOutput = config.get('maxCharactersForOutput');
-        super._postMessage('SETTINGS', testcaseViewSettings);
+        this.loadSavedData();
     }
 
-    private _onSaveTestcases(data: ITestcase[]): void {
+    private _onSave(data?: IFileStorage): void {
         const file = vscode.window.activeTextEditor?.document.fileName;
-        if (!file) {
-            return;
+        if (file) {
+            super._writeStorage(file, data);
         }
-
-        if (data.length === 0) {
-            delete this._state[file];
-        } else {
-            this._state[file] = data;
-        }
-        saveStorageState(this.storagePath, this._state);
     }
 
-    private async _onSourceCodeRun({ ids, inputs }: { ids: number[], inputs: string[] }): Promise<void> {
+    private async _onRun({ id, stdin }: { id: number, stdin: string }): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -180,16 +123,16 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-            super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+            super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
             return;
         }
 
         if (runSettings.compileCommand) {
             if (this._compileProcess) {
-                super._postMessage('STATUS', { status: 'COMPILING', ids });
+                super._postMessage('STATUS', { status: 'COMPILING', id });
                 const code = await this._compileProcess.promise; // another testcase is compiling
                 if (code) {
-                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code, elapsed: 0 });
                     return;
                 }
             } else {
@@ -203,7 +146,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0; // avoid unnecessary recompilation
                     }
 
-                    super._postMessage('STATUS', { status: 'COMPILING', ids });
+                    super._postMessage('STATUS', { status: 'COMPILING', id });
                     const process = new RunningProcess(resolvedCommand);
                     this._compileProcess = process;
                     let compileError = '';
@@ -217,7 +160,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0;
                     }
 
-                    super._postMessage('EXIT', { ids, code: -1, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
 
                     const dummy = new DummyTerminal();
                     const terminal = vscode.window.createTerminal({
@@ -236,32 +179,32 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     return -1;
                 })();
                 if (code) {
-                    super._postMessage('EXIT', { ids, code, elapsed: 0 });
+                    super._postMessage('EXIT', { id, code, elapsed: 0 });
                     return;
                 }
             }
         }
         this._compileProcess = undefined;
-        super._postMessage('STATUS', { status: 'RUNNING', ids });
+        super._postMessage('STATUS', { status: 'RUNNING', id });
 
         const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-        for (let i = 0; i < ids.length; i++) {
-            const process = new RunningProcess(resolvedCommand);
-            this._expandArraysIfNecesssary(ids[i]);
-            this._processes[ids[i]] = process;
+        const process = new RunningProcess(resolvedCommand);
+        this._expandArraysIfNecesssary(id);
+        this._processes[id] = process;
+        this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data });
+        this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data });
 
-            process.process.stdin.write(inputs[i]);
-            process.process.stdout.on('data', this._sendCombinedData.bind(this, 'STDOUT', ids[i], this._combinedStdoutTime, this._combinedStdout));
-            process.process.stderr.on('data', this._sendCombinedData.bind(this, 'STDERR', ids[i], this._combinedStderrTime, this._combinedStderr));
-            process.process.stdout.on('end', () => this._sendLeftoverData('STDOUT', ids[i], this._combinedStdout));
-            process.process.stderr.on('end', () => this._sendLeftoverData('STDERR', ids[i], this._combinedStderr));
-            process.process.on('error', this._onError.bind(this, ids[i]));
-            process.process.on('exit', this._onExit.bind(this, ids[i], process));
-        }
+        process.process.stdin.write(stdin);
+        process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));
+        process.process.stderr.on('data', data => this._stderrSenders[id].send(data));
+        process.process.stdout.on('end', () => this._stdoutSenders[id].send('', true));
+        process.process.stderr.on('end', () => this._stderrSenders[id].send('', true));
+        process.process.on('error', this._onError.bind(this, id));
+        process.process.on('exit', this._onExit.bind(this, id, process));
 
     }
 
-    private _onSourceCodeStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
+    private _onStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
         if (removeListeners) {
             this._processes[id]!.process.removeAllListeners();
         }
@@ -269,29 +212,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
         this._processes[id] = undefined;
     }
 
-    private _onStdin({ id, input }: { id: number, input: string }): void {
-        this._processes[id]!.process.stdin.write(input);
-    }
-
-    private async _onViewText({ content }: { content: string }): Promise<void> {
-        const document = await vscode.workspace.openTextDocument({ content });
-        vscode.window.showTextDocument(document);
-    }
-
-    private _sendCombinedData(type: string, id: number, combinedTime: number[], combinedData: string[], data: string): void {
-        const now = Date.now();
-        if (now - combinedTime[id] >= TestcasesViewProvider.IO_SEND_INTERVAL_MS) {
-            super._postMessage(type, { id, data: combinedData[id] + data });
-            combinedTime[id] = now;
-            combinedData[id] = '';
-        } else {
-            combinedData[id] += data;
-        }
-    }
-
-    private _sendLeftoverData(type: string, id: number, combinedData: string[]): void {
-        super._postMessage(type, { id, data: combinedData[id] });
-        combinedData[id] = '';
+    private _onStdin({ id, stdin }: { id: number, stdin: string }): void {
+        this._processes[id]!.process.stdin.write(stdin);
     }
 
     private _killAllProcesses(): void {
@@ -307,12 +229,10 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     private _expandArraysIfNecesssary(id: number): void {
-        if (id === this._processes.length) {
+        while (id >= this._processes.length) {
             this._processes.push(undefined);
-            this._combinedStdoutTime.push(-Infinity);
-            this._combinedStderrTime.push(-Infinity);
-            this._combinedStdout.push('');
-            this._combinedStderr.push('');
+            this._stdoutSenders.push(new BatchedSender());
+            this._stderrSenders.push(new BatchedSender());
         }
     }
 }

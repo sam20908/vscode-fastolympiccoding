@@ -13,19 +13,17 @@ Fast Olympic Coding is an extension to assist with various common tasks in compe
 ---
 
 ### Keybinds
-- Compile (only if file changed) and run all testcases: `Ctrl+Alt+B`
-- Compile (Always) and run all testcases: `Ctrl+Alt+G`
+- Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
+- Run stress test: `Ctrl+Alt+G`
 - Delete all testcases: `Ctrl+Alt+D`
 - Insert file template: `Ctrl+Alt+I`
-  - Control if the content should be folded `fastolympiccoding.foldFileTemplate` (**Default: `true`**)
+  - Control if the content should be folded via settings.
 
 ---
 
 ### Todo
-- Documentation on settings
 - Integration with [Competitive Companion](https://github.com/jmerle/competitive-companion)
   - Problem parser (and maybe contest parser)
-- Stress tester
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
 
 ---
@@ -71,9 +69,19 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ![Compile Error Gif](media/compile_error.gif)
 
-- Very long outputs will be truncated (adjustable character limit at `fastolympiccoding.maxCharactersForOutput`)
+- Very long outputs will be truncated. 
 
 ![Truncated Messages Gif](media/truncated_messages.gif)
+
+---
+
+### Stress Tester
+- Rapidly runs the current solution, the correct solution, and the input generator to find potential counterexamples.
+- The generator is provided with a random seed to generate the input
+
+*Gif is recorded at 10FPS but the tester runs as low as 5ms between testcases!*
+
+![Stress Tester Gif](media/stress_tester.gif)
 
 ---
 

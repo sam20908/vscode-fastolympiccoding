@@ -38,7 +38,8 @@ function getWebviewConfig(subsystem) {
 /** @type BuildOptions[] */
 const configs = [
     extensionConfig,
-    getWebviewConfig("testcases")
+    getWebviewConfig("testcases"),
+    getWebviewConfig("stress-tester"),
 ];
 
 (async () => {

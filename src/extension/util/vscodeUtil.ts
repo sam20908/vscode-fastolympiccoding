@@ -69,3 +69,8 @@ export function resolveVariables(string: string, recursive: boolean = false, inC
     } while (recursive && oldString !== string);
     return string;
 }
+
+export async function viewLargeTextAsFile(content: string): Promise<void> {
+    const document = await vscode.workspace.openTextDocument({ content });
+    vscode.window.showTextDocument(document);
+}

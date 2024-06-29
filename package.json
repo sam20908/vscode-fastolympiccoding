@@ -35,6 +35,11 @@
           "id": "fastolympiccoding.testcases",
           "type": "webview",
           "name": "Testcases"
+        },
+        {
+          "id": "fastolympiccoding.stress-tester",
+          "type": "webview",
+          "name": "Stress Tester"
         }
       ]
     },
@@ -59,13 +64,19 @@
         "properties": {
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}__Good.${fileExtname}",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Good${fileExtname}",
             "description": "The full path to the good solution file."
           },
           "fastolympiccoding.generatorFile": {
             "type": "string",
-            "default": "${fileDirname}/${fileBasenameNoExtension}__Generator.${fileExtname}",
+            "default": "${fileDirname}/${fileBasenameNoExtension}__Generator${fileExtname}",
             "description": "The full path to the generator file."
+          },
+          "fastolympiccoding.delayBetweenTestcases": {
+            "type": "integer",
+            "default": 5,
+            "description": "Delay (in milliseconds) between each generated testcases",
+            "minimum": 5
           }
         }
       },
@@ -97,17 +108,17 @@
           "fastolympiccoding.forceCompilation": {
             "type": "boolean",
             "default": false,
-            "description": "Force compilation regardless of file changes (if current file extension has a compile command)."
+            "description": "Force compilation regardless of file changes."
           }
         }
       },
       {
-        "title": "Testcase Window",
+        "title": "Miscellaneous",
         "properties": {
-          "fastolympiccoding.maxCharactersForOutput": {
+          "fastolympiccoding.maxDisplayCharacters": {
             "type": "integer",
             "default": 2000,
-            "description": "Number of characters to truncate stdout and stderr to (restart webview for change to take effect).",
+            "description": "Number of characters to limit displayed text to.",
             "minimum": 3
           }
         }
@@ -120,18 +131,13 @@
         "category": "Fast Olympic Coding"
       },
       {
-        "command": "fastolympiccoding.recompileAndRunAll",
-        "title": "Recompile and Run All Testcases",
+        "command": "fastolympiccoding.stressTest",
+        "title": "Run Stress Test",
         "category": "Fast Olympic Coding"
       },
       {
         "command": "fastolympiccoding.deleteAll",
         "title": "Delete All Testcases",
-        "category": "Fast Olympic Coding"
-      },
-      {
-        "command": "fastolympiccoding.clearTestcases",
-        "title": "Clear Saved Testcases",
         "category": "Fast Olympic Coding"
       },
       {
@@ -152,9 +158,9 @@
         "when": "view.fastolympiccoding.testcases.visible"
       },
       {
-        "command": "fastolympiccoding.recompileAndRunAll",
+        "command": "fastolympiccoding.stressTest",
         "key": "ctrl+alt+g",
-        "when": "view.fastolympiccoding.testcases.visible"
+        "when": "view.fastolympiccoding.stress-tester.visible"
       },
       {
         "command": "fastolympiccoding.deleteAll",
