@@ -10,6 +10,7 @@
 
 > [!IMPORTANT]
 > Versions under 1.x saved data formats are NOT stable. Therefore, users should clear their saved data when updating
+> 
 > Do it by using command pallete (`Ctrl+P`) and enter **`Fast Olympic Coding: Clear Saved Data`**
 
 Fast Olympic Coding is an extension to assist with various tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin that also leverages the power of VSCode.
@@ -27,11 +28,11 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 - Insert file template: `Ctrl+Alt+I`
   - Control if the content should be folded via settings.
 
-### Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
+### ✅ Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
 
 ---
 
-### Todo
+### 📝 Todo
 - Integration with [Competitive Companion](https://github.com/jmerle/competitive-companion)
   - Problem parser (and maybe contest parser)
 - "Emmet" for class types (`Class Completion` functionality in original plugin)
@@ -40,7 +41,7 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 
 ---
 
-### Setting Up
+### </> Setting Up
 Provide run settings for the languages you use in `settings.json`. Here are some examples for C++, Python, and Java:
 ```json
 {
@@ -65,7 +66,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ---
 
-### Testcase Window
+### 📜 Testcase Window
 - Accept outputs to detect wrong answers later!
 
 ![AC Gif](media/ac.gif)
@@ -80,7 +81,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ---
 
-### Stress Tester
+### 👨🏻‍💻 Stress Tester
 - Rapidly runs the current solution, the correct solution, and the input generator to find potential counterexamples.
 - The generator is provided with a random seed to generate the input
 
@@ -90,20 +91,20 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ---
 
-### Other Goodies
+### 👜 Other Goodies
 - Insert code from a pre-written library and automatically folded by VSCode!
 
 ![File Template Gif](media/file_template.gif)
 
 ---
 
-### How to Install
+### 📥 How to Install
 - VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
 - Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
 
 ---
 
-### Attributions
+### © Attributions
 
 - [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding): The original Sublime Text package that inspired this extension 💖
 - [Flaticon](https://www.flaticon.com/): Icon for this extension 💖
