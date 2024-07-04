@@ -195,7 +195,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 for (let i = 0; i < codes.length; i++) {
                     super._postMessage('EXIT', { code: (codes[i] as PromiseFulfilledResult<number>).value, from: this._fromIndexed[i] });
                 }
-                return;
+                break;
             }
             if (output !== goodOutput) {
                 super._postMessage('EXIT', { code: -2, from: 'solution' });
