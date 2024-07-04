@@ -19,7 +19,7 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
   - Concurrently run, edit, and delete multiple testcases
   - Stress tester to find counterexamples
   - Insert pre-written code in another file without switching tabs!
-  - ***BLAZINGLY FAST!*** asynchronous design + optimizations = **99%** spam proof!
+  - ***BLAZINGLY FAST!*** Asynchronous design + optimizations = **99%** spam proof!
 
 ### 💻 Keybinds
 - Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
