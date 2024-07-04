@@ -147,13 +147,12 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     }
 
                     super._postMessage('STATUS', { status: 'COMPILING', id });
-                    const process = new RunningProcess(resolvedCommand);
-                    this._compileProcess = process;
+                    this._compileProcess = new RunningProcess(resolvedCommand);
                     let compileError = '';
-                    process.process.stderr.on('data', data => compileError += data.toString());
-                    process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
+                    this._compileProcess.process.stderr.on('data', data => compileError += data.toString());
+                    this._compileProcess.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
-                    const code = await process.promise;
+                    const code = await this._compileProcess.promise;
                     this._compileProcess = undefined;
                     if (!code) {
                         this._lastCompiled.set(file, [lastModified, resolvedCommand]);
