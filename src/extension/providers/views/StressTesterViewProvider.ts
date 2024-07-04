@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 
 import { BatchedSender, RunningProcess } from '../../util/runUtil';
 import { BaseViewProvider, IMessage } from "./BaseViewProvider";
-import { ILanguageRunSettings } from '../../common';
+import { compileProcess, errorTerminal, ILanguageRunSettings, lastCompiled } from '../../common';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 
 interface IFileState<T> {
@@ -19,13 +19,8 @@ interface IStressTestData {
 }
 
 export class StressTesterViewProvider extends BaseViewProvider {
-    private _lastCompiled: Map<string, [number, string]> = new Map();
-    private _errorTerminal: Map<string, vscode.Terminal> = new Map();
-    private _compileProcesses: RunningProcess[] = [];
-    private _compilePromises: Promise<number>[] = [];
     private _runningProcesses: RunningProcess[] = [];
     private _stopFlag: boolean = true;
-    private _fromIndexed: string[] = ['solution', 'goodSolution', 'generator'];
 
     onMessage(message: IMessage): void {
         switch (message.type) {
@@ -89,7 +84,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         if (!file) {
             return;
         }
-        if (this._compilePromises.length > 0 || !this._stopFlag) {
+        if (!this._stopFlag) {
             return;
         }
 
@@ -107,44 +102,21 @@ export class StressTesterViewProvider extends BaseViewProvider {
         }
 
         if (runSettings.compileCommand) {
-            if (this._compilePromises.length > 0) {
-                super._postMessage('STATUS', { status: 'COMPILING' });
-                const codes = await Promise.allSettled(this._compilePromises);
-                let anyFailed = false;
-                for (const codeResult of codes) {
-                    const code = (codeResult as PromiseFulfilledResult<number>).value;
-                    anyFailed ||= code !== 0;
-                }
-                if (anyFailed) {
-                    for (let i = 0; i < codes.length; i++) {
-                        super._postMessage('EXIT', { code: (codes[i] as PromiseFulfilledResult<number>).value, from: this._fromIndexed[i] });
-                    }
-                    return;
-                }
-            } else {
-                this._compilePromises = [
-                    this._doCompile(runSettings.compileCommand!, '${file}', 'solution', forceCompilation),
-                    this._doCompile(runSettings.compileCommand!, config.get('goodSolutionFile')!, 'goodSolution', forceCompilation),
-                    this._doCompile(runSettings.compileCommand!, config.get('generatorFile')!, 'generator', forceCompilation),
-                ]
-                const codes = await Promise.allSettled(this._compilePromises);
-                this._compileProcesses = [];
-                this._compilePromises = [];
-                let anyFailed = false;
-                for (const codeResult of codes) {
-                    const code = (codeResult as PromiseFulfilledResult<number>).value;
-                    anyFailed ||= code !== 0;
-                }
-                if (anyFailed) {
-                    for (let i = 0; i < codes.length; i++) {
-                        super._postMessage('EXIT', { code: (codes[i] as PromiseFulfilledResult<number>).value, from: this._fromIndexed[i] });
-                    }
-                    return;
-                }
+            const promises = [
+                this._doCompile(runSettings.compileCommand!, '${file}', 'solution', forceCompilation),
+                this._doCompile(runSettings.compileCommand!, config.get('goodSolutionFile')!, 'goodSolution', forceCompilation),
+                this._doCompile(runSettings.compileCommand!, config.get('generatorFile')!, 'generator', forceCompilation),
+            ];
+            const codes = await Promise.allSettled(promises);
+            let anyFailed = false;
+            for (const codeResult of codes) {
+                const code = (codeResult as PromiseFulfilledResult<number>).value;
+                anyFailed ||= code !== 0;
+            }
+            if (anyFailed) {
+                return;
             }
         }
-        this._compileProcesses = [];
-        this._compilePromises = [];
         this._stopFlag = false;
         super._postMessage('STATUS', { status: 'RUNNING', from: 'solution' });
         super._postMessage('STATUS', { status: 'RUNNING', from: 'goodSolution' });
@@ -192,9 +164,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 anyFailed ||= code !== 0;
             }
             if (anyFailed) {
-                for (let i = 0; i < codes.length; i++) {
-                    super._postMessage('EXIT', { code: (codes[i] as PromiseFulfilledResult<number>).value, from: this._fromIndexed[i] });
-                }
+                super._postMessage('EXIT', { code: (codes[0] as PromiseFulfilledResult<number>).value, from: 'solution' });
+                super._postMessage('EXIT', { code: (codes[1] as PromiseFulfilledResult<number>).value, from: 'goodSolution' });
+                super._postMessage('EXIT', { code: (codes[2] as PromiseFulfilledResult<number>).value, from: 'generator' });
                 break;
             }
             if (output !== goodOutput) {
@@ -243,12 +215,6 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
     private _killAllProcesses(): void {
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        for (const process of this._compileProcesses) {
-            process.process.removeAllListeners();
-            process.process.kill();
-        }
-        this._compileProcesses = [];
-        this._compilePromises = [];
         for (const process of this._runningProcesses) {
             process.process.removeAllListeners();
             process.process.kill();
@@ -264,9 +230,19 @@ export class StressTesterViewProvider extends BaseViewProvider {
             return -1;
         }
 
+        if (compileProcess.has(resolvedFile)) {
+            super._postMessage('STATUS', { status: 'COMPILING', from });
+            const code = await compileProcess.get(resolvedFile)!.promise;
+            if (code) {
+                super._postMessage('EXIT', { code, elapsed: 0, from });
+            }
+            return code;
+        }
+        errorTerminal.get(resolvedFile)?.dispose();
+
         const resolvedCommand = path.normalize(resolveVariables(compileCommand, false, resolvedFile));
         const lastModified = fs.statSync(resolvedFile).mtime.getTime();
-        const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(resolvedFile) ?? [-1, ''];
+        const [cachedModified, cachedCompileCommand] = lastCompiled.get(resolvedFile) ?? [-1, ''];
         if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
             super._postMessage('EXIT', { code: 0, from });
             return 0; // avoid unnecessary recompilation
@@ -274,15 +250,15 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
         super._postMessage('STATUS', { status: 'COMPILING', from });
         const process = new RunningProcess(resolvedCommand);
-        this._compileProcesses.push(process);
+        compileProcess.set(resolvedFile, process);
         let compileError = '';
         process.process.stderr.on('data', data => compileError += data.toString());
         process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
         const code = await process.promise;
-        this._compileProcesses.splice(this._compileProcesses.findIndex(value => value === process), 1);
+        compileProcess.delete(resolvedFile);
         if (!code) {
-            this._lastCompiled.set(resolvedFile, [lastModified, resolvedCommand]);
+            lastCompiled.set(resolvedFile, [lastModified, resolvedCommand]);
             super._postMessage('EXIT', { code: 0, from });
             return 0;
         }
@@ -296,7 +272,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
             iconPath: { id: 'zap' },
             location: { viewColumn: vscode.ViewColumn.Beside }
         });
-        this._errorTerminal.set(resolvedFile, terminal);
+        errorTerminal.set(resolvedFile, terminal);
 
         // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
         await new Promise<void>(resolve => setTimeout(() => resolve(), 400));

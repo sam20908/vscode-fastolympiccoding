@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { BatchedSender, RunningProcess } from '../../util/runUtil';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
-import { ILanguageRunSettings } from '../../common';
+import { compileProcess, errorTerminal, ILanguageRunSettings, lastCompiled } from '../../common';
 
 interface ITestcase {
     input: string;
@@ -21,9 +21,6 @@ interface IFileStorage {
 }
 
 export class TestcasesViewProvider extends BaseViewProvider {
-    private _lastCompiled: Map<string, [number, string]> = new Map();
-    private _errorTerminal: Map<string, vscode.Terminal> = new Map();
-    private _compileProcess: RunningProcess | undefined = undefined;
     private _processes: (RunningProcess | undefined)[] = [];
     private _stdoutSenders: BatchedSender[] = [];
     private _stderrSenders: BatchedSender[] = [];
@@ -78,15 +75,11 @@ export class TestcasesViewProvider extends BaseViewProvider {
     }
 
     public runAll(): void {
-        if (!this._compileProcess) {
-            super._postMessage('RUN_ALL');
-        }
+        super._postMessage('RUN_ALL');
     }
 
     public deleteAll(): void {
-        if (!this._compileProcess) {
-            super._postMessage('DELETE_ALL');
-        }
+        super._postMessage('DELETE_ALL');
     }
 
     private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
@@ -128,38 +121,38 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
 
         if (runSettings.compileCommand) {
-            if (this._compileProcess) {
+            if (compileProcess.has(file)) {
                 super._postMessage('STATUS', { status: 'COMPILING', id });
-                const code = await this._compileProcess.promise; // another testcase is compiling
+                const code = await compileProcess.get(file)!.promise; // another testcase is compiling
                 if (code) {
                     super._postMessage('EXIT', { id, code, elapsed: 0 });
                     return;
                 }
             } else {
                 const code = await (async () => {
-                    this._errorTerminal.get(file)?.dispose();
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                     const lastModified = fs.statSync(file).mtime.getTime();
-                    const [cachedModified, cachedCompileCommand] = this._lastCompiled.get(file) ?? [-1, ''];
+                    const [cachedModified, cachedCompileCommand] = lastCompiled.get(file) ?? [-1, ''];
                     if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
                         return 0; // avoid unnecessary recompilation
                     }
 
                     super._postMessage('STATUS', { status: 'COMPILING', id });
-                    this._compileProcess = new RunningProcess(resolvedCommand);
+                    const process = new RunningProcess(resolvedCommand);
+                    compileProcess.set(file, process);
                     let compileError = '';
-                    this._compileProcess.process.stderr.on('data', data => compileError += data.toString());
-                    this._compileProcess.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
+                    process.process.stderr.on('data', data => compileError += data.toString());
+                    process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
 
-                    const code = await this._compileProcess.promise;
-                    this._compileProcess = undefined;
+                    const code = await process.promise;
+                    compileProcess.delete(file);
                     if (!code) {
-                        this._lastCompiled.set(file, [lastModified, resolvedCommand]);
+                        lastCompiled.set(file, [lastModified, resolvedCommand]);
                         return 0;
                     }
-
                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                    errorTerminal.get(file)?.dispose();
 
                     const dummy = new DummyTerminal();
                     const terminal = vscode.window.createTerminal({
@@ -168,7 +161,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         iconPath: { id: 'zap' },
                         location: { viewColumn: vscode.ViewColumn.Beside }
                     });
-                    this._errorTerminal.set(file, terminal);
+                    errorTerminal.set(file, terminal);
 
                     // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
                     await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
@@ -183,7 +176,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 }
             }
         }
-        this._compileProcess = undefined;
         super._postMessage('STATUS', { status: 'RUNNING', id });
 
         const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
@@ -217,9 +209,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     private _killAllProcesses(): void {
         // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        this._compileProcess?.process.removeAllListeners();
-        this._compileProcess?.process.kill();
-        this._compileProcess = undefined;
         for (let i = 0; i < this._processes.length; i++) {
             this._processes[i]?.process.removeAllListeners();
             this._processes[i]?.process.kill();
