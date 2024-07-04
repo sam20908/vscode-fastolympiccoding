@@ -149,6 +149,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         super._postMessage('STATUS', { status: 'RUNNING', from: 'solution' });
         super._postMessage('STATUS', { status: 'RUNNING', from: 'goodSolution' });
         super._postMessage('STATUS', { status: 'RUNNING', from: 'generator' });
+        super._postMessage('CLEAR');
 
         while (!this._stopFlag) {
             const solutionProcess = this._runFile(runSettings.runCommand, '${file}');
