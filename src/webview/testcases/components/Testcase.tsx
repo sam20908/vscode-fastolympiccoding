@@ -19,7 +19,7 @@ interface Props {
     onSaveTestcase: (id: number, input: string) => void;
     onDeleteTestcase: (id: number, isIndex: boolean) => void;
     onRunTestcase: (id: number, isIndex: boolean) => void;
-    onStopTestcase: (id: number, removeListeners: boolean) => void;
+    onStopTestcase: (id: number, isIndex: boolean, removeListeners: boolean) => void;
     onSendStdin: (id: number, input: string) => void;
     onViewText: (content: string) => void;
 };
@@ -121,7 +121,7 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={() => onStopTestcase(id, false)}>stop</button>
+                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={() => onStopTestcase(id, false, false)}>stop</button>
                     </div>
                 </div>
                 <div class="flex flex-row">

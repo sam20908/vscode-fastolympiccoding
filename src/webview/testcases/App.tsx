@@ -104,7 +104,7 @@ const handleRunAllTestcasesMessage = () => {
 const handleDeleteAllTestcasesMessage = () => {
     batch(() => {
         for (let i = 0; i < state.testcases.length; i++) {
-            handleStopTestcase(i, true);
+            handleStopTestcase(i, true, true);
         }
         state.testcases = [];
     });
@@ -156,8 +156,8 @@ const handleRunTestcase = (id: number, isIndex: boolean) => {
     postMessage('RUN', { id: state.testcases[index].id, stdin: state.testcases[index].stdin });
 };
 
-const handleStopTestcase = (id: number, removeListeners: boolean) => {
-    const index = findIndexFromId(id);
+const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boolean) => {
+    const index = isIndex ? id : findIndexFromId(id);
     if (isRunning(index)) {
         postMessage('STOP', { id: state.testcases[index].id, removeListeners });
     }
