@@ -18,7 +18,8 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 ### ⚡ Overview
   - Concurrently run, edit, and delete multiple testcases
   - Stress tester to find counterexamples
-  - Insert pre-written code in another file without switching tabs!
+  - Insert pre-written code from another file with automatic folding
+  - Reads testcases and outputs from [Competitive Companion](https://github.com/jmerle/competitive-companion) onto the current file
   - ***BLAZINGLY FAST!*** Asynchronous design + optimizations = **99%** spam proof!
 
 ### 💻 Keybinds
@@ -26,18 +27,8 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 - Run stress test: `Ctrl+Alt+G`
 - Delete all testcases: `Ctrl+Alt+D`
 - Insert file template: `Ctrl+Alt+I`
-  - Control if the content should be folded via settings.
 
 ### ✅ Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
-
----
-
-### 📝 Todo
-- Integration with [Competitive Companion](https://github.com/jmerle/competitive-companion)
-  - Problem parser (and maybe contest parser)
-- "Emmet" for class types (`Class Completion` functionality in original plugin)
-
-
 
 ---
 
@@ -91,10 +82,13 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ---
 
-### 👜 Other Goodies
-- Insert code from a pre-written library and automatically folded by VSCode!
+### 👜 Inserting Prewritten Code
 
 ![File Template Gif](media/file_template.gif)
+
+### 🛜 Competitive Companion
+
+![Competitive Companion Gif](media/competitive_companion.gif)
 
 ---
 

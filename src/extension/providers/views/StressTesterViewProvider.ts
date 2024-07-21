@@ -173,7 +173,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
                 super._postMessage('EXIT', { code: -2, from: 'solution' });
                 super._postMessage('EXIT', { code: -2, from: 'goodSolution' });
                 super._postMessage('EXIT', { code: -2, from: 'generator' });
-                super._writeStorage(vscode.window.activeTextEditor!.document.fileName, {
+                super.writeStorage(vscode.window.activeTextEditor!.document.fileName, {
                     data: {
                         solution: output,
                         goodSolution: goodOutput,
@@ -197,7 +197,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
     private _onSave(data: IStressTestData): void {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (file) {
-            super._writeStorage(file, data);
+            super.writeStorage(file, data);
         }
     }
 
@@ -209,7 +209,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (file) {
-            super._writeStorage(file); // no counterexample found, don't need to save anything
+            super.writeStorage(file); // no counterexample found, don't need to save anything
         }
     }
 

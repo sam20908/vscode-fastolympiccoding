@@ -5,16 +5,7 @@ import * as vscode from 'vscode';
 import { BatchedSender, RunningProcess } from '../../util/runUtil';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
-import { compileProcess, errorTerminal, ILanguageRunSettings, lastCompiled } from '../../common';
-
-interface ITestcase {
-    input: string;
-    stderr: string;
-    stdout: string;
-    elapsed: number;
-    status: number;
-    acceptedOutput: string;
-}
+import { compileProcess, errorTerminal, ILanguageRunSettings, ITestcase, lastCompiled } from '../../common';
 
 interface IFileStorage {
     testcases: ITestcase[];
@@ -100,7 +91,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
     private _onSave(data?: IFileStorage): void {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (file) {
-            super._writeStorage(file, data);
+            super.writeStorage(file, data);
         }
     }
 
@@ -182,8 +173,10 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const process = new RunningProcess(resolvedCommand);
         this._expandArraysIfNecesssary(id);
         this._processes[id] = process;
-        this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data });
-        this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data });
+
+        // just avoid \r\n entirely
+        this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data: data.replace(/\r\n/g, '\n') });
+        this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data: data.replace(/\r\n/g, '\n') });
 
         process.process.stdin.write(stdin);
         process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));

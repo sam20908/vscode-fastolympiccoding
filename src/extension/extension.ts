@@ -1,10 +1,12 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import * as http from 'http'
 import * as vscode from 'vscode';
 
 import { resolveVariables } from './util/vscodeUtil';
 import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
 import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
+import { ITestcase } from './common';
 
 let testcasesViewProvider: TestcasesViewProvider;
 let stressTesterViewProvider: StressTesterViewProvider;
@@ -73,7 +75,46 @@ function registerCommands(context: vscode.ExtensionContext): void {
     ));
 }
 
+function listenForCompetitiveCompanion() {
+    const server = http.createServer((req, res) => {
+        if (req.method !== 'POST') {
+            res.end();
+            return;
+        }
+
+        let ccData = '';
+        req.setEncoding('utf-8');
+        req.on('data', data => ccData += data);
+        req.on('end', () => {
+            const file = vscode.window.activeTextEditor?.document.fileName;
+            if (!file) {
+                vscode.window.showWarningMessage("Received data from Competitive Companion, but no opened file to write data to...");
+                res.end();
+                return;
+            }
+            const data = JSON.parse(ccData);
+            const testcases: ITestcase[] = [];
+            for (const test of data['tests']) {
+                testcases.push({
+                    stdin: test['input'],
+                    stderr: 'This is generated from Competitive Companion. Run this testcase to get rid of this message.',
+                    stdout: '',
+                    elapsed: 0,
+                    status: 0,
+                    acceptedOutput: test['output'],
+                });
+            }
+            testcasesViewProvider.writeStorage(file, { testcases });
+            testcasesViewProvider.loadSavedData();
+
+            res.end();
+        });
+    });
+    server.listen(1327);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
     registerViewProviders(context);
     registerCommands(context);
+    listenForCompetitiveCompanion();
 }
