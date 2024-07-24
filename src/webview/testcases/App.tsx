@@ -225,7 +225,7 @@ export default function App() {
                 stderr={value.$stderr!}
                 elapsed={value.elapsed}
                 code={value.code}
-                acceptedOutput={value.acceptedOutput}
+                acceptedOutput={value.$acceptedOutput!}
                 id={value.id}
                 status={value.status}
                 settings={state.settings!}

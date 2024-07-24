@@ -11,7 +11,7 @@ interface Props {
     stderr: Signal<string>;
     elapsed: number;
     code: number;
-    acceptedOutput: string;
+    acceptedOutput: Signal<string>;
     id: number;
     status: string;
     onAcceptTestcase: (id: number) => void;
@@ -41,9 +41,9 @@ export default function App({
             return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>CTE</p>
         if (code)
             return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>RTE</p>
-        if (acceptedOutput === '')
+        if (acceptedOutput.value === '')
             return <></>;
-        if (stdout.value === acceptedOutput)
+        if (stdout.value === acceptedOutput.value)
             return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: GREEN_COLOR }}>AC</p>
         return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>WA</p>
     })();
@@ -74,7 +74,7 @@ export default function App({
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
                     </div>
                 </div>
-                {(acceptedOutput === '' || stdout.value !== acceptedOutput) &&
+                {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) &&
                     <>
                         <div class="flex flex-row">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
@@ -100,6 +100,16 @@ export default function App({
                                 <TruncatedText maxLength={settings.maxDisplayCharacters} text={stdout} onViewText={onViewText} />
                             </div>
                         </div>
+                        {(acceptedOutput.value !== '' && stdout.value !== acceptedOutput.value) &&
+                            <div class="flex flex-row">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">
+                                    <path fill={GREEN_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
+                                </svg>
+                                <div class="grow">
+                                    <TruncatedText maxLength={settings.maxDisplayCharacters} text={acceptedOutput} onViewText={onViewText} />
+                                </div>
+                            </div>
+                        }
                         <div class="flex flex-row">
                             <div class="w-6"></div>
                             <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onAcceptTestcase(id)}>accept</button>
