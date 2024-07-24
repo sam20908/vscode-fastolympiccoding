@@ -9,18 +9,18 @@
 </p>
 
 > [!IMPORTANT]
-> Versions under 1.x saved data formats are NOT stable. Therefore, users should clear their saved data when updating
+> Saved data format is _NOT_ finalized. Therefore, users should clear their saved data when updating
 > 
 > Do it by using command pallete (`Ctrl+P`) and enter **`Fast Olympic Coding: Clear Saved Data`**
 
 Fast Olympic Coding is an extension to assist with various tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin that also leverages the power of VSCode.
 
 ### ⚡ Overview
-  - Concurrently run, edit, and delete multiple testcases
-  - Stress tester to find counterexamples
-  - Insert pre-written code from another file with automatic folding
-  - Reads testcases and outputs from [Competitive Companion](https://github.com/jmerle/competitive-companion) onto the current file
-  - ***BLAZINGLY FAST!*** Asynchronous design + optimizations = **99%** spam proof!
+  - [📜](#-testcase-window) Concurrently run, edit, and delete multiple testcases
+  - [👨🏻‍💻](#-stress-tester) Stress tester to find counterexamples
+  - [👜](#-inserting-prewritten-code) Insert pre-written code from another file with automatic folding
+  - [🛜](#-competitive-companion) Reads testcases and outputs from [Competitive Companion](https://github.com/jmerle/competitive-companion) onto the current file
+  - 🏃 ***BLAZINGLY FAST!*** Asynchronous design + optimizations = **99%** spam proof!
 
 ### 💻 Keybinds
 - Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
@@ -52,6 +52,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 }
 ```
 
+- **The paths have to be absolute!** VSCode's built-in path variables will resolve to absolute paths unless the name says otherwise.
 - We can use [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) as well as `${exeExtname}` that resolves into `.exe` for Windows and an empty string for other platforms. 
 - Forward/backward slashes are automatically normalized when being executed.
 
@@ -84,9 +85,19 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ### 👜 Inserting Prewritten Code
 
+> [!NOTE]
+> Input the absolute path to your library directory in settings to enable this functionality. Otherwise, nothing happens!
+
 ![File Template Gif](media/file_template.gif)
 
+---
+
 ### 🛜 Competitive Companion
+
+> [!NOTE]
+> The output shown may not be expected. Due to the asynchronous nature of Node.js, the extension view may not receive appropriate messages in order.
+>
+> ***But, when there is a wrong answer, that is true regardless of whatever output is displayed!*** The provided input can be used on both solutions for such cases.
 
 ![Competitive Companion Gif](media/competitive_companion.gif)
 

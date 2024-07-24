@@ -50,7 +50,7 @@
           "fastolympiccoding.fileTemplatesBaseDirectory": {
             "type": "string",
             "default": null,
-            "description": "The base directory of the file snippets (empty string to disable this functionality)."
+            "description": "The base directory of the file templates (empty string to disable this functionality)."
           },
           "fastolympiccoding.foldFileTemplate": {
             "type": "boolean",
