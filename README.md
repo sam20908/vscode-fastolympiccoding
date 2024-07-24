@@ -75,7 +75,12 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ### 👨🏻‍💻 Stress Tester
 - Rapidly runs the current solution, the correct solution, and the input generator to find potential counterexamples.
-- The generator is provided with a random seed to generate the input
+- The generator is provided with a ra
+
+> [!NOTE]
+> The output shown may not be expected. Due to the asynchronous nature of Node.js, the extension view may not receive appropriate messages in order.
+>
+> ***But, when there is a wrong answer, that is true regardless of whatever output is displayed!*** The provided input can be used on both solutions for such cases.ndom seed to generate the input
 
 *Gif is recorded at 10FPS but the tester runs as low as 5ms between testcases!*
 
@@ -93,11 +98,6 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 ---
 
 ### 🛜 Competitive Companion
-
-> [!NOTE]
-> The output shown may not be expected. Due to the asynchronous nature of Node.js, the extension view may not receive appropriate messages in order.
->
-> ***But, when there is a wrong answer, that is true regardless of whatever output is displayed!*** The provided input can be used on both solutions for such cases.
 
 ![Competitive Companion Gif](media/competitive_companion.gif)
 
