@@ -112,6 +112,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
 
         if (runSettings.compileCommand) {
+            errorTerminal.get(file)?.dispose();
+
             if (compileProcess.has(file)) {
                 super._postMessage('STATUS', { status: 'COMPILING', id });
                 const code = await compileProcess.get(file)!.promise; // another testcase is compiling
@@ -143,14 +145,13 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0;
                     }
                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
-                    errorTerminal.get(file)?.dispose();
 
                     const dummy = new DummyTerminal();
                     const terminal = vscode.window.createTerminal({
                         name: path.basename(file),
                         pty: dummy,
                         iconPath: { id: 'zap' },
-                        location: { viewColumn: vscode.ViewColumn.Beside }
+                        location: { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }
                     });
                     errorTerminal.set(file, terminal);
 
