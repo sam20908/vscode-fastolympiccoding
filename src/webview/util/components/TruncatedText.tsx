@@ -1,4 +1,4 @@
-import { Signal, computed, useComputed } from "@preact/signals";
+import { Signal, useComputed } from "@preact/signals";
 import { BLUE_COLOR } from "../../common";
 
 interface Props {
