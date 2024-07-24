@@ -68,6 +68,8 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getWebviewContent(webview: vscode.Webview): string {
+        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const font = config.get('font')!;
         const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
         const stylesUri = this._getUri(webview, ['dist', this.view, 'index.css']);
         const nonce = getNonce();
@@ -81,6 +83,11 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' cdn.tailwindcss.com; script-src 'nonce-${nonce}';">
                 <script nonce="${nonce}" src="https://cdn.tailwindcss.com"></script>
                 <link rel="stylesheet" href="${stylesUri}">
+                <style>
+                    .display-font {
+                        font-family: ${font};
+                    };
+                </style>
             </head>
         <body>
             <div id="root"></div>

@@ -38,14 +38,14 @@ export default function App({
     const newStdin = useSignal('');
     const statusItem = (() => {
         if (code === -1)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>CTE</p>
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>CTE</p>
         if (code)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>RTE</p>
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>RTE</p>
         if (acceptedOutput.value === '')
             return <></>;
         if (stdout.value === acceptedOutput.value)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: GREEN_COLOR }}>AC</p>
-        return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }}>WA</p>
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }}>AC</p>
+        return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>WA</p>
     })();
 
     const handleKeyUp = (index: number, event: KeyboardEvent, onSendStdin: Function) => {
@@ -62,16 +62,16 @@ export default function App({
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
                         {statusItem}
-                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" onClick={() => {
+                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => {
                             newStdin.value = stdin.value;
                             onEditTestcase(id);
                         }}>edit</button>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
                             newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
                             onRunTestcase(id, false);
                         }}>run</button>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">time: {elapsed}ms</p>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
+                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">time: {elapsed}ms</p>
                     </div>
                 </div>
                 {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) &&
@@ -112,7 +112,7 @@ export default function App({
                         }
                         <div class="flex flex-row">
                             <div class="w-6"></div>
-                            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onAcceptTestcase(id)}>accept</button>
+                            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onAcceptTestcase(id)}>accept</button>
                         </div>
                     </>
                 }
@@ -122,7 +122,7 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit font-['Consolas']">compiling</p>
+                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">compiling</p>
                     </div>
                 </div>
             </div>;
@@ -131,7 +131,7 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={() => onStopTestcase(id, false, false)}>stop</button>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onStopTestcase(id, false, false)}>stop</button>
                     </div>
                 </div>
                 <div class="flex flex-row">
@@ -168,8 +168,8 @@ export default function App({
                 <div class="flex flex-row">
                     <div class="w-6"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: BLUE_COLOR }} onClick={() => onSaveTestcase(id, newStdin.value)}>save</button>
-                        <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => onSaveTestcase(id, newStdin.value)}>save</button>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
                     </div>
                 </div>
                 <div class="flex flex-row">

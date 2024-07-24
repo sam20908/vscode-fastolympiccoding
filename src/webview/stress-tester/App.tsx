@@ -146,10 +146,10 @@ export default function App() {
     useEffect(() => postMessage('LOADED'), []);
     const button = useComputed(() => {
         if (state.status.generator === 'RUNNING' && state.status.solution === 'RUNNING' && state.status.goodSolution === 'RUNNING')
-            return <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: RED_COLOR }} onClick={handleStop}>stop</button>;
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={handleStop}>stop</button>;
         if (state.status.generator === 'COMPILING' || state.status.solution === 'COMPILING' || state.status.goodSolution === 'COMPILING')
             return <></>;
-        return <button class="text-base leading-tight px-3 w-fit font-['Consolas']" style={{ backgroundColor: BLUE_COLOR }} onClick={handleStressTest}>stress test</button>;
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={handleStressTest}>stress test</button>;
     });
 
     if (!state.settings) {

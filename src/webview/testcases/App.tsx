@@ -240,13 +240,13 @@ export default function App() {
             />)
         }
         <div class="flex flex-row justify-start gap-x-2 ml-6">
-            <button class="text-base leading-tight bg-zinc-600 px-3 font-['Consolas']" onClick={handleNextTestcase}>
+            <button class="text-base leading-tight bg-zinc-600 px-3 display-font" onClick={handleNextTestcase}>
                 next test
             </button>
-            <button class="text-base leading-tight bg-zinc-600 px-3 font-['Consolas']" style={{ backgroundColor: "#4C6179" }} onClick={handleRunAllTestcasesMessage}>
+            <button class="text-base leading-tight bg-zinc-600 px-3 display-font" style={{ backgroundColor: "#4C6179" }} onClick={handleRunAllTestcasesMessage}>
                 run all
             </button>
-            <button class="text-base leading-tight bg-zinc-600 px-3 font-['Consolas']" style={{ backgroundColor: "#6C4549" }} onClick={handleDeleteAllTestcasesMessage}>
+            <button class="text-base leading-tight bg-zinc-600 px-3 display-font" style={{ backgroundColor: "#6C4549" }} onClick={handleDeleteAllTestcasesMessage}>
                 delete all
             </button>
         </div>
