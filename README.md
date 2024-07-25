@@ -16,6 +16,7 @@
 Fast Olympic Coding is an extension to assist with various tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin that also leverages the power of VSCode.
 
 ### ⚡ Overview
+
   - [📜](#-testcase-window) Concurrently run, edit, and delete multiple testcases
   - [👨🏻‍💻](#-stress-tester) Stress tester to find counterexamples
   - [👜](#-inserting-prewritten-code) Insert pre-written code from another file with automatic folding
@@ -23,6 +24,7 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
   - 🏃 ***BLAZINGLY FAST!*** Asynchronous design + optimizations = **99%** spam proof!
 
 ### 💻 Keybinds
+
 - Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
 - Run stress test: `Ctrl+Alt+G`
 - Delete all testcases: `Ctrl+Alt+D`
@@ -33,6 +35,7 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 ---
 
 ### </> Setting Up
+
 Provide run settings for the languages you use in `settings.json`. Here are some examples for C++, Python, and Java:
 ```json
 {
@@ -52,13 +55,14 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 }
 ```
 
-- **The paths have to be absolute!** VSCode's built-in path variables will resolve to absolute paths unless the name says otherwise.
+- **The paths have to be absolute!**
 - We can use [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) as well as `${exeExtname}` that resolves into `.exe` for Windows and an empty string for other platforms. 
 - Forward/backward slashes are automatically normalized when being executed.
 
 ---
 
 ### 📜 Testcase Window
+
 - Accept outputs to detect wrong answers later!
 
 ![AC Gif](media/ac.gif)
@@ -74,8 +78,11 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 ---
 
 ### 👨🏻‍💻 Stress Tester
-- Rapidly runs the current solution, the correct solution, and the input generator to find potential counterexamples.
-- The generator is provided with a random seed to generate inputs.
+
+Required files for the default configuration:
+- `<name>.[ext]`: the solution to bruteforce against
+- `<name>__Good.[ext]`: the solution that outputs the correct answer
+- `<name>__Generator.[ext]`: to generate inputs for the other 2 files
 
 > [!NOTE]
 > The output shown may not be expected. Due to the asynchronous nature of Node.js, the extension view may not receive appropriate messages in order.
