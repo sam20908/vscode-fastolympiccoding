@@ -8,11 +8,6 @@
 <img src="https://vsmarketplacebadges.dev/rating-short/sam20908.vscode-fastolympiccoding.svg">
 </p>
 
-> [!IMPORTANT]
-> Saved data format is _NOT_ finalized. Therefore, users should clear their saved data when updating
-> 
-> Do it by using command pallete (`Ctrl+P`) and enter **`Fast Olympic Coding: Clear Saved Data`**
-
 Fast Olympic Coding is an extension to assist with various tasks in competitive programming. It is a ported and enhanced version of the corresponding Sublime Text plugin that also leverages the power of VSCode.
 
 ### ⚡ Overview
@@ -30,8 +25,7 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 - Delete all testcases: `Ctrl+Alt+D`
 - Insert file template: `Ctrl+Alt+I`
 
-### ✅ Interested? _[INSTALL](#how-to-install) AND [SET IT UP](#setting-up) RIGHT NOW!_
-
+### 📥 Installation: [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
 ---
 
 ### </> Setting Up
@@ -63,33 +57,18 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 
 ### 📜 Testcase Window
 
-- Accept outputs to detect wrong answers later!
-
-![AC Gif](media/ac.gif)
-
-- Compilation errors will be displayed in a popup window.
-
-![Compile Error Gif](media/compile_error.gif)
-
-- Very long outputs will be truncated. 
-
-![Truncated Messages Gif](media/truncated_messages.gif)
+![LeetCode Gif](media/leetcode.gif)
 
 ---
 
 ### 👨🏻‍💻 Stress Tester
 
-Required files for the default configuration:
+Required files (naming scheme configurable in settings):
 - `<name>.[ext]`: the solution to bruteforce against
 - `<name>__Good.[ext]`: the solution that outputs the correct answer
 - `<name>__Generator.[ext]`: to generate inputs for the other 2 files
 
-> [!NOTE]
-> The output shown may not be expected. Due to the asynchronous nature of Node.js, the extension view may not receive appropriate messages in order.
->
-> ***But, when there is a wrong answer, that is true regardless of whatever output is displayed!*** The provided input can be used on both solutions for such cases.
-
-*Gif is recorded at 10FPS but the tester runs as low as 5ms between testcases!*
+*Gif is recorded at 15FPS but the tester runs as low as 5ms between testcases!*
 
 ![Stress Tester Gif](media/stress_tester.gif)
 
@@ -97,22 +76,15 @@ Required files for the default configuration:
 
 ### 👜 Inserting Prewritten Code
 
-> [!NOTE]
-> Input the absolute path to your library directory in settings to enable this functionality. Otherwise, nothing happens!
+- **Specify your library directory in settings to enable this functionality. Otherwise, nothing happens!**
 
-![File Template Gif](media/file_template.gif)
+![File Template Gif](media/insert_file_template.gif)
 
 ---
 
 ### 🛜 Competitive Companion
 
 ![Competitive Companion Gif](media/competitive_companion.gif)
-
----
-
-### 📥 How to Install
-- VSCode Marketplace: [Fast Olympic Coding](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
-- Command in Quick Open (`Ctrl+P`): `ext install sam20908.vscode-fastolympiccoding`
 
 ---
 
