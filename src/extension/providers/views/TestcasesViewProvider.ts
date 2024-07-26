@@ -73,7 +73,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         super._postMessage('DELETE_ALL');
     }
 
-    private _onExit(id: number, process: RunningProcess, exitCode: number | null): void {
+    private _onClose(id: number, process: RunningProcess, exitCode: number | null): void {
         // if exitCode is null, the process crashed
         super._postMessage('EXIT', { id, elapsed: process.elapsed, code: exitCode ?? 1 });
         this._processes[id] = undefined;
@@ -185,7 +185,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         process.process.stdout.on('end', () => this._stdoutSenders[id].send('', true));
         process.process.stderr.on('end', () => this._stderrSenders[id].send('', true));
         process.process.on('error', this._onError.bind(this, id));
-        process.process.on('exit', this._onExit.bind(this, id, process));
+        process.process.on('close', this._onClose.bind(this, id, process));
 
     }
 

@@ -14,7 +14,7 @@ export class RunningProcess {
         this.promise = new Promise(resolve => {
             this.process.on('spawn', () => this._startTime = Date.now());
             this.process.on('error', () => resolve(-1));
-            this.process.on('exit', code => { this._endTime = Date.now(); resolve(code ?? 1); });
+            this.process.on('close', code => { this._endTime = Date.now(); resolve(code ?? 1); });
         });
     }
 
