@@ -39,6 +39,12 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
     }
 
+    onDispose(): void {
+        for (let id = 0; id < this._processes.length; id++) {
+            this._onStop({ id, removeListeners: true });
+        }
+    }
+
     constructor(context: vscode.ExtensionContext) {
         super('testcases', context);
 
@@ -191,9 +197,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
 
     private _onStop({ id, removeListeners }: { id: number, removeListeners: boolean }): void {
         if (removeListeners) {
-            this._processes[id]!.process.removeAllListeners();
+            this._processes[id]?.process.removeAllListeners();
         }
-        this._processes[id]!.process.kill();
+        this._processes[id]?.process.kill();
         this._processes[id] = undefined;
     }
 

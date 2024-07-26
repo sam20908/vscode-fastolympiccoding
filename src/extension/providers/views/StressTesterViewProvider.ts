@@ -42,6 +42,11 @@ export class StressTesterViewProvider extends BaseViewProvider {
         }
     }
 
+    onDispose(): void {
+        this._killAllProcesses();
+        this._stopFlag = true;
+    }
+
     constructor(context: vscode.ExtensionContext) {
         super('stress-tester', context);
 
