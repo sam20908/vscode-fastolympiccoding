@@ -1,6 +1,6 @@
 import { Signal, useSignal } from '@preact/signals';
 
-import { BLUE_COLOR, GREEN_COLOR, RED_COLOR, ITestcaseState, ISettings } from '../../common';
+import { BLUE_COLOR, GREEN_COLOR, RED_COLOR, ISettings } from '../../common';
 import TruncatedText from '../../util/components/TruncatedText';
 import AutoresizeTextarea from '../../util/components/AutoresizeTextarea';
 

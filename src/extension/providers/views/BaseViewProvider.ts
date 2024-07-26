@@ -24,6 +24,7 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
     }
 
     abstract onMessage(message: IMessage): void;
+    abstract onDispose(): void;
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
         this._webview = webviewView.webview;
@@ -33,6 +34,8 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
         };
         webviewView.webview.html = this._getWebviewContent(webviewView.webview);
         webviewView.webview.onDidReceiveMessage(message => this.onMessage(message));
+        webviewView.onDidDispose(() => this.onDispose());
+        webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
     }
 
     public getViewId(): string {
