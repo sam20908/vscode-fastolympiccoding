@@ -48,8 +48,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
   }
 }
 ```
-
-- **The paths have to be absolute!**
+- **Make sure the directory for your compiled file exists!**
 - We can use [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) as well as `${exeExtname}` that resolves into `.exe` for Windows and an empty string for other platforms. 
 - Forward/backward slashes are automatically normalized when being executed.
 
