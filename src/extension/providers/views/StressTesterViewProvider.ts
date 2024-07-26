@@ -144,7 +144,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
             const generatorProcess = this._runFile(runSettings.runCommand, config.get('generatorFile')!);
             const generatorSender = new BatchedSender(data => super._postMessage('DATA', { from: 'generator', data }));
-            const seed = Math.round(Math.random() * 9223372036854775807);
+            const seed = Math.round(Math.random() * 9007199254740991);
             let input = '';
             generatorProcess.process.stdin.write(`${seed}\n`);
             generatorProcess.process.stdout.on('data', data => {
