@@ -59,7 +59,7 @@ export default function App({
         case '':
             return <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
-                    <div class="w-6"></div>
+                    <div class="w-6 shrink-0"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
                         {statusItem}
                         <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => {
@@ -71,7 +71,7 @@ export default function App({
                             onRunTestcase(id, false);
                         }}>run</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
-                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">time: {elapsed}ms</p>
+                        <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>
                     </div>
                 </div>
                 {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) &&
