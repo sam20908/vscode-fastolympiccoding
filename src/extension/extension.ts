@@ -94,10 +94,11 @@ function listenForCompetitiveCompanion() {
             }
             const data = JSON.parse(ccData);
             const testcases: ITestcase[] = [];
+            const showStderrMessage = vscode.workspace.getConfiguration('fastolympiccoding').get('showTestcaseStderrMessage') as boolean;
             for (const test of data['tests']) {
                 testcases.push({
                     stdin: test['input'],
-                    stderr: 'This is generated from Competitive Companion. Run this testcase to get rid of this message.',
+                    stderr: showStderrMessage ? 'This is generated from Competitive Companion. Run this testcase to get rid of this message.' : '',
                     stdout: '',
                     elapsed: 0,
                     status: 0,
