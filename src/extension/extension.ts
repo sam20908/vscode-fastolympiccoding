@@ -102,7 +102,7 @@ function listenForCompetitiveCompanion() {
                     stdout: '',
                     elapsed: 0,
                     status: 0,
-                    acceptedOutput: test['output'],
+                    acceptedOutput: test['output'].split(' ').filter(word => word !== '').join(' '),
                 });
             }
             testcasesViewProvider.writeStorage(file, { testcases });

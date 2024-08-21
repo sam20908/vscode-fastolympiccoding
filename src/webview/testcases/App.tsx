@@ -165,7 +165,21 @@ const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boole
 
 const handleOutputMessage = (payloadId: number, property: keyof ITestcase, data: string) => {
     const index = findIndexFromId(payloadId);
-    (state.testcases[index][property] as string) += data;
+    let trimmedData = '';
+    for (let i = 0; i < data.length; i++) {
+        if (data[i] === ' ') {
+            let lastStdoutChar = (state.testcases[index][property] as string).at(-1) ?? ' ';
+            if (i != 0 || (lastStdoutChar !== ' ' && lastStdoutChar !== '\n')) {
+                trimmedData += ' ';
+            }
+            for (; i < data.length && data[i] === ' '; i++) {
+            } // skip consecutive whitespaces
+            i--;
+        } else {
+            trimmedData += data[i];
+        }
+    }
+    (state.testcases[index][property] as string) += trimmedData;
 };
 
 const handleSavedDataMessage = (payload?: any) => {
