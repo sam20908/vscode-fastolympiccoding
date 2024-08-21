@@ -1,7 +1,7 @@
 {
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Competitive programming in VSCode made easy",
   "icon": "./media/icon.png",
   "categories": [
@@ -119,6 +119,16 @@
             "type": "boolean",
             "default": false,
             "description": "Force compilation regardless of file changes."
+          }
+        }
+      },
+      {
+        "title": "Competitive Companion",
+        "properties": {
+          "fastolympiccoding.showTestcaseStderrMessage": {
+            "type": "boolean",
+            "default": true,
+            "description": "Explain in stderr the testcase came from Competitive Companion."
           }
         }
       },
