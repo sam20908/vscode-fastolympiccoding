@@ -38,9 +38,9 @@ export default function App({
     const newStdin = useSignal('');
     const statusItem = (() => {
         if (code === -1)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>CTE</p>
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>CE</p>
         if (code)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>RTE</p>
+            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>RE</p>
         if (acceptedOutput.value === '')
             return <></>;
         if (stdout.value === acceptedOutput.value)
