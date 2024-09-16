@@ -12,6 +12,7 @@ interface Props {
     elapsed: number;
     code: number;
     acceptedOutput: Signal<string>;
+    showTestcaseOnAccepted: Signal<boolean>;
     id: number;
     status: string;
     onAcceptTestcase: (id: number) => void;
@@ -20,18 +21,20 @@ interface Props {
     onDeleteTestcase: (id: number, isIndex: boolean) => void;
     onRunTestcase: (id: number, isIndex: boolean) => void;
     onStopTestcase: (id: number, isIndex: boolean, removeListeners: boolean) => void;
+    onToggleACVisibilityTestcase: (id: number) => void;
     onSendStdin: (id: number, input: string) => void;
     onViewText: (content: string) => void;
 };
 
 export default function App({
-    settings, stdin, stdout, stderr, elapsed, code, acceptedOutput, id, status,
+    settings, stdin, stdout, stderr, elapsed, code, acceptedOutput, showTestcaseOnAccepted, id, status,
     onAcceptTestcase,
     onEditTestcase,
     onSaveTestcase,
     onDeleteTestcase,
     onRunTestcase,
     onStopTestcase,
+    onToggleACVisibilityTestcase,
     onSendStdin,
     onViewText
 }: Props) {
@@ -71,10 +74,13 @@ export default function App({
                             onRunTestcase(id, false);
                         }}>run</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
+                        {(acceptedOutput.value !== '' && stdout.value === acceptedOutput.value) &&
+                            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => onToggleACVisibilityTestcase(id)}>show/hide</button>
+                        }
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>
                     </div>
                 </div>
-                {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) &&
+                {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value || showTestcaseOnAccepted.value) &&
                     <>
                         <div class="flex flex-row">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">

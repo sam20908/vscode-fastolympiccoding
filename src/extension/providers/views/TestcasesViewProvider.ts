@@ -67,7 +67,19 @@ export class TestcasesViewProvider extends BaseViewProvider {
             maxDisplayCharacters: config.get('maxDisplayCharacters')
         };
         const data = storage[file] ?? { testcases: [] };
-        const payload: any = { settings, ...data };
+        const testcases: ITestcase[] = [];
+        for (const testcase of data.testcases) {
+            testcases.push({
+                stdin: testcase.stdin ?? '',
+                stderr: testcase.stderr ?? '',
+                stdout: testcase.stdout ?? '',
+                elapsed: testcase.elapsed ?? 0,
+                status: testcase.status ?? 0,
+                acceptedOutput: testcase.acceptedOutput ?? '',
+                showTestcaseOnAccepted: testcase.showTestcaseOnAccepted ?? false,
+            });
+        }
+        const payload: any = { settings, testcases };
         super._postMessage('SAVED_DATA', payload);
     }
 

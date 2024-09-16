@@ -43,6 +43,7 @@ const saveTestcases = () => {
             code: testcase.code,
             elapsed: testcase.elapsed,
             acceptedOutput: testcase.acceptedOutput,
+            showTestcaseOnAccepted: testcase.showTestcaseOnAccepted,
         });
     }
     postMessage('SAVE', { testcases });
@@ -85,8 +86,9 @@ const handleNextTestcase = () => {
         elapsed: 0,
         code: 0,
         acceptedOutput: '',
+        showTestcaseOnAccepted: false,
         id: newId,
-        status: ''
+        status: '',
     });
     postMessage('RUN', { id: newId, stdin: '' });
 };
@@ -161,6 +163,11 @@ const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boole
     if (isRunning(index)) {
         postMessage('STOP', { id: state.testcases[index].id, removeListeners });
     }
+};
+
+const handleToggleACVisibilityTestcase = (id: number) => {
+    const index = findIndexFromId(id);
+    state.testcases[index].showTestcaseOnAccepted = !state.testcases[index].showTestcaseOnAccepted;
 };
 
 const handleOutputMessage = (payloadId: number, property: keyof ITestcase, data: string) => {
@@ -241,6 +248,7 @@ export default function App() {
                 elapsed={value.elapsed}
                 code={value.code}
                 acceptedOutput={value.$acceptedOutput!}
+                showTestcaseOnAccepted={value.$showTestcaseOnAccepted!}
                 id={value.id}
                 status={value.status}
                 settings={state.settings!}
@@ -250,6 +258,7 @@ export default function App() {
                 onDeleteTestcase={handleDeleteTestcase}
                 onRunTestcase={handleRunTestcase}
                 onStopTestcase={handleStopTestcase}
+                onToggleACVisibilityTestcase={handleToggleACVisibilityTestcase}
                 onSendStdin={handleSendStdin}
                 onViewText={handleViewText}
             />)

@@ -14,6 +14,7 @@ export interface ITestcase {
     elapsed: number;
     status: number;
     acceptedOutput: string;
+    showTestcaseOnAccepted: boolean;
 }
 
 export const lastCompiled: Map<string, [number, string]> = new Map();
