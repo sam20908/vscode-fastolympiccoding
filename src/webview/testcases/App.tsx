@@ -4,7 +4,7 @@ import { batch } from '@preact/signals';
 
 import Testcase from './components/Testcase';
 import { Mex } from '../util/Mex';
-import { IMessage, ITestcase, ITestcaseState, ISettings } from '../common';
+import { IMessage, ITestcase, ITestcaseState, ISettings, BLUE_COLOR, RED_COLOR } from '../common';
 
 interface IState {
     settings?: ISettings;
@@ -258,10 +258,10 @@ export default function App() {
             <button class="text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={handleNextTestcase}>
                 next test
             </button>
-            <button class="text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" style={{ backgroundColor: "#4C6179" }} onClick={handleRunAllTestcasesMessage}>
+            <button class="text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={handleRunAllTestcasesMessage}>
                 run all
             </button>
-            <button class="text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" style={{ backgroundColor: "#6C4549" }} onClick={handleDeleteAllTestcasesMessage}>
+            <button class="text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" style={{ backgroundColor: RED_COLOR }} onClick={handleDeleteAllTestcasesMessage}>
                 delete all
             </button>
         </div>

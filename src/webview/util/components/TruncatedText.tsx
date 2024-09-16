@@ -12,7 +12,7 @@ export default function App({ text, maxLength, onViewText }: Props) {
     const isTruncated = useComputed(() => truncatedText.value.endsWith('...'));
 
     return <>
-        <span class="text-base display-font" style={{ whiteSpace: "pre-line" }}>{truncatedText}</span>
+        <span class="whitespace-pre-line text-base display-font">{truncatedText}</span>
         {isTruncated.value &&
             <div class="flex flex-row">
                 <div class="w-6"></div>
