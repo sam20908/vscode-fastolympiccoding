@@ -165,21 +165,22 @@ const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boole
 
 const handleOutputMessage = (payloadId: number, property: keyof ITestcase, data: string) => {
     const index = findIndexFromId(payloadId);
-    let trimmedData = '';
     for (let i = 0; i < data.length; i++) {
+        const lastChar = (state.testcases[index][property] as string).at(-1);
         if (data[i] === ' ') {
-            let lastStdoutChar = (state.testcases[index][property] as string).at(-1) ?? ' ';
-            if (i != 0 || (lastStdoutChar !== ' ' && lastStdoutChar !== '\n')) {
-                trimmedData += ' ';
+            if (lastChar !== ' ' && lastChar !== '\n') {
+                (state.testcases[index][property] as string) += ' ';
             }
-            for (; i < data.length && data[i] === ' '; i++) {
-            } // skip consecutive whitespaces
-            i--;
+        } else if (data[i] === '\n') {
+            if (lastChar === ' ') {
+                (state.testcases[index][property] as string) = (state.testcases[index][property] as string).slice(0, -1) + '\n';
+            } else if (lastChar !== '\n') {
+                (state.testcases[index][property] as string) += '\n';
+            }
         } else {
-            trimmedData += data[i];
+            (state.testcases[index][property] as string) += data[i]
         }
     }
-    (state.testcases[index][property] as string) += trimmedData;
 };
 
 const handleSavedDataMessage = (payload?: any) => {
