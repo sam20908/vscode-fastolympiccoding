@@ -117,6 +117,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
             return;
         }
 
+        await vscode.commands.executeCommand('workbench.action.files.save', file);
+        await new Promise<void>(resolve => setTimeout(() => resolve(), 200)); // FIXME: for some reason need this delay?
+
         if (runSettings.compileCommand) {
             errorTerminal.get(file)?.dispose();
 
