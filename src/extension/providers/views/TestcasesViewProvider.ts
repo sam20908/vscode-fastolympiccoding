@@ -1,8 +1,7 @@
 import * as path from 'path';
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { BatchedSender, RunningProcess } from '../../util/runUtil';
+import { BatchedSender, getFileChecksum, RunningProcess } from '../../util/runUtil';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
 import { BaseViewProvider, IMessage } from './BaseViewProvider';
 import { compileProcess, errorTerminal, ILanguageRunSettings, ITestcase, lastCompiled } from '../../common';
@@ -130,7 +129,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
 
         await vscode.commands.executeCommand('workbench.action.files.save', file);
-        await new Promise<void>(resolve => setTimeout(() => resolve(), 200)); // FIXME: for some reason need this delay?
+        await new Promise<void>(resolve => setTimeout(() => resolve(), 100)); // FIXME: file not saved *immediate* by vscode
 
         if (runSettings.compileCommand) {
             errorTerminal.get(file)?.dispose();
@@ -146,9 +145,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 const code = await (async () => {
 
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
-                    const lastModified = fs.statSync(file).mtime.getTime();
-                    const [cachedModified, cachedCompileCommand] = lastCompiled.get(file) ?? [-1, ''];
-                    if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
+                    const currentChecksum = await getFileChecksum(file);
+                    const [cachedChecksum, cachedCompileCommand] = lastCompiled.get(file) ?? [-1, ''];
+                    if (currentChecksum === cachedChecksum && cachedCompileCommand === resolvedCommand && !forceCompilation) {
                         return 0; // avoid unnecessary recompilation
                     }
 
@@ -162,7 +161,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     const code = await process.promise;
                     compileProcess.delete(file);
                     if (!code) {
-                        lastCompiled.set(file, [lastModified, resolvedCommand]);
+                        lastCompiled.set(file, [currentChecksum, resolvedCommand]);
                         return 0;
                     }
                     super._postMessage('EXIT', { id, code: -1, elapsed: 0 });

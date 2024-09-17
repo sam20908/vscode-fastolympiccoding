@@ -17,6 +17,6 @@ export interface ITestcase {
     showTestcaseOnAccepted: boolean;
 }
 
-export const lastCompiled: Map<string, [number, string]> = new Map();
+export const lastCompiled: Map<string, [string, string]> = new Map();
 export const compileProcess: Map<string, RunningProcess> = new Map();
 export const errorTerminal: Map<string, vscode.Terminal> = new Map();

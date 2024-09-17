@@ -1,4 +1,6 @@
 import * as child_process from 'child_process';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
 
 export class RunningProcess {
     readonly process: child_process.ChildProcessWithoutNullStreams;
@@ -40,4 +42,17 @@ export class BatchedSender {
             this._pending += data;
         }
     }
+}
+
+export async function getFileChecksum(file: string): Promise<string> {
+    const hash = crypto.createHash('md5'); // good enough to verify file integrity with good speed
+    hash.setEncoding('hex');
+    const stream = fs.createReadStream(file);
+    return new Promise(resolve => {
+        stream.on('end', () => {
+            hash.end();
+            resolve(hash.read());
+        });
+        stream.pipe(hash);
+    });
 }
