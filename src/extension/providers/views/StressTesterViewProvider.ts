@@ -106,6 +106,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
             return;
         }
 
+        await vscode.commands.executeCommand('workbench.action.files.save', file);
+        await new Promise<void>(resolve => setTimeout(() => resolve(), 100)); // FIXME: file not saved *immediate* by vscode
+
         if (runSettings.compileCommand) {
             const promises = [
                 this._doCompile(runSettings.compileCommand!, '${file}', 'solution', forceCompilation),
