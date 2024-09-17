@@ -47,7 +47,7 @@ export default function App({
         if (acceptedOutput.value === '')
             return <></>;
         if (stdout.value === acceptedOutput.value)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }}>AC</p>
+            return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>AC</button>
         return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>WA</p>
     })();
 
@@ -74,9 +74,6 @@ export default function App({
                             onRunTestcase(id, false);
                         }}>run</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
-                        {(acceptedOutput.value !== '' && stdout.value === acceptedOutput.value) &&
-                            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => onToggleACVisibilityTestcase(id)}>show/hide</button>
-                        }
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>
                     </div>
                 </div>
