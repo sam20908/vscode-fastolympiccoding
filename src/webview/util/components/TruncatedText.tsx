@@ -24,7 +24,6 @@ export default function App({ text, settings, onViewText }: Props) {
             isTruncated = true;
             truncatedText = truncatedText.substring(0, -3);
         }
-        console.log(isTruncated);
         return { truncatedText, isTruncated };
     });
 
