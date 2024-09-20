@@ -86,7 +86,7 @@ const handleNextTestcase = () => {
         elapsed: 0,
         code: 0,
         acceptedOutput: '',
-        showTestcase: false,
+        showTestcase: true,
         id: newId,
         status: '',
     });
