@@ -76,12 +76,15 @@ Required files (naming scheme configurable in settings):
 ### 👜 Inserting Prewritten Code
 
 - **Specify your library directory in settings to enable this functionality. Otherwise, nothing happens!**
+- **Make sure there is no newlines at the end of your templates for the folding to work!**
 
 ![File Template Gif](media/insert_file_template.gif)
 
 ---
 
 ### 🛜 Competitive Companion
+
+- **Open the extension's tab on VSCode's sidebar to activate the process of listening for Competitive Companion first!**
 
 ![Competitive Companion Gif](media/competitive_companion.gif)
 
