@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { BatchedSender, RunningProcess } from '../../util/runUtil';
+import { BatchedSender, getFileChecksum, RunningProcess } from '../../util/runUtil';
 import { BaseViewProvider, IMessage } from "./BaseViewProvider";
 import { compileProcess, errorTerminal, ILanguageRunSettings, lastCompiled } from '../../common';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
@@ -250,9 +250,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
         errorTerminal.get(resolvedFile)?.dispose();
 
         const resolvedCommand = path.normalize(resolveVariables(compileCommand, false, resolvedFile));
-        const lastModified = fs.statSync(resolvedFile).mtime.getTime();
-        const [cachedModified, cachedCompileCommand] = lastCompiled.get(resolvedFile) ?? [-1, ''];
-        if (cachedModified === lastModified && cachedCompileCommand === resolvedCommand && !forceCompilation) {
+        const currentChecksum = await getFileChecksum(resolvedFile);
+        const [cachedChecksum, cachedCompileCommand] = lastCompiled.get(resolvedFile) ?? [-1, ''];
+        if (cachedChecksum === currentChecksum && cachedCompileCommand === resolvedCommand && !forceCompilation) {
             super._postMessage('EXIT', { code: 0, from });
             return 0; // avoid unnecessary recompilation
         }
@@ -267,7 +267,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         const code = await process.promise;
         compileProcess.delete(resolvedFile);
         if (!code) {
-            lastCompiled.set(resolvedFile, [lastModified, resolvedCommand]);
+            lastCompiled.set(resolvedFile, [currentChecksum, resolvedCommand]);
             super._postMessage('EXIT', { code: 0, from });
             return 0;
         }
