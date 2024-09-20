@@ -131,9 +131,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
             return;
         }
 
-        await vscode.commands.executeCommand('workbench.action.files.save', file);
-        await new Promise<void>(resolve => setTimeout(() => resolve(), 100)); // FIXME: file not saved *immediate* by vscode
-
         if (runSettings.compileCommand) {
             errorTerminal.get(file)?.dispose();
 
