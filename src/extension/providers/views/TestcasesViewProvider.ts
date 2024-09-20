@@ -209,9 +209,8 @@ export class TestcasesViewProvider extends BaseViewProvider {
             this._expandArraysIfNecesssary(id);
             this._processes[id] = process;
 
-            // just avoid \r\n entirely
-            this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data: data.replace(/\r\n/g, '\n') });
-            this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data: data.replace(/\r\n/g, '\n') });
+            this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data });
+            this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data });
 
             process.process.stdin.write(stdin);
             process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));

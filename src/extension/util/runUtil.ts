@@ -33,6 +33,7 @@ export class BatchedSender {
     constructor(public callback?: (data: string) => any) { }
 
     public send(data: string, force: boolean = false): void {
+        data = data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
         const now = Date.now();
         if (!this.callback || now - this._lastSent >= BatchedSender.BATCH_MS || force) {
             this.callback!(this._pending + data);
