@@ -90,17 +90,23 @@ const handleNextTestcase = () => {
         id: newId,
         status: '',
     });
-    postMessage('RUN', { id: newId, stdin: '' });
+    postMessage('RUN', { ids: [newId], stdins: [''] });
 };
 
 const handleRunAllTestcasesMessage = () => {
+    const ids: number[] = [];
+    const stdins: string[] = [];
     batch(() => {
         for (let i = 0; i < state.testcases.length; i++) {
             if (!isRunning(i)) {
-                handleRunTestcase(i, true);
+                state.testcases[i].stdout = '';
+                state.testcases[i].stderr = '';
+                ids.push(state.testcases[i].id);
+                stdins.push(state.testcases[i].stdin);
             }
         }
     });
+    postMessage('RUN', { ids, stdins });
 };
 
 const handleDeleteAllTestcasesMessage = () => {
@@ -145,8 +151,8 @@ const handleDeleteTestcase = (id: number, isIndex: boolean) => {
     saveTestcases();
 };
 
-const handleRunTestcase = (id: number, isIndex: boolean) => {
-    const index = isIndex ? id : findIndexFromId(id);
+const handleRunTestcase = (id: number) => {
+    const index = findIndexFromId(id);
     if (isRunning(index)) {
         return;
     }
@@ -155,7 +161,7 @@ const handleRunTestcase = (id: number, isIndex: boolean) => {
         state.testcases[index].stdout = '';
         state.testcases[index].stderr = '';
     });
-    postMessage('RUN', { id: state.testcases[index].id, stdin: state.testcases[index].stdin });
+    postMessage('RUN', { ids: [state.testcases[index].id], stdins: [state.testcases[index].stdin] });
 };
 
 const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boolean) => {

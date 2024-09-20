@@ -19,7 +19,7 @@ interface Props {
     onEditTestcase: (id: number) => void;
     onSaveTestcase: (id: number, input: string) => void;
     onDeleteTestcase: (id: number, isIndex: boolean) => void;
-    onRunTestcase: (id: number, isIndex: boolean) => void;
+    onRunTestcase: (id: number) => void;
     onStopTestcase: (id: number, isIndex: boolean, removeListeners: boolean) => void;
     onToggleACVisibilityTestcase: (id: number) => void;
     onSendStdin: (id: number, input: string) => void;
@@ -71,7 +71,7 @@ export default function App({
                         }}>edit</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
                             newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
-                            onRunTestcase(id, false);
+                            onRunTestcase(id);
                         }}>run</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeleteTestcase(id, false)}>delete</button>
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>

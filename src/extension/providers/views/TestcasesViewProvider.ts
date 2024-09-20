@@ -112,7 +112,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
         }
     }
 
-    private async _onRun({ id, stdin }: { id: number, stdin: string }): Promise<void> {
+    private async _onRun({ ids, stdins }: { ids: number[], stdins: string[] }): Promise<void> {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -124,7 +124,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
         const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-            super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+            for (const id of ids) {
+                super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+            }
             return;
         }
 
@@ -135,10 +137,14 @@ export class TestcasesViewProvider extends BaseViewProvider {
             errorTerminal.get(file)?.dispose();
 
             if (compileProcess.has(file)) {
-                super._postMessage('STATUS', { status: 'COMPILING', id });
+                for (const id of ids) {
+                    super._postMessage('STATUS', { status: 'COMPILING', id });
+                }
                 const code = await compileProcess.get(file)!.promise; // another testcase is compiling
                 if (code) {
-                    super._postMessage('EXIT', { id, code, elapsed: 0 });
+                    for (const id of ids) {
+                        super._postMessage('EXIT', { id, code, elapsed: 0 });
+                    }
                     return;
                 }
             } else {
@@ -150,7 +156,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         return 0; // avoid unnecessary recompilation
                     }
 
-                    super._postMessage('STATUS', { status: 'COMPILING', id });
+                    for (const id of ids) {
+                        super._postMessage('STATUS', { status: 'COMPILING', id });
+                    }
                     const process = new RunningProcess(resolvedCommand);
                     compileProcess.set(file, process);
                     let compileError = '';
@@ -163,7 +171,9 @@ export class TestcasesViewProvider extends BaseViewProvider {
                         lastCompiled.set(file, [currentChecksum, resolvedCommand]);
                         return 0;
                     }
-                    super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                    for (const id of ids) {
+                        super._postMessage('EXIT', { id, code: -1, elapsed: 0 });
+                    }
 
                     const dummy = new DummyTerminal();
                     const terminal = vscode.window.createTerminal({
@@ -182,29 +192,35 @@ export class TestcasesViewProvider extends BaseViewProvider {
                     return -1;
                 })();
                 if (code) {
-                    super._postMessage('EXIT', { id, code, elapsed: 0 });
+                    for (const id of ids) {
+                        super._postMessage('EXIT', { id, code, elapsed: 0 });
+                    }
                     return;
                 }
             }
         }
-        super._postMessage('STATUS', { status: 'RUNNING', id });
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            const stdin = stdins[i];
+            super._postMessage('STATUS', { status: 'RUNNING', id });
 
-        const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
-        const process = new RunningProcess(resolvedCommand);
-        this._expandArraysIfNecesssary(id);
-        this._processes[id] = process;
+            const resolvedCommand = path.normalize(resolveVariables(runSettings.runCommand));
+            const process = new RunningProcess(resolvedCommand);
+            this._expandArraysIfNecesssary(id);
+            this._processes[id] = process;
 
-        // just avoid \r\n entirely
-        this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data: data.replace(/\r\n/g, '\n') });
-        this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data: data.replace(/\r\n/g, '\n') });
+            // just avoid \r\n entirely
+            this._stdoutSenders[id].callback = data => super._postMessage('STDOUT', { id, data: data.replace(/\r\n/g, '\n') });
+            this._stderrSenders[id].callback = data => super._postMessage('STDERR', { id, data: data.replace(/\r\n/g, '\n') });
 
-        process.process.stdin.write(stdin);
-        process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));
-        process.process.stderr.on('data', data => this._stderrSenders[id].send(data));
-        process.process.stdout.on('end', () => this._stdoutSenders[id].send('', true));
-        process.process.stderr.on('end', () => this._stderrSenders[id].send('', true));
-        process.process.on('error', this._onError.bind(this, id));
-        process.process.on('close', this._onClose.bind(this, id, process));
+            process.process.stdin.write(stdin);
+            process.process.stdout.on('data', data => this._stdoutSenders[id].send(data));
+            process.process.stderr.on('data', data => this._stderrSenders[id].send(data));
+            process.process.stdout.on('end', () => this._stdoutSenders[id].send('', true));
+            process.process.stderr.on('end', () => this._stderrSenders[id].send('', true));
+            process.process.on('error', this._onError.bind(this, id));
+            process.process.on('close', this._onClose.bind(this, id, process));
+        }
 
     }
 
