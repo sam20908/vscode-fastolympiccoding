@@ -171,7 +171,7 @@ const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boole
     }
 };
 
-const handleToggleACVisibilityTestcase = (id: number) => {
+const handleToggleTestcaseVisibility = (id: number) => {
     const index = findIndexFromId(id);
     state.testcases[index].showTestcase = !state.testcases[index].showTestcase;
 };
@@ -265,7 +265,7 @@ export default function App() {
                 onDeleteTestcase={handleDeleteTestcase}
                 onRunTestcase={handleRunTestcase}
                 onStopTestcase={handleStopTestcase}
-                onToggleACVisibilityTestcase={handleToggleACVisibilityTestcase}
+                onToggleTestcaseVisibility={handleToggleTestcaseVisibility}
                 onSendStdin={handleSendStdin}
                 onViewText={handleViewText}
             />)
