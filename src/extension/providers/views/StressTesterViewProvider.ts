@@ -66,7 +66,8 @@ export class StressTesterViewProvider extends BaseViewProvider {
         const storage = super._readStorage();
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const settings: any = {
-            maxDisplayCharacters: config.get('maxDisplayCharacters')
+            maxDisplayCharacters: config.get('maxDisplayCharacters'),
+            maxDisplayLines: config.get('maxDisplayLines'),
         };
         const data: IStressTestData = storage[file] ?? {
             data: {

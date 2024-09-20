@@ -140,6 +140,12 @@
             "default": 2000,
             "description": "Number of characters to limit displayed text to.",
             "minimum": 3
+          },
+          "fastolympiccoding.maxDisplayLines": {
+            "type": "integer",
+            "default": 30,
+            "description": "Number of lines to limit displayed text to.",
+            "minimum": 3
           }
         }
       }
