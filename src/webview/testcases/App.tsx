@@ -173,7 +173,8 @@ const handleToggleACVisibilityTestcase = (id: number) => {
 const handleOutputMessage = (payloadId: number, property: keyof ITestcase, data: string) => {
     const index = findIndexFromId(payloadId);
     for (let i = 0; i < data.length; i++) {
-        const lastChar = (state.testcases[index][property] as string).at(-1);
+        // default to newline when there's empty string to trick algorithm to avoid adding whitespace at beginning
+        const lastChar = (state.testcases[index][property] as string).at(-1) ?? '\n';
         if (data[i] === ' ') {
             if (lastChar !== ' ' && lastChar !== '\n') {
                 (state.testcases[index][property] as string) += ' ';
