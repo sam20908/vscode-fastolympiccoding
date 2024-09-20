@@ -75,7 +75,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 elapsed: testcase.elapsed ?? 0,
                 status: testcase.status ?? 0,
                 acceptedOutput: testcase.acceptedOutput ?? '',
-                showTestcaseOnAccepted: testcase.showTestcaseOnAccepted ?? false,
+                showTestcase: testcase.showTestcase ?? true,
             });
         }
         const payload: any = { settings, testcases };
@@ -143,7 +143,6 @@ export class TestcasesViewProvider extends BaseViewProvider {
                 }
             } else {
                 const code = await (async () => {
-
                     const resolvedCommand = path.normalize(resolveVariables(runSettings.compileCommand!));
                     const currentChecksum = await getFileChecksum(file);
                     const [cachedChecksum, cachedCompileCommand] = lastCompiled.get(file) ?? [-1, ''];

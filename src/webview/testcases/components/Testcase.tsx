@@ -12,7 +12,7 @@ interface Props {
     elapsed: number;
     code: number;
     acceptedOutput: Signal<string>;
-    showTestcaseOnAccepted: Signal<boolean>;
+    showTestcase: Signal<boolean>;
     id: number;
     status: string;
     onAcceptTestcase: (id: number) => void;
@@ -27,7 +27,7 @@ interface Props {
 };
 
 export default function App({
-    settings, stdin, stdout, stderr, elapsed, code, acceptedOutput, showTestcaseOnAccepted, id, status,
+    settings, stdin, stdout, stderr, elapsed, code, acceptedOutput, showTestcase, id, status,
     onAcceptTestcase,
     onEditTestcase,
     onSaveTestcase,
@@ -41,14 +41,14 @@ export default function App({
     const newStdin = useSignal('');
     const statusItem = (() => {
         if (code === -1)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>CE</p>
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>CE</button>
         if (code)
-            return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>RE</p>
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>RE</button>
         if (acceptedOutput.value === '')
-            return <></>;
+            return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => onToggleACVisibilityTestcase(id)}>NA</button>
         if (stdout.value === acceptedOutput.value)
-            return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>AC</button>
-        return <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>WA</p>
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>AC</button>
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onToggleACVisibilityTestcase(id)}>WA</button>
     })();
 
     const handleKeyUp = (index: number, event: KeyboardEvent, onSendStdin: Function) => {
@@ -77,7 +77,7 @@ export default function App({
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>
                     </div>
                 </div>
-                {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value || showTestcaseOnAccepted.value) &&
+                {(showTestcase.value) &&
                     <>
                         <div class="flex flex-row">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1">

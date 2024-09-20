@@ -5,7 +5,7 @@ export interface ITestcase {
     elapsed: number;
     code: number;
     acceptedOutput: string;
-    showTestcaseOnAccepted: boolean;
+    showTestcase: boolean;
 }
 
 export interface ITestcaseState extends ITestcase {

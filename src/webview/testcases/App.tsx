@@ -43,7 +43,7 @@ const saveTestcases = () => {
             code: testcase.code,
             elapsed: testcase.elapsed,
             acceptedOutput: testcase.acceptedOutput,
-            showTestcaseOnAccepted: testcase.showTestcaseOnAccepted,
+            showTestcase: testcase.showTestcase,
         });
     }
     postMessage('SAVE', { testcases });
@@ -86,7 +86,7 @@ const handleNextTestcase = () => {
         elapsed: 0,
         code: 0,
         acceptedOutput: '',
-        showTestcaseOnAccepted: false,
+        showTestcase: false,
         id: newId,
         status: '',
     });
@@ -167,7 +167,7 @@ const handleStopTestcase = (id: number, isIndex: boolean, removeListeners: boole
 
 const handleToggleACVisibilityTestcase = (id: number) => {
     const index = findIndexFromId(id);
-    state.testcases[index].showTestcaseOnAccepted = !state.testcases[index].showTestcaseOnAccepted;
+    state.testcases[index].showTestcase = !state.testcases[index].showTestcase;
 };
 
 const handleOutputMessage = (payloadId: number, property: keyof ITestcase, data: string) => {
@@ -249,7 +249,7 @@ export default function App() {
                 elapsed={value.elapsed}
                 code={value.code}
                 acceptedOutput={value.$acceptedOutput!}
-                showTestcaseOnAccepted={value.$showTestcaseOnAccepted!}
+                showTestcase={value.$showTestcase!}
                 id={value.id}
                 status={value.status}
                 settings={state.settings!}
