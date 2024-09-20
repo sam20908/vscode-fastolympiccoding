@@ -15,14 +15,16 @@ export default function App({ text, settings, onViewText }: Props) {
         for (let i = 0; i < Math.min(text.value.length, settings.maxDisplayCharacters) && newlineCount < settings.maxDisplayLines; i++) {
             truncatedText += text.value[i];
             if (text.value[i] === '\n') {
-                newlineCount++;
-                isTruncated = true;
+                if (++newlineCount === settings.maxDisplayLines) {
+                    isTruncated = true;
+                }
             }
         }
         if (truncatedText.length === settings.maxDisplayCharacters) {
             isTruncated = true;
             truncatedText = truncatedText.substring(0, -3);
         }
+        console.log(isTruncated);
         return { truncatedText, isTruncated };
     });
 
