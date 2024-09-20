@@ -163,7 +163,7 @@ export default function App() {
     return <>
         <div class="container mx-auto mb-6">
             <div class="flex flex-row">
-                <div class="w-6"></div>
+                <div class="w-6 shrink-0"></div>
                 <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
                     {button}
                 </div>
@@ -175,7 +175,7 @@ export default function App() {
         {(state.code.solution === -2) &&
             <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
-                    <div class="w-6"></div>
+                    <div class="w-6 shrink-0"></div>
                     <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => handleAddTestcase(state.data.generator)}>add testcase</button>
                 </div>
             </div>
