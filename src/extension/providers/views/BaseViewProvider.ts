@@ -42,6 +42,10 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
         return `fastolympiccoding.${this.view}`;
     }
 
+    public readStorage(): any {
+        return this._readStorageJson()[this.view] ?? {};
+    }
+
     public writeStorage(file: string, data?: any): void {
         const fileData = this._readStorageJson();
         fileData[this.view] = { ...fileData[this.view] };
@@ -55,10 +59,6 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
 
     protected _postMessage(type: string, payload?: any): void {
         this._webview?.postMessage({ type, payload });
-    }
-
-    protected _readStorage(): any {
-        return this._readStorageJson()[this.view] ?? {};
     }
 
     private _readStorageJson(): any {

@@ -91,6 +91,10 @@ const handleStressTest = () => {
     postMessage('RUN');
 };
 
+const handleAddTestcase = (input: string) => {
+    postMessage('ADD', { input });
+};
+
 const handleStop = () => {
     // don't rely on the provider to send exit messages, as it can ruin the status if clicking start and stop rapidly
     batch(() => {
@@ -168,5 +172,13 @@ export default function App() {
         <FileData settings={state.settings} code={state.code.generator} status={state.status.generator} filetype="Generator" data={state.data.$generator!} onViewText={handleViewText} />
         <FileData settings={state.settings} code={state.code.solution} status={state.status.solution} filetype="Solution" data={state.data.$solution!} onViewText={handleViewText} />
         <FileData settings={state.settings} code={state.code.goodSolution} status={state.status.goodSolution} filetype="Good Solution" data={state.data.$goodSolution!} onViewText={handleViewText} />
+        {(state.code.solution === -2) &&
+            <div class="container mx-auto mb-6">
+                <div class="flex flex-row">
+                    <div class="w-6"></div>
+                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => handleAddTestcase(state.data.generator)}>add testcase</button>
+                </div>
+            </div>
+        }
     </>;
 }

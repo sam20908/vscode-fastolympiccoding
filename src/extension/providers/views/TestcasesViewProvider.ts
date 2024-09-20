@@ -60,7 +60,7 @@ export class TestcasesViewProvider extends BaseViewProvider {
             return;
         }
 
-        const storage = super._readStorage();
+        const storage = super.readStorage();
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const settings: any = {
             maxDisplayCharacters: config.get('maxDisplayCharacters'),

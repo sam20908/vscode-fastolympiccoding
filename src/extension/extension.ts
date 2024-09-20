@@ -18,7 +18,7 @@ function registerViewProviders(context: vscode.ExtensionContext): void {
         testcasesViewProvider
     ));
 
-    stressTesterViewProvider = new StressTesterViewProvider(context);
+    stressTesterViewProvider = new StressTesterViewProvider(context, testcasesViewProvider);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
         stressTesterViewProvider.getViewId(),
         stressTesterViewProvider
@@ -102,7 +102,8 @@ function listenForCompetitiveCompanion() {
                     stdout: '',
                     elapsed: 0,
                     status: 0,
-                    acceptedOutput: test['output'].split(' ').filter(word => word !== '').join(' '),
+                    acceptedOutput: test['output'].split(' ').filter((word: string) => word !== '').join(' '),
+                    showTestcase: true,
                 });
             }
             testcasesViewProvider.writeStorage(file, { testcases });

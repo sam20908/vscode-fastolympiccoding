@@ -4,8 +4,9 @@ import * as vscode from 'vscode';
 
 import { BatchedSender, getFileChecksum, RunningProcess } from '../../util/runUtil';
 import { BaseViewProvider, IMessage } from "./BaseViewProvider";
-import { compileProcess, errorTerminal, ILanguageRunSettings, lastCompiled } from '../../common';
+import { compileProcess, errorTerminal, ILanguageRunSettings, ITestcase, lastCompiled } from '../../common';
 import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
+import { TestcasesViewProvider } from './TestcasesViewProvider';
 
 interface IFileState<T> {
     solution: T;
@@ -36,6 +37,9 @@ export class StressTesterViewProvider extends BaseViewProvider {
             case 'STOP':
                 this._onStop();
                 break;
+            case 'ADD':
+                this._onAdd(message.payload);
+                break;
             case 'VIEW_TEXT':
                 viewLargeTextAsFile(message.payload.content);
                 break;
@@ -47,7 +51,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         this._stopFlag = true;
     }
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, private testcaseViewProvider: TestcasesViewProvider) {
         super('stress-tester', context);
 
         vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
@@ -63,7 +67,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
             return;
         }
 
-        const storage = super._readStorage();
+        const storage = super.readStorage();
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const settings: any = {
             maxDisplayCharacters: config.get('maxDisplayCharacters'),
@@ -220,6 +224,26 @@ export class StressTesterViewProvider extends BaseViewProvider {
         if (file) {
             super.writeStorage(file); // no counterexample found, don't need to save anything
         }
+    }
+
+    private _onAdd({ input }: { input: string }): void {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            return;
+        }
+
+        const testcases: ITestcase[] = this.testcaseViewProvider.readStorage()[file]?.testcases ?? [];
+        testcases.push({
+            stdin: input,
+            stderr: '',
+            stdout: '',
+            elapsed: 0,
+            status: 0,
+            acceptedOutput: '',
+            showTestcase: true,
+        });
+        this.testcaseViewProvider.writeStorage(file, { testcases });
+        this.testcaseViewProvider.loadSavedData();
     }
 
     private _killAllProcesses(): void {
