@@ -126,6 +126,12 @@ const handleAcceptTestcase = (id: number) => {
     saveTestcases();
 };
 
+const handleDeclineTestcase = (id: number) => {
+    const index = findIndexFromId(id);
+    state.testcases[index].acceptedOutput = '';
+    saveTestcases();
+};
+
 const handleEditTestcase = (id: number) => {
     const index = findIndexFromId(id);
     batch(() => {
@@ -260,6 +266,7 @@ export default function App() {
                 status={value.status}
                 settings={state.settings!}
                 onAcceptTestcase={handleAcceptTestcase}
+                onDeclineTestcase={handleDeclineTestcase}
                 onEditTestcase={handleEditTestcase}
                 onSaveTestcase={handleSaveTestcase}
                 onDeleteTestcase={handleDeleteTestcase}

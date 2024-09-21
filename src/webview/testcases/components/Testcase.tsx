@@ -16,6 +16,7 @@ interface Props {
     id: number;
     status: string;
     onAcceptTestcase: (id: number) => void;
+    onDeclineTestcase: (id: number) => void;
     onEditTestcase: (id: number) => void;
     onSaveTestcase: (id: number, input: string) => void;
     onDeleteTestcase: (id: number, isIndex: boolean) => void;
@@ -29,6 +30,7 @@ interface Props {
 export default function App({
     settings, stdin, stdout, stderr, elapsed, code, acceptedOutput, showTestcase, id, status,
     onAcceptTestcase,
+    onDeclineTestcase,
     onEditTestcase,
     onSaveTestcase,
     onDeleteTestcase,
@@ -120,10 +122,17 @@ export default function App({
                                 </div>
                             </div>
                         }
-                        <div class="flex flex-row">
-                            <div class="w-6"></div>
-                            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onAcceptTestcase(id)}>accept</button>
-                        </div>
+                        {(acceptedOutput.value === '' || stdout.value !== acceptedOutput.value) ?
+                            <div class="flex flex-row">
+                                <div class="w-6 shrink-0"></div>
+                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => onAcceptTestcase(id)}>accept</button>
+                            </div>
+                            :
+                            <div class="flex flex-row">
+                                <div class="w-6 shrink-0"></div>
+                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => onDeclineTestcase(id)}>decline</button>
+                            </div>
+                        }
                     </>
                 }
             </div>;
