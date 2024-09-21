@@ -135,7 +135,6 @@ const handleDeclineTestcase = (id: number) => {
 const handleEditTestcase = (id: number) => {
     const index = findIndexFromId(id);
     batch(() => {
-        state.testcases[index].acceptedOutput = '';
         state.testcases[index].code = 0;
         state.testcases[index].status = 'EDITING';
     });
