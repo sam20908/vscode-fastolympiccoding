@@ -223,7 +223,7 @@ export class StressTesterViewProvider extends BaseViewProvider {
         }
     }
 
-    private _onAdd({ input }: { input: string }): void {
+    private _onAdd({ stdin, acceptedOutput }: { stdin: string, acceptedOutput: string }): void {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -231,12 +231,12 @@ export class StressTesterViewProvider extends BaseViewProvider {
 
         const testcases: ITestcase[] = this.testcaseViewProvider.readStorage()[file]?.testcases ?? [];
         testcases.push({
-            stdin: input,
+            stdin,
             stderr: '',
             stdout: '',
             elapsed: 0,
             status: 0,
-            acceptedOutput: '',
+            acceptedOutput,
             showTestcase: true,
         });
         this.testcaseViewProvider.writeStorage(file, { testcases });

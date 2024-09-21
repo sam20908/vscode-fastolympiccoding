@@ -91,8 +91,8 @@ const handleStressTest = () => {
     postMessage('RUN');
 };
 
-const handleAddTestcase = (input: string) => {
-    postMessage('ADD', { input });
+const handleAddTestcase = (stdin: string, acceptedOutput: string) => {
+    postMessage('ADD', { stdin, acceptedOutput });
 };
 
 const handleStop = () => {
@@ -176,7 +176,7 @@ export default function App() {
             <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
                     <div class="w-6 shrink-0"></div>
-                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => handleAddTestcase(state.data.generator)}>add testcase</button>
+                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => handleAddTestcase(state.data.generator, state.data.goodSolution)}>add testcase</button>
                 </div>
             </div>
         }
