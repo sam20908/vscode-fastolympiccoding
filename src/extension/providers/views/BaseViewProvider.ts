@@ -23,7 +23,7 @@ export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider 
         this._webview = webviewView.webview;
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist', this.view)],
+            localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist')],
         };
         webviewView.webview.html = this._getWebviewContent(webviewView.webview);
         webviewView.webview.onDidReceiveMessage(message => this.onMessage(message));
@@ -65,10 +65,9 @@ export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider 
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' cdn.tailwindcss.com; script-src 'nonce-${nonce}';">
-                <script nonce="${nonce}" src="https://cdn.tailwindcss.com"></script>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'nonce-${nonce}'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
                 <link rel="stylesheet" href="${stylesUri}">
-                <style>
+                <style nonce="${nonce}">
                     .display-font {
                         font-family: ${font};
                     };
