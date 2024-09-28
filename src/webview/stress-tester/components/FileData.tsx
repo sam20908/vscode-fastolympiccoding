@@ -1,16 +1,17 @@
+import { Signal } from "@preact/signals";
 import { Status } from "../../../common";
 import { RED_COLOR } from "../../common";
 
 interface Props {
+    data: Signal<string>;
     status: Status;
-    data: string;
     id: number;
     onView: (id: number) => void;
 }
 
 const from = ['Generator', 'Solution', 'Good Solution'];
 
-export default function App({ status, data, id, onView }: Props) {
+export default function App({ data, status, id, onView }: Props) {
     const statusItem = (() => {
         if (status === Status.WA)
             return <p class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>WA</p>

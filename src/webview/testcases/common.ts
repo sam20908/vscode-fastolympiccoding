@@ -1,17 +1,14 @@
-import { deepSignal } from "deepsignal";
+import { Signal } from "@preact/signals";
 import { Status, TestcasesMessageType } from "../../common";
 
 // @ts-ignore
-export const vscode = acquireVsCodeApi();
-
-export const state = deepSignal<IState[]>([]);
-export let idToIndex: number[] = [];
+const vscode = acquireVsCodeApi();
 
 export interface IState {
-    stdin: string;
-    stderr: string;
-    stdout: string;
-    acceptedStdout: string;
+    stdin: Signal<string>;
+    stderr: Signal<string>;
+    stdout: Signal<string>;
+    acceptedStdout: Signal<string>;
     elapsed: number;
     status: Status;
     showTestcase: boolean;

@@ -1,9 +1,13 @@
-import { batch } from '@preact/signals';
+import { batch, Signal, signal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import Testcase from './components/Testcase';
-import { idToIndex, postMessage, state } from './common';
+import { IState, postMessage } from './common';
 import { ITestcasesMessage, Status, Stdio, TestcasesMessageType } from '../../common';
+import { deepSignal } from 'deepsignal';
+
+const state = deepSignal<IState[]>([]);
+const idToIndex: number[] = [];
 
 window.addEventListener('message', (event: MessageEvent) => {
     const { type, payload } = event.data as ITestcasesMessage;
@@ -17,10 +21,10 @@ window.addEventListener('message', (event: MessageEvent) => {
                     idToIndex[id] = state.length;
                 }
                 state.push({
-                    stdin: '',
-                    stderr: '',
-                    stdout: '',
-                    acceptedStdout: '',
+                    stdin: signal(''),
+                    stderr: signal(''),
+                    stdout: signal(''),
+                    acceptedStdout: signal(''),
                     elapsed: 0,
                     status: Status.NA,
                     showTestcase: true,
@@ -47,16 +51,16 @@ window.addEventListener('message', (event: MessageEvent) => {
                 const { id, data, stdio } = payload;
                 switch (stdio) {
                     case Stdio.STDIN:
-                        state[idToIndex[id]].stdin += data;
+                        state[idToIndex[id]].stdin.value += data;
                         break;
                     case Stdio.STDERR:
-                        state[idToIndex[id]].stderr += data;
+                        state[idToIndex[id]].stderr.value += data;
                         break;
                     case Stdio.STDOUT:
-                        state[idToIndex[id]].stdout += data;
+                        state[idToIndex[id]].stdout.value += data;
                         break;
                     case Stdio.ACCEPTED_STDOUT:
-                        state[idToIndex[id]].acceptedStdout += data;
+                        state[idToIndex[id]].acceptedStdout.value += data;
                         break;
                 }
             }
@@ -71,15 +75,15 @@ window.addEventListener('message', (event: MessageEvent) => {
         case TestcasesMessageType.FULL_STDIN:
             {
                 const { id, data } = payload;
-                state[idToIndex[id]].stdin = data;
+                state[idToIndex[id]].stdin.value = data;
             }
             break;
         case TestcasesMessageType.CLEAR_OUTPUTS:
             {
                 const { id } = payload;
                 batch(() => {
-                    state[idToIndex[id]].stderr = '';
-                    state[idToIndex[id]].stdout = '';
+                    state[idToIndex[id]].stderr.value = '';
+                    state[idToIndex[id]].stdout.value = '';
                 });
             }
             break;
@@ -103,6 +107,8 @@ window.addEventListener('message', (event: MessageEvent) => {
 
 export default function App() {
     useEffect(() => postMessage(TestcasesMessageType.LOADED), []);
+
+    console.log('rendering');
 
     return <>
         {state.map(value => <Testcase key={value.id} testcase={value} />)}

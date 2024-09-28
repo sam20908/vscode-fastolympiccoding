@@ -64,9 +64,9 @@ export default function App() {
                 </div>
             </div>
         </div>
-        <FileData data={state[0].data} status={state[0].status} id={0} onView={view} />
-        <FileData data={state[1].data} status={state[1].status} id={1} onView={view} />
-        <FileData data={state[2].data} status={state[2].status} id={2} onView={view} />
+        <FileData data={state[0].$data!} status={state[0].status} id={0} onView={view} />
+        <FileData data={state[1].$data!} status={state[1].status} id={1} onView={view} />
+        <FileData data={state[2].$data!} status={state[2].status} id={2} onView={view} />
         {(state[1].status === Status.WA) &&
             <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
