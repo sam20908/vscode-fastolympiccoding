@@ -89,6 +89,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     public loadSavedData() {
         this.stopAll();
         this._state = [];
+        this._order = [];
         super._postMessage(TestcasesMessageType.CLEAR_TESTCASES);
 
         const file = vscode.window.activeTextEditor?.document.fileName;
@@ -137,7 +138,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             this._state[id] = newTestcase;
         }
 
-        this._saveState(id);
+        this._saveState();
         return id;
     }
 
@@ -176,16 +177,16 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             this._state[id]!.showTestcase = status !== Status.AC;
             super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
         }
-        this._saveState(id);
+        this._saveState();
     }
 
     private _onError(id: number, data: Error) {
         super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDERR });
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
-        this._saveState(id);
+        this._saveState();
     }
 
-    private _saveState(id?: number) {
+    private _saveState() {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -283,7 +284,11 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._stop(id);
         this._state[id] = undefined;
         super._postMessage(TestcasesMessageType.DELETE_TESTCASE, { id });
-        this._saveState(id);
+
+        const index = this._order.findIndex(value => value === id);
+        this._order.splice(index, 1);
+
+        this._saveState();
     }
 
     private _edit(id: number) {
