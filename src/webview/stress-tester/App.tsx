@@ -3,162 +3,57 @@ import { useEffect } from "preact/hooks";
 import { batch, useComputed } from "@preact/signals";
 
 import FileData from './components/FileData';
-import { BLUE_COLOR, IMessage, ISettings, RED_COLOR } from "../common";
-
-interface IFileState<T> {
-    generator: T;
-    solution: T;
-    goodSolution: T;
-}
-
-interface IStressTestData {
-    data: IFileState<string>;
-    code: IFileState<number>;
-}
+import { BLUE_COLOR, RED_COLOR } from "../common";
+import { IStressTesterMessage, Status, StressTesterMessageType } from "../../common";
 
 interface IState {
-    settings?: ISettings;
-    data: IFileState<string>;
-    code: IFileState<number>;
-    status: IFileState<string>;
+    data: string;
+    status: Status;
 }
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
+const state = deepSignal<IState[]>([{ data: '', status: Status.NA }, { data: '', status: Status.NA }, { data: '', status: Status.NA }]);
 
-const initialState: IState = {
-    settings: undefined,
-    data: {
-        generator: '',
-        solution: '',
-        goodSolution: '',
-    },
-    code: {
-        generator: 0,
-        solution: 0,
-        goodSolution: 0,
+const postMessage = (type: StressTesterMessageType, payload?: any) => vscode.postMessage({ type, payload });
+const view = (id: number) => postMessage(StressTesterMessageType.VIEW, { id });
 
-    },
-    status: {
-        generator: '',
-        solution: '',
-        goodSolution: '',
-    },
-};
-const state = deepSignal<IState>({ ...initialState });
-
-const postMessage = (type: string, payload?: any) => {
-    vscode.postMessage({ type, payload });
-}
-
-const saveData = () => {
-    postMessage('SAVE', {
-        data: {
-            generator: state.data.generator,
-            solution: state.data.solution,
-            goodSolution: state.data.goodSolution,
-        },
-        code: {
-            generator: state.code.generator,
-            solution: state.code.solution,
-            goodSolution: state.code.goodSolution,
-        },
-    });
-};
-
-const handleMessage = (event: MessageEvent) => {
-    const message: IMessage = event.data;
-    switch (message.type) {
-        case 'SAVED_DATA':
-            handleSavedDataMessage(message.payload);
+window.addEventListener('message', (event: MessageEvent) => {
+    const message: IStressTesterMessage = event.data;
+    const { type, payload } = message;
+    switch (type) {
+        case StressTesterMessageType.STATUS:
+            {
+                const { id, status } = payload;
+                state[id].status = status;
+            }
             break;
-        case 'STATUS':
-            handleStatusMessage(message.payload);
+        case StressTesterMessageType.STDIO:
+            {
+                const { id, data } = payload;
+                state[id].data += data;
+            }
             break;
-        case 'EXIT':
-            handleExitMessage(message.payload);
-            break;
-        case 'DATA':
-            handleDataMessage(message.payload);
-            break;
-        case 'CLEAR':
-            handleClearMessage();
+        case StressTesterMessageType.CLEAR:
+            batch(() => {
+                for (let i = 0; i < 3; i++) {
+                    state[i].data = '';
+                }
+            });
             break;
     }
-};
-
-const handleStressTest = () => {
-    postMessage('RUN');
-};
-
-const handleAddTestcase = (stdin: string, acceptedOutput: string) => {
-    postMessage('ADD', { stdin, acceptedOutput });
-};
-
-const handleStop = () => {
-    // don't rely on the provider to send exit messages, as it can ruin the status if clicking start and stop rapidly
-    batch(() => {
-        state.status.solution = '';
-        state.status.goodSolution = '';
-        state.status.generator = '';
-    });
-    postMessage('STOP');
-};
-
-const handleViewText = (content: string) => {
-    postMessage('VIEW_TEXT', { content });
-};
-
-const handleSavedDataMessage = (payload: IStressTestData) => {
-    const newState = payload ?? initialState;
-    Object.assign(state, newState);
-    // assign these manually to trigger update
-    batch(() => {
-        state.data.solution = newState.data.solution;
-        state.data.goodSolution = newState.data.goodSolution;
-        state.data.generator = newState.data.generator;
-    });
-};
-
-const handleStatusMessage = ({ status, from }: { status: string, from: keyof IFileState<string> }) => {
-    state.status[from] = status;
-};
-
-const handleExitMessage = ({ code, from }: { code: number, from: keyof IFileState<number> }) => {
-    batch(() => {
-        state.code[from] = code;
-        state.status[from] = '';
-    });
-    saveData();
-};
-
-const handleDataMessage = ({ from, data }: { from: keyof IFileState<string>, data: string }) => {
-    state.data[from] += data;
-};
-
-const handleClearMessage = () => {
-    batch(() => {
-        state.data.generator = '';
-        state.data.solution = '';
-        state.data.goodSolution = '';
-    });
-};
-
-window.addEventListener('message', handleMessage);
+});
 
 export default function App() {
-    useEffect(() => postMessage('LOADED'), []);
-    const button = useComputed(() => {
-        if (state.status.generator === 'RUNNING' && state.status.solution === 'RUNNING' && state.status.goodSolution === 'RUNNING')
-            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={handleStop}>stop</button>;
-        if (state.status.generator === 'COMPILING' || state.status.solution === 'COMPILING' || state.status.goodSolution === 'COMPILING')
-            return <></>;
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={handleStressTest}>stress test</button>;
-    });
+    useEffect(() => postMessage(StressTesterMessageType.LOADED), []);
 
-    if (!state.settings) {
-        return <></>;
-    }
+    const button = useComputed(() => {
+        if (state[1].status === Status.RUNNING)
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage(StressTesterMessageType.STOP)}>stop</button>;
+        if (state[0].status === Status.COMPILING || state[1].status === Status.COMPILING || state[2].status === Status.COMPILING)
+            return <></>;
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.RUN)}>stress test</button>;
+    });
 
     return <>
         <div class="container mx-auto mb-6">
@@ -169,14 +64,14 @@ export default function App() {
                 </div>
             </div>
         </div>
-        <FileData settings={state.settings} code={state.code.generator} status={state.status.generator} filetype="Generator" data={state.data.$generator!} onViewText={handleViewText} />
-        <FileData settings={state.settings} code={state.code.solution} status={state.status.solution} filetype="Solution" data={state.data.$solution!} onViewText={handleViewText} />
-        <FileData settings={state.settings} code={state.code.goodSolution} status={state.status.goodSolution} filetype="Good Solution" data={state.data.$goodSolution!} onViewText={handleViewText} />
-        {(state.code.solution === -2) &&
+        <FileData data={state[0].data} status={state[0].status} id={0} onView={view} />
+        <FileData data={state[1].data} status={state[1].status} id={1} onView={view} />
+        <FileData data={state[2].data} status={state[2].status} id={2} onView={view} />
+        {(state[1].status === Status.WA) &&
             <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
                     <div class="w-6 shrink-0"></div>
-                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => handleAddTestcase(state.data.generator, state.data.goodSolution)}>add testcase</button>
+                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.ADD)}>add testcase</button>
                 </div>
             </div>
         }

@@ -1,92 +1,92 @@
 import * as path from 'path';
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-import { BatchedSender, getFileChecksum, RunningProcess } from '../../util/runUtil';
-import { BaseViewProvider, IMessage } from "./BaseViewProvider";
-import { compileProcess, errorTerminal, ILanguageRunSettings, ITestcase, lastCompiled } from '../../common';
-import { DummyTerminal, resolveVariables, viewLargeTextAsFile } from '../../util/vscodeUtil';
+import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveVariables } from '../../util';
+import { BaseViewProvider } from "./BaseViewProvider";
 import { TestcasesViewProvider } from './TestcasesViewProvider';
+import { IStressTesterMessage, Status, StressTesterMessageType } from '../../../common';
+import { compile } from '../../util';
 
-interface IFileState<T> {
-    solution: T;
-    goodSolution: T;
-    generator: T;
+interface IData {
+    data: string;
+    status: Status;
 }
 
-interface IStressTestData {
-    data: IFileState<string>;
-    code: IFileState<number>;
+interface IState {
+    data: Data;
+    status: Status;
+    process: RunningProcess | undefined;
 }
 
-export class StressTesterViewProvider extends BaseViewProvider {
-    private _runningProcesses: RunningProcess[] = [];
-    private _stopFlag: boolean = true;
+export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessageType> {
+    private _state: IState[] = [
+        { data: new Data(), status: Status.NA, process: undefined },
+        { data: new Data(), status: Status.NA, process: undefined },
+        { data: new Data(), status: Status.NA, process: undefined },
+    ]; // [generator, solution, good solution]
+    private _stopFlag: boolean = false;
 
-    onMessage(message: IMessage): void {
-        switch (message.type) {
-            case 'LOADED':
+    onMessage(message: IStressTesterMessage) {
+        const { type, payload } = message;
+        switch (type) {
+            case StressTesterMessageType.LOADED:
                 this.loadSavedData();
                 break;
-            case 'SAVE':
-                this._onSave(message.payload);
-                break;
-            case 'RUN':
+            case StressTesterMessageType.RUN:
                 this.run();
                 break;
-            case 'STOP':
-                this._onStop();
+            case StressTesterMessageType.STOP:
+                this._stop();
+                this._saveState();
                 break;
-            case 'ADD':
-                this._onAdd(message.payload);
+            case StressTesterMessageType.VIEW:
+                {
+                    const { id } = payload;
+                    viewTextInEditor(this._state[id].data.data);
+                }
                 break;
-            case 'VIEW_TEXT':
-                viewLargeTextAsFile(message.payload.content);
+            case StressTesterMessageType.ADD:
+                this._add();
                 break;
         }
     }
 
-    onDispose(): void {
-        this._killAllProcesses();
-        this._stopFlag = true;
+    onDispose() {
+        this._stop();
     }
 
     constructor(context: vscode.ExtensionContext, private testcaseViewProvider: TestcasesViewProvider) {
         super('stress-tester', context);
 
+        this._state[0].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 0, data });
+        this._state[1].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 1, data });
+        this._state[2].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 2, data });
+
         vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
-        this.loadSavedData();
     }
 
     public async loadSavedData(): Promise<void> {
-        this._killAllProcesses();
+        this._stop();
+        for (let i = 0; i < 3; i++) {
+            this._state[i].data.reset();
+            this._state[i].status = Status.NA;
+            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.NA });
+        }
+        super._postMessage(StressTesterMessageType.CLEAR);
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
-            super._postMessage('SAVED_DATA');
             return;
         }
 
         const storage = super.readStorage();
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const settings: any = {
-            maxDisplayCharacters: config.get('maxDisplayCharacters'),
-            maxDisplayLines: config.get('maxDisplayLines'),
-        };
-        const data: IStressTestData = storage[file] ?? {
-            data: {
-                solution: '',
-                goodSolution: '',
-                generator: '',
-            },
-            code: {
-                solution: 0,
-                goodSolution: 0,
-                generator: 0,
-            },
-        };
-        const payload: any = { settings, ...data };
-        super._postMessage('SAVED_DATA', payload);
+        const state: IData[] = storage[file] ?? [];
+        for (let i = 0; i < state.length; i++) {
+            this._state[i].data.write(state[i].data, true);
+            this._state[i].status = state[i].status;
+            this._state[i].process = undefined;
+            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: state[i].status });
+        }
     }
 
     public async run(): Promise<void> {
@@ -94,222 +94,135 @@ export class StressTesterViewProvider extends BaseViewProvider {
         if (!file) {
             return;
         }
-        if (!this._stopFlag) {
-            return;
-        }
 
         const extension = path.extname(file);
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const forceCompilation: boolean = config.get('forceCompilation')!;
         const delayBetweenTestcases: number = config.get('delayBetweenTestcases')!;
-        const runSettings: ILanguageRunSettings | undefined = config.get('runSettings', {} as any)[extension];
+        const runSettings: ILanguageRunSettings | undefined = config.get<any>('runSettings')[extension];
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
-            super._postMessage('EXIT', { code: 0, from: 'solution' });
-            super._postMessage('EXIT', { code: 0, from: 'goodSolution' });
-            super._postMessage('EXIT', { code: 0, from: 'generator' });
             return;
         }
 
         if (runSettings.compileCommand) {
+            for (let i = 0; i < 3; i++) {
+                super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.COMPILING });
+            }
+            const callback = (id: number, code: number) => {
+                const status = code ? Status.CE : Status.NA;
+                this._state[id].status = status;
+                super._postMessage(StressTesterMessageType.STATUS, { id, status });
+                return code;
+            };
             const promises = [
-                this._doCompile(runSettings.compileCommand!, '${file}', 'solution', forceCompilation),
-                this._doCompile(runSettings.compileCommand!, config.get('goodSolutionFile')!, 'goodSolution', forceCompilation),
-                this._doCompile(runSettings.compileCommand!, config.get('generatorFile')!, 'generator', forceCompilation),
+                compile(resolveVariables(config.get('generatorFile')!), runSettings.compileCommand).then(callback.bind(this, 0)),
+                compile(resolveVariables('${file}'), runSettings.compileCommand).then(callback.bind(this, 1)),
+                compile(resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand).then(callback.bind(this, 2)),
             ];
             const codes = await Promise.allSettled(promises);
-            let anyFailed = false;
-            for (const codeResult of codes) {
-                const code = (codeResult as PromiseFulfilledResult<number>).value;
-                anyFailed ||= code !== 0;
-            }
-            if (anyFailed) {
-                return;
+
+            for (let i = 0; i < 3; i++) {
+                const code = (codes[i] as PromiseFulfilledResult<number>).value;
+                if (code) {
+                    return;
+                }
             }
         }
+
+        for (let i = 0; i < 3; i++) {
+            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RUNNING });
+        }
+
         this._stopFlag = false;
-        super._postMessage('STATUS', { status: 'RUNNING', from: 'solution' });
-        super._postMessage('STATUS', { status: 'RUNNING', from: 'goodSolution' });
-        super._postMessage('STATUS', { status: 'RUNNING', from: 'generator' });
-        super._postMessage('CLEAR');
-
         while (!this._stopFlag) {
-            const solutionProcess = this._runFile(runSettings.runCommand, '${file}');
-            const solutionSender = new BatchedSender(data => super._postMessage('DATA', { from: 'solution', data }));
-            let output = '';
-            solutionProcess.process.stdout.on('data', data => {
-                solutionSender.send(data);
-                output += data;
-            });
-            solutionProcess.process.stdout.on('end', () => solutionSender.send('', true));
+            super._postMessage(StressTesterMessageType.CLEAR);
+            for (let i = 0; i < 3; i++) {
+                this._state[i].data.reset();
+            }
 
-            const goodSolutionProcess = this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
-            const goodSolutionSender = new BatchedSender(data => super._postMessage('DATA', { from: 'goodSolution', data }));
-            let goodOutput = '';
-            goodSolutionProcess.process.stdout.on('data', data => {
-                goodSolutionSender.send(data);
-                goodOutput += data;
-            });
-            goodSolutionProcess.process.stdout.on('end', () => goodSolutionSender.send('', true));
+            this._state[1].process = this._runFile(runSettings.runCommand, '${file}');
+            this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
+            this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
 
-            const generatorProcess = this._runFile(runSettings.runCommand, config.get('generatorFile')!);
-            const generatorSender = new BatchedSender(data => super._postMessage('DATA', { from: 'generator', data }));
+            this._state[2].process = this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
+            this._state[2].process.process.stdout.on('data', data => this._state[2].data.write(data, false));
+            this._state[2].process.process.stdout.on('end', () => this._state[2].data.write('', true));
+
             const seed = Math.round(Math.random() * 9007199254740991);
-            let input = '';
-            generatorProcess.process.stdin.write(`${seed}\n`);
-            generatorProcess.process.stdout.on('data', data => {
-                generatorSender.send(data);
-                solutionProcess.process.stdin.write(data);
-                goodSolutionProcess.process.stdin.write(data);
-                input += data;
+            this._state[0].process = this._runFile(runSettings.runCommand, config.get('generatorFile')!);
+            this._state[0].process.process.stdin.write(`${seed}\n`);
+            this._state[0].process.process.stdout.on('data', data => {
+                this._state[0].data.write(data, false);
+                this._state[1].process!.process.stdin.write(data);
+                this._state[2].process!.process.stdin.write(data);
             });
-            generatorProcess.process.stdout.on('end', () => generatorSender.send('', true));
+            this._state[0].process.process.stdout.on('end', () => this._state[0].data.write('', true));
 
-            this._runningProcesses = [solutionProcess, goodSolutionProcess, generatorProcess];
-            const codes = await Promise.allSettled(this._runningProcesses.map(value => value.promise));
-            this._runningProcesses = [];
+            const codes = await Promise.allSettled(this._state.map(value => value.process!.promise));
             let anyFailed = false;
             for (let i = 0; i < codes.length; i++) {
                 const code = (codes[i] as PromiseFulfilledResult<number>).value;
-                anyFailed ||= code !== 0;
+                let status = Status.NA;
+                if (code) {
+                    anyFailed = true;
+                    status = Status.RE;
+                    super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RE });
+                }
+                this._state[i].status = status;
             }
             if (anyFailed) {
-                super._postMessage('EXIT', { code: (codes[0] as PromiseFulfilledResult<number>).value, from: 'solution' });
-                super._postMessage('EXIT', { code: (codes[1] as PromiseFulfilledResult<number>).value, from: 'goodSolution' });
-                super._postMessage('EXIT', { code: (codes[2] as PromiseFulfilledResult<number>).value, from: 'generator' });
                 break;
             }
-            if (output !== goodOutput) {
-                super._postMessage('EXIT', { code: -2, from: 'solution' });
-                super._postMessage('EXIT', { code: -2, from: 'goodSolution' });
-                super._postMessage('EXIT', { code: -2, from: 'generator' });
-                super.writeStorage(vscode.window.activeTextEditor!.document.fileName, {
-                    data: {
-                        solution: output,
-                        goodSolution: goodOutput,
-                        generator: input,
-                    },
-                    code: {
-                        solution: -2,
-                        goodSolution: -2,
-                        generator: -2,
-                    },
-                });
+            if (this._state[1].data.data !== this._state[2].data.data) {
+                this._state[1].status = Status.WA;
+                super._postMessage(StressTesterMessageType.STATUS, { id: 1, status: Status.WA });
+                this._saveState();
                 break;
             } else {
                 await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
-                super._postMessage('CLEAR');
+                super._postMessage(StressTesterMessageType.CLEAR);
             }
         }
+    }
+
+    private _stop() {
         this._stopFlag = true;
-    }
-
-    private _onSave(data: IStressTestData): void {
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (file) {
-            super.writeStorage(file, data);
+        for (let i = 0; i < 3; i++) {
+            this._state[i].process?.process.kill();
+            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RE });
         }
     }
 
-    private _onStop(): void {
-        for (const process of this._runningProcesses) {
-            process.process.kill();
-        }
-        this._stopFlag = true;
-
-        const file = vscode.window.activeTextEditor?.document.fileName;
-        if (file) {
-            super.writeStorage(file); // no counterexample found, don't need to save anything
-        }
-    }
-
-    private _onAdd({ stdin, acceptedOutput }: { stdin: string, acceptedOutput: string }): void {
+    private _add() {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
         }
 
-        const testcases: ITestcase[] = this.testcaseViewProvider.readStorage()[file]?.testcases ?? [];
-        testcases.push({
-            stdin,
+        this.testcaseViewProvider.nextTestcase({
+            stdin: this._state[0].data.data,
             stderr: '',
-            stdout: '',
+            stdout: this._state[1].data.data,
+            acceptedStdout: this._state[2].data.data,
             elapsed: 0,
-            status: 0,
-            acceptedOutput,
+            status: Status.WA,
             showTestcase: true,
+            toggled: false,
         });
-        this.testcaseViewProvider.writeStorage(file, { testcases });
-        this.testcaseViewProvider.loadSavedData();
     }
 
-    private _killAllProcesses(): void {
-        // Remove all listeners to avoid exiting 'EXIT' messages to webview because the states there would already been reset
-        for (const process of this._runningProcesses) {
-            process.process.removeAllListeners();
-            process.process.kill();
-        }
-        this._runningProcesses = [];
-    }
-
-    private async _doCompile(compileCommand: string, fileVariable: string, from: string, forceCompilation: boolean): Promise<number> {
-        const resolvedFile = resolveVariables(fileVariable);
-        if (!fs.existsSync(resolvedFile)) {
-            vscode.window.showErrorMessage(`${resolvedFile} does not exist!`);
-            super._postMessage('EXIT', { code: -1, from });
-            return -1;
+    private _saveState() {
+        const file = vscode.window.activeTextEditor?.document.fileName;
+        if (!file) {
+            return;
         }
 
-        if (compileProcess.has(resolvedFile)) {
-            super._postMessage('STATUS', { status: 'COMPILING', from });
-            const code = await compileProcess.get(resolvedFile)!.promise;
-            if (code) {
-                super._postMessage('EXIT', { code, elapsed: 0, from });
-            }
-            return code;
-        }
-        errorTerminal.get(resolvedFile)?.dispose();
-
-        const resolvedCommand = path.normalize(resolveVariables(compileCommand, false, resolvedFile));
-        const currentChecksum = await getFileChecksum(resolvedFile);
-        const [cachedChecksum, cachedCompileCommand] = lastCompiled.get(resolvedFile) ?? [-1, ''];
-        if (cachedChecksum === currentChecksum && cachedCompileCommand === resolvedCommand && !forceCompilation) {
-            super._postMessage('EXIT', { code: 0, from });
-            return 0; // avoid unnecessary recompilation
-        }
-
-        super._postMessage('STATUS', { status: 'COMPILING', from });
-        const process = new RunningProcess(resolvedCommand);
-        compileProcess.set(resolvedFile, process);
-        let compileError = '';
-        process.process.stderr.on('data', data => compileError += data.toString());
-        process.process.on('error', data => compileError += `${data.stack ?? 'Error encountered during compilation!'}\n\nWhen executing command "${resolvedCommand}`);
-
-        const code = await process.promise;
-        compileProcess.delete(resolvedFile);
-        if (!code) {
-            lastCompiled.set(resolvedFile, [currentChecksum, resolvedCommand]);
-            super._postMessage('EXIT', { code: 0, from });
-            return 0;
-        }
-
-        super._postMessage('EXIT', { code: -1, from });
-
-        const dummy = new DummyTerminal();
-        const terminal = vscode.window.createTerminal({
-            name: path.basename(resolvedFile),
-            pty: dummy,
-            iconPath: { id: 'zap' },
-            location: { viewColumn: vscode.ViewColumn.Beside }
-        });
-        errorTerminal.set(resolvedFile, terminal);
-
-        // FIXME remove this hack when https://github.com/microsoft/vscode/issues/87843 is resolved
-        await new Promise<void>(resolve => setTimeout(() => resolve(), 400));
-
-        dummy.write(compileError);
-        terminal.show(true);
-        return -1;
+        super.writeStorage(file, this._state.map<IData>(value => {
+            return {
+                data: value.data.data,
+                status: value.status,
+            };
+        }));
     }
 
     private _runFile(runCommand: string, fileVariable: string): RunningProcess {

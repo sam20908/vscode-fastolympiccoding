@@ -3,10 +3,9 @@ import * as fs from 'fs';
 import * as http from 'http'
 import * as vscode from 'vscode';
 
-import { resolveVariables } from './util/vscodeUtil';
 import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
 import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
-import { ITestcase } from './common';
+import { resolveVariables } from './util';
 
 let testcasesViewProvider: TestcasesViewProvider;
 let stressTesterViewProvider: StressTesterViewProvider;
@@ -44,10 +43,8 @@ function registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.clearData',
         () => {
-            const path = testcasesViewProvider.storagePath;
-            fs.writeFileSync(path, '{}');
-            testcasesViewProvider.loadSavedData();
-            stressTesterViewProvider.loadSavedData();
+            testcasesViewProvider.clearData();
+            stressTesterViewProvider.clearData();
         }
     ));
 
@@ -92,23 +89,8 @@ function listenForCompetitiveCompanion() {
                 res.end();
                 return;
             }
-            const data = JSON.parse(ccData);
-            const testcases: ITestcase[] = [];
-            const showStderrMessage = vscode.workspace.getConfiguration('fastolympiccoding').get('showTestcaseStderrMessage') as boolean;
-            for (const test of data['tests']) {
-                testcases.push({
-                    stdin: test['input'],
-                    stderr: showStderrMessage ? 'This is generated from Competitive Companion. Run this testcase to get rid of this message.' : '',
-                    stdout: '',
-                    elapsed: 0,
-                    status: 0,
-                    acceptedOutput: test['output'].split(' ').filter((word: string) => word !== '').join(' '),
-                    showTestcase: true,
-                });
-            }
-            testcasesViewProvider.writeStorage(file, { testcases });
-            testcasesViewProvider.loadSavedData();
 
+            testcasesViewProvider.addFromCompetitiveCompanion(JSON.parse(ccData));
             res.end();
         });
     });

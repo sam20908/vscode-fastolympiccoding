@@ -114,11 +114,6 @@
               }
             },
             "additionalProperties": false
-          },
-          "fastolympiccoding.forceCompilation": {
-            "type": "boolean",
-            "default": false,
-            "description": "Force compilation regardless of file changes."
           }
         }
       },
@@ -133,7 +128,7 @@
         }
       },
       {
-        "title": "Miscellaneous",
+        "title": "UI Display Limit",
         "properties": {
           "fastolympiccoding.maxDisplayCharacters": {
             "type": "integer",

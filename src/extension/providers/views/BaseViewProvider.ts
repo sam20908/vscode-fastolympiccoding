@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
+import { IMessage } from '../../../common';
+
 function getNonce(): string {
     const CHOICES = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let nonce = "";
@@ -10,20 +12,12 @@ function getNonce(): string {
     return nonce;
 }
 
-export interface IMessage {
-    type: string;
-    payload?: any;
-};
-
-export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
-    readonly storagePath: string;
+export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider {
     private _webview?: vscode.Webview = undefined;
 
-    constructor(public readonly view: string, private _context: vscode.ExtensionContext) {
-        this.storagePath = _context.globalStorageUri.fsPath;
-    }
+    constructor(public readonly view: string, private _context: vscode.ExtensionContext) { }
 
-    abstract onMessage(message: IMessage): void;
+    abstract onMessage(message: IMessage<T>): void;
     abstract onDispose(): void;
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -43,31 +37,20 @@ export abstract class BaseViewProvider implements vscode.WebviewViewProvider {
     }
 
     public readStorage(): any {
-        return this._readStorageJson()[this.view] ?? {};
+        return this._context.workspaceState.get<any>(this.view, {});
     }
 
-    public writeStorage(file: string, data?: any): void {
-        const fileData = this._readStorageJson();
-        fileData[this.view] = { ...fileData[this.view] };
-        if (!data) {
-            delete fileData[this.view][file];
-        } else {
-            fileData[this.view][file] = { ...fileData[this.view][file], ...data };
-        }
-        fs.writeFileSync(this.storagePath, JSON.stringify(fileData));
+    public writeStorage(file: string, data: any): void {
+        const fileData = this._context.workspaceState.get<any>(this.view, {});
+        this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
     }
 
-    protected _postMessage(type: string, payload?: any): void {
+    public clearData() {
+        this._context.workspaceState.update(this.view, undefined);
+    }
+
+    protected _postMessage(type: T, payload?: any): void {
         this._webview?.postMessage({ type, payload });
-    }
-
-    private _readStorageJson(): any {
-        try {
-            const content = fs.readFileSync(this.storagePath, { encoding: 'utf-8' });
-            return JSON.parse(content);
-        } catch (_) {
-            return {};
-        }
     }
 
     private _getWebviewContent(webview: vscode.Webview): string {
