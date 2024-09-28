@@ -195,9 +195,16 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "cross-env NODE_ENV=production node ./esbuild.js",
-    "build": "node ./esbuild.js",
-    "watch": "node ./esbuild.js --watch"
+    "vscode:prepublish": "npm run prod",
+    "build-js": "node ./esbuild.js",
+    "prod-js": "cross-env NODE_ENV=production node ./esbuild.js",
+    "watch-js": "node ./esbuild.js --watch",
+    "build-css": "tailwindcss -i ./src/webview/styles.css -o ./dist/styles.css",
+    "prod-css": "tailwindcss -i ./src/webview/styles.css -o ./dist/styles.css --minify",
+    "watch-css": "tailwindcss -i ./src/webview/styles.css -o ./dist/styles.css --watch",
+    "build": "npm-run-all --parallel build-*",
+    "prod": "npm-run-all --parallel prod-*",
+    "watch": "npm-run-all --parallel watch-*"
   },
   "author": "Sam Huang",
   "license": "MIT",
@@ -205,7 +212,9 @@
     "@types/node": "^20.12.12",
     "@types/vscode": "^1.89.0",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.21.2"
+    "esbuild": "^0.21.2",
+    "npm-run-all": "^4.1.5",
+    "tailwindcss": "^3.4.13"
   },
   "dependencies": {
     "@preact/signals": "^1.2.3",

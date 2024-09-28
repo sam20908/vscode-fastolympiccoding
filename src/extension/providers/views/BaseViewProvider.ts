@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 import { IMessage } from '../../../common';
@@ -57,7 +56,7 @@ export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider 
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const font = config.get('font')!;
         const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
-        const stylesUri = this._getUri(webview, ['dist', this.view, 'index.css']);
+        const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
         const nonce = getNonce();
 
         return `
