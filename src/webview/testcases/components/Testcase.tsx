@@ -9,8 +9,6 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
     const toggle = () => postMessage(TestcasesMessageType.TOGGLE, { id });
     const view = (stdin: string) => postMessage(TestcasesMessageType.VIEW, { id, stdin });
 
-    console.log(`rendering ${id}`);
-
     const newStdin = useSignal('');
     const statusItem = (() => {
         if (status === Status.CE)

@@ -108,8 +108,6 @@ window.addEventListener('message', (event: MessageEvent) => {
 export default function App() {
     useEffect(() => postMessage(TestcasesMessageType.LOADED), []);
 
-    console.log('rendering');
-
     return <>
         {state.map(value => <Testcase key={value.id} testcase={value} />)}
         <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postMessage(TestcasesMessageType.NEXT_TESTCASE)}>
