@@ -195,7 +195,7 @@ export async function compile<T>(file: string, compileCommand: string): Promise<
     const currentCommand = path.normalize(resolveVariables(compileCommand, false, file));
     const currentChecksum = await getFileChecksum(file);
     const [cachedChecksum, cachedCommand] = lastCompiled.get(file) ?? [-1, ''];
-    if (currentChecksum === cachedChecksum && currentCommand === cachedCommand && fs.existsSync(file)) {
+    if (currentChecksum === cachedChecksum && currentCommand === cachedCommand) {
         return 0; // avoid unnecessary recompilation
     }
 
