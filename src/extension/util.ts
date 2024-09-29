@@ -189,7 +189,7 @@ export async function viewTextInEditor(content: string): Promise<void> {
     vscode.window.showTextDocument(document);
 }
 
-export async function compile<T>(file: string, compileCommand: string): Promise<number> {
+export async function compile(file: string, compileCommand: string): Promise<number> {
     errorTerminal.get(file)?.dispose();
 
     const currentCommand = path.normalize(resolveVariables(compileCommand, false, file));
