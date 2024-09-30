@@ -35,22 +35,23 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 {
   "fastolympiccoding.runSettings": {
     ".cpp": {
-      "compileCommand": "g++ -std=gnu++20 -D_GLIBCXX_DEBUG ${file} -o ${fileDirname}/${fileBasenameNoExtension}${exeExtname} -fdiagnostics-color=always",
-      "runCommand": "${fileDirname}/${fileBasenameNoExtension}${exeExtname}"
+      "compileCommand": "g++ -std=gnu++20 -D_GLIBCXX_DEBUG ${path:${file}} -o ${path:${fileDirname}/${fileBasenameNoExtension}${exeExtname}} -fdiagnostics-color=always",
+      "runCommand": "${path:${fileDirname}/${fileBasenameNoExtension}${exeExtname}}"
     },
     ".py": {
-      "runCommand": "python ${file}"
+      "runCommand": "python ${path:${file}}"
     },
     ".java": {
-      "compileCommand": "javac ${file}",
+      "compileCommand": "javac ${path:${file}}",
       "runCommand": "java -cp ${fileDirname} ${fileBasenameNoExtension}"
     }
   }
 }
 ```
-- **Make sure the directory for your compiled file exists!**
-- We can use [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference) as well as `${exeExtname}` that resolves into `.exe` for Windows and an empty string for other platforms. 
-- Forward/backward slashes are automatically normalized when being executed.
+We can use the following variables in the syntax of `${...}`
+- Most of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference)
+- `${exeExtname}` returns `.exe` for Windows and an empty string for other platforms
+- `${path:*some value*}` turns \*some value\* into a valid path string for the current platform, which normalizes slashes and handles spaces
 
 ---
 

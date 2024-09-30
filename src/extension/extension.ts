@@ -52,7 +52,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
         'fastolympiccoding.insertFileTemplate',
         async () => {
             const config = vscode.workspace.getConfiguration('fastolympiccoding');
-            const baseDirectory = resolveVariables(config.get('fileTemplatesBaseDirectory')!);
+            const baseDirectory = await resolveVariables(config.get('fileTemplatesBaseDirectory')!);
             const files = fs.readdirSync(baseDirectory, { recursive: true, withFileTypes: true }).filter(value => value.isFile());
             const items = files.map(file => { return { label: file.name, description: file.path }; });
             const pickedFile = await vscode.window.showQuickPick(items, { title: 'Insert File Template' })

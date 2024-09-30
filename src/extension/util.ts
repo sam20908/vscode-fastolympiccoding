@@ -24,6 +24,26 @@ async function getFileChecksum(file: string): Promise<string> {
     });
 }
 
+async function getDefaultBuildTaskName() {
+    const tasks = await vscode.tasks.fetchTasks();
+    for (const task of tasks) {
+        if (task.group?.id === vscode.TaskGroup.Build.id && task.group?.isDefault) {
+            return task.name;
+        }
+    }
+    return '';
+}
+
+async function replaceAsync(string: string, regexp: RegExp, replacer: Function) {
+    const replacements = await Promise.all(Array.from(string.matchAll(regexp), match => replacer(...match.slice(1), match.index, match[0])));
+    let i = 0;
+    return string.replace(regexp, () => replacements[i++]);
+}
+
+function normalizePath(str: string) {
+    return path.normalize(os.platform() === 'win32' ? `"${str}"` : str.replace(/ /g, '\ '));
+}
+
 export interface ILanguageRunSettings {
     compileCommand?: string;
     runCommand: string;
@@ -35,8 +55,7 @@ export class RunningProcess {
     private _startTime: number = 0;
     private _endTime: number = 0;
 
-    constructor(commandString: string) {
-        const [command, ...args] = commandString.trim().split(' ');
+    constructor(command: string, ...args: string[]) {
         this.process = child_process.spawn(command, args);
         this.process.stdout.setEncoding('utf-8');
         this.process.stderr.setEncoding('utf-8');
@@ -141,7 +160,7 @@ export class DummyTerminal implements vscode.Pseudoterminal {
     }
 }
 
-export function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): string {
+export async function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): Promise<string> {
     const workspaces = vscode.workspace.workspaceFolders;
     const workspace = vscode.workspace.workspaceFolders?.at(0);
     const activeEditor = inContextOfFile ? undefined : vscode.window.activeTextEditor;
@@ -184,6 +203,7 @@ export function resolveVariables(string: string, recursive: boolean = false, inC
         string = string.replace(/\${env:(.*?)}/g, match => process.env[match] ?? '');
         string = string.replace(/\${config:(.*?)}/g, match => vscode.workspace.getConfiguration().get(match) ?? '');
         string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
+        string = await replaceAsync(string, /\${path:(.*?)}/g, async (match: string) => normalizePath(await resolveVariables(match, false, inContextOfFile)));
     } while (recursive && oldString !== string);
     return string;
 }
@@ -193,10 +213,16 @@ export async function viewTextInEditor(content: string): Promise<void> {
     vscode.window.showTextDocument(document);
 }
 
+export async function resolveCommandArgs(command: string, inContextOfFile?: string) {
+    const args = command.trim().split(' ');
+    return await Promise.all(args.map(arg => resolveVariables(arg, false, inContextOfFile)));
+}
+
 export async function compile(file: string, compileCommand: string): Promise<number> {
     errorTerminal.get(file)?.dispose();
 
-    const currentCommand = path.normalize(resolveVariables(compileCommand, false, file));
+    const resolvedArgs = await resolveCommandArgs(compileCommand, file);
+    const currentCommand = resolvedArgs.join(' ');
     const currentChecksum = await getFileChecksum(file);
     const [cachedChecksum, cachedCommand] = lastCompiled.get(file) ?? [-1, ''];
     if (currentChecksum === cachedChecksum && currentCommand === cachedCommand) {
@@ -206,7 +232,7 @@ export async function compile(file: string, compileCommand: string): Promise<num
     let promise = compilePromise.get(file);
     if (!promise) {
         promise = (async () => {
-            const process = new RunningProcess(currentCommand);
+            const process = new RunningProcess(resolvedArgs[0], ...resolvedArgs.slice(1));
             let err = '';
             process.process.stderr.on('data', data => err += data.toString());
             process.process.on('error', data => err += data.stack);

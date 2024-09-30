@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveVariables } from '../../util';
+import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveVariables, resolveCommandArgs } from '../../util';
 import { BaseViewProvider } from "./BaseViewProvider";
 import { TestcasesViewProvider } from './TestcasesViewProvider';
 import { IStressTesterMessage, Status, StressTesterMessageType } from '../../../common';
@@ -115,9 +115,9 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 return code;
             };
             const promises = [
-                compile(resolveVariables(config.get('generatorFile')!), runSettings.compileCommand).then(callback.bind(this, 0)),
-                compile(resolveVariables('${file}'), runSettings.compileCommand).then(callback.bind(this, 1)),
-                compile(resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand).then(callback.bind(this, 2)),
+                compile(await resolveVariables(config.get('generatorFile')!), runSettings.compileCommand).then(callback.bind(this, 0)),
+                compile(await resolveVariables('${file}'), runSettings.compileCommand).then(callback.bind(this, 1)),
+                compile(await resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand).then(callback.bind(this, 2)),
             ];
             const codes = await Promise.allSettled(promises);
 
@@ -140,16 +140,17 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[i].data.reset();
             }
 
-            this._state[1].process = this._runFile(runSettings.runCommand, '${file}');
+            const resolvedFileArg = await resolveCommandArgs(runSettings.runCommand);
+            this._state[1].process = await this._runFile(runSettings.runCommand, '${file}');
             this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
             this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
 
-            this._state[2].process = this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
+            this._state[2].process = await this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
             this._state[2].process.process.stdout.on('data', data => this._state[2].data.write(data, false));
             this._state[2].process.process.stdout.on('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
-            this._state[0].process = this._runFile(runSettings.runCommand, config.get('generatorFile')!);
+            this._state[0].process = await this._runFile(runSettings.runCommand, config.get('generatorFile')!);
             this._state[0].process.process.stdin.write(`${seed}\n`);
             this._state[0].process.process.stdout.on('data', data => {
                 this._state[0].data.write(data, false);
@@ -225,9 +226,9 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         }));
     }
 
-    private _runFile(runCommand: string, fileVariable: string): RunningProcess {
-        const resolvedFile = resolveVariables(fileVariable);
-        const resolvedCommand = path.normalize(resolveVariables(runCommand, false, resolvedFile));
-        return new RunningProcess(resolvedCommand);
+    private async _runFile(runCommand: string, fileVariable: string) {
+        const resolvedFile = await resolveVariables(fileVariable);
+        const resolvedArgs = await resolveCommandArgs(runCommand, resolvedFile);
+        return new RunningProcess(resolvedArgs[0], ...resolvedArgs.slice(1));
     }
 }
