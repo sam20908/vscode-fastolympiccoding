@@ -221,6 +221,11 @@ export async function resolveCommandArgs(command: string, inContextOfFile?: stri
 export async function compile(file: string, compileCommand: string): Promise<number> {
     errorTerminal.get(file)?.dispose();
 
+    if (!fs.existsSync(file)) {
+        vscode.window.showErrorMessage(`${file} does not exist`);
+        return 1;
+    }
+
     const resolvedArgs = await resolveCommandArgs(compileCommand, file);
     const currentCommand = resolvedArgs.join(' ');
     const currentChecksum = await getFileChecksum(file);
