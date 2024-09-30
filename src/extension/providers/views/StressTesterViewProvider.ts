@@ -140,7 +140,6 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[i].data.reset();
             }
 
-            const resolvedFileArg = await resolveCommandArgs(runSettings.runCommand);
             this._state[1].process = await this._runFile(runSettings.runCommand, '${file}');
             this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
             this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
