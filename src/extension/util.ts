@@ -178,11 +178,11 @@ export function resolveVariables(string: string, recursive: boolean = false, inC
         string = activeEditor ? string.replace(/\${lineNumber}/g, `${activeEditor.selection.start.line + 1}`) : string;
         string = activeEditor ? string.replace(/\${selectedText}/g, `${activeEditor.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end))}`) : string;
         string = string.replace(/\${execPath}/g, process.execPath);
-        string = string.replace(/\${defaultBuildTask}/g, await getDefaultBuildTaskName());
+        string = await replaceAsync(string, /\${defaultBuildTask}/g, async () => await getDefaultBuildTaskName()); // only get name when necessary because it's slow
         string = string.replace(/\${pathSeparator}/g, path.sep);
         string = string.replace(/\${\/}/g, path.sep);
-        string = string.replace(/\${env:(.*?)}/g, (match, _offset, _string) => process.env[match] ?? '');
-        string = string.replace(/\${config:(.*?)}/g, (match, _offset, _string) => vscode.workspace.getConfiguration().get(match) ?? '');
+        string = string.replace(/\${env:(.*?)}/g, match => process.env[match] ?? '');
+        string = string.replace(/\${config:(.*?)}/g, match => vscode.workspace.getConfiguration().get(match) ?? '');
         string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
     } while (recursive && oldString !== string);
     return string;
