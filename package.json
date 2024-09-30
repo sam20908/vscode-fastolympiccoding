@@ -152,13 +152,18 @@
         "category": "Fast Olympic Coding"
       },
       {
-        "command": "fastolympiccoding.stressTest",
-        "title": "Run Stress Test",
+        "command": "fastolympiccoding.stopAll",
+        "title": "Stop All Testcases",
         "category": "Fast Olympic Coding"
       },
       {
         "command": "fastolympiccoding.deleteAll",
         "title": "Delete All Testcases",
+        "category": "Fast Olympic Coding"
+      },
+      {
+        "command": "fastolympiccoding.stressTest",
+        "title": "Run Stress Test",
         "category": "Fast Olympic Coding"
       },
       {
@@ -179,14 +184,19 @@
         "when": "view.fastolympiccoding.testcases.visible"
       },
       {
-        "command": "fastolympiccoding.stressTest",
-        "key": "ctrl+alt+g",
-        "when": "view.fastolympiccoding.stress-tester.visible"
+        "command": "fastolympiccoding.stopAll",
+        "key": "ctrl+alt+k",
+        "when": "view.fastolympiccoding.testcases.visible"
       },
       {
         "command": "fastolympiccoding.deleteAll",
         "key": "ctrl+alt+d",
         "when": "view.fastolympiccoding.testcases.visible"
+      },
+      {
+        "command": "fastolympiccoding.stressTest",
+        "key": "ctrl+alt+g",
+        "when": "view.fastolympiccoding.stress-tester.visible"
       },
       {
         "command": "fastolympiccoding.insertFileTemplate",

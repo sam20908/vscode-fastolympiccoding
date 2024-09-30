@@ -21,8 +21,9 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 ### 💻 Keybinds
 
 - Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
-- Run stress test: `Ctrl+Alt+G`
+- Stop all testcases: `Ctrl+Alt+K`
 - Delete all testcases: `Ctrl+Alt+D`
+- Run stress test: `Ctrl+Alt+G`
 - Insert file template: `Ctrl+Alt+I`
 
 ### 📥 Installation: [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sam20908.vscode-fastolympiccoding)
