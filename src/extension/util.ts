@@ -162,6 +162,7 @@ export function resolveVariables(string: string, recursive: boolean = false, inC
     do {
         oldString = string;
 
+        string = workspace ? string.replace(/\${userHome}/g, os.homedir()) : string;
         string = workspace ? string.replace(/\${workspaceFolder}/g, workspace.uri.fsPath) : string;
         string = workspace ? string.replace(/\${workspaceFolderBasename}/g, workspace.name) : string;
         string = absoluteFilePath ? string.replace(/\${file}/g, absoluteFilePath) : string;
@@ -174,9 +175,12 @@ export function resolveVariables(string: string, recursive: boolean = false, inC
         string = parsedPath ? string.replace(/\${fileDirname}/g, parsedPath.dir) : string;
         string = parsedPath ? string.replace(/\${fileDirnameBasename}/g, parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1)) : string;
         string = parsedPath ? string.replace(/\${cwd}/g, parsedPath.dir) : string;
-        string = string.replace(/\${pathSeparator}/g, path.sep);
         string = activeEditor ? string.replace(/\${lineNumber}/g, `${activeEditor.selection.start.line + 1}`) : string;
         string = activeEditor ? string.replace(/\${selectedText}/g, `${activeEditor.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end))}`) : string;
+        string = string.replace(/\${execPath}/g, process.execPath);
+        string = string.replace(/\${defaultBuildTask}/g, await getDefaultBuildTaskName());
+        string = string.replace(/\${pathSeparator}/g, path.sep);
+        string = string.replace(/\${\/}/g, path.sep);
         string = string.replace(/\${env:(.*?)}/g, (match, _offset, _string) => process.env[match] ?? '');
         string = string.replace(/\${config:(.*?)}/g, (match, _offset, _string) => vscode.workspace.getConfiguration().get(match) ?? '');
         string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
