@@ -329,8 +329,21 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._saveState();
     }
 
-    private _view({ id, stdin }: { id: number, stdin: keyof ITestcase }) {
-        viewTextInEditor((this._state[id]![stdin] as Data).data);
+    private _view({ id, stdin }: { id: number, stdin: Stdio }) {
+        switch (stdin) {
+            case Stdio.STDIN:
+                viewTextInEditor(this._state[id]!['stdin'].data);
+                break;
+            case Stdio.STDERR:
+                viewTextInEditor(this._state[id]!['stderr'].data);
+                break;
+            case Stdio.STDOUT:
+                viewTextInEditor(this._state[id]!['stdout'].data);
+                break;
+            case Stdio.ACCEPTED_STDOUT:
+                viewTextInEditor(this._state[id]!['acceptedStdout'].data);
+                break;
+        }
     }
 
     private _stdin({ id, data }: { id: number, data: string }) {
