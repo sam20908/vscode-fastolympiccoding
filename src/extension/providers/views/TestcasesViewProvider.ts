@@ -241,6 +241,12 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         if (!file) {
             return;
         }
+
+        if (this._state[id]!.process) { // prevent process leak
+            this._stop(id);
+            await this._state[id]!.process.promise; // wait for status update to be sent
+        }
+
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.COMPILING });
 
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
