@@ -68,6 +68,7 @@ Required files (naming scheme configurable in settings):
 - `<name>.[ext]`: the solution to bruteforce against
 - `<name>__Good.[ext]`: the solution that outputs the correct answer
 - `<name>__Generator.[ext]`: to generate inputs for the other 2 files
+  - **The extension provides a 64-bit integer seed input for random number generators!**
 
 *Gif is recorded at 15FPS but the tester runs as low as 5ms between testcases!*
 
