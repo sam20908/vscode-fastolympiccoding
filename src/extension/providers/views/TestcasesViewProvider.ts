@@ -313,7 +313,6 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.stdin.reset();
         this._state[id]!.stdin.write(data, true);
         super._postMessage(TestcasesMessageType.STATUS, { id, status: this._state[id]!.status });
-        super._postMessage(TestcasesMessageType.STDIN, { id, data: this._state[id]!.stdin.shortData, stdio: Stdio.STDIN });
         this._saveState();
     }
 

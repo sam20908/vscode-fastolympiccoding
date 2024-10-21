@@ -75,8 +75,8 @@ export class Data {
     private static readonly INTERVAL: number = 30;
     private static _maxDisplayCharacters: number = vscode.workspace.getConfiguration('fastolympiccoding').get('maxDisplayCharacters')!;
     private static _maxDisplayLines: number = vscode.workspace.getConfiguration('fastolympiccoding').get('maxDisplayLines')!;
-    private _data: string = ''; // full output with combined adjacent whitespaces
-    private _shortData: string = ''; // shortened output without combined adjacent whitespaces
+    private _data: string = '';
+    private _shortDataLength: number = 0;
     private _pending: string = '';
     private _newlineCount: number = 0;
     private _shortened: boolean = false;
@@ -87,30 +87,19 @@ export class Data {
         return this._data;
     }
 
-    get shortData() {
-        return this._shortData;
-    }
-
     public write(data: string, last: boolean) {
         data = data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
 
-        for (let i = 0; i < data.length;) {
-            if (data[i] === ' ') {
-                this._data += ' ';
-                for (; i < data.length && data[i] === ' '; i++) { }
-            } else {
-                this._data += data[i++];
-            }
-        }
+        this._data += data;
         if (this._shortened) {
             return;
         }
 
-        for (let i = 0; i < data.length && this._shortData.length < Data._maxDisplayCharacters && this._newlineCount < Data._maxDisplayLines; i++) {
+        for (let i = 0; i < data.length && this._shortDataLength < Data._maxDisplayCharacters && this._newlineCount < Data._maxDisplayLines; i++) {
             if (data[i] === '\n') {
                 this._newlineCount++;
             }
-            this._shortData += data[i];
+            this._shortDataLength++;
             this._pending += data[i];
         }
 
@@ -120,8 +109,7 @@ export class Data {
         }
 
         this._lastWrite = now;
-        if (this._shortData.length === Data._maxDisplayCharacters || this._newlineCount === Data._maxDisplayLines) {
-            this._shortData += '...';
+        if (this._shortDataLength === Data._maxDisplayCharacters || this._newlineCount === Data._maxDisplayLines) {
             this._pending += '...';
             this._shortened = true;
         }
@@ -133,7 +121,7 @@ export class Data {
 
     public reset() {
         this._data = '';
-        this._shortData = '';
+        this._shortDataLength = 0;
         this._pending = '';
         this._newlineCount = 0;
         this._shortened = false;
