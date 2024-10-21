@@ -119,7 +119,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 stdin: test['input'],
                 stderr: showStderrMessage ? 'This is generated from Competitive Companion. Run this testcase to get rid of this message.' : '',
                 stdout: '',
-                acceptedStdout: test['output'].split(' ').filter((word: string) => word !== '').join(' '),
+                acceptedStdout: test['output'],
                 elapsed: 0,
                 status: Status.WA,
                 showTestcase: true,
