@@ -370,8 +370,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             
             const outFile = path.join(folder, `${id}.out`);
             const acOutFile = path.join(folder, `${id}.ac.out`);
-            fs.writeFileSync(outFile, this._state[id]!.stdout.data);
-            fs.writeFileSync(acOutFile, this._state[id]!.acceptedStdout.data);
+            fs.writeFileSync(outFile, `OUTPUT:\n\n${this._state[id]!.stdout.data}`);
+            fs.writeFileSync(acOutFile, `ACCEPTED OUTPUT:\n\n${this._state[id]!.acceptedStdout.data}`);
             vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(outFile), vscode.Uri.file(acOutFile), `Diff: Testcase #${id}`);
         });
     }
