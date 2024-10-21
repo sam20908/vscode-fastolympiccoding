@@ -62,6 +62,10 @@ Trailing whitespaces matter when comparing answers because some problems require
 
 ![LeetCode Gif](media/leetcode.gif)
 
+You can also view wrong answers in a diff view.
+
+![Diff AC Image](media/diff-ac.png)
+
 ---
 
 ### 👨🏻‍💻 Stress Tester

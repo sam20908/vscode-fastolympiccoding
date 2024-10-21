@@ -39,6 +39,7 @@ export enum TestcasesMessageType {
     DECLINE,
     VIEW,
     STDIN,
+    DIFF,
 }
 
 export enum StressTesterMessageType {

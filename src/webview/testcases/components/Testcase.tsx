@@ -79,9 +79,12 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                             </div>
                         }
                         {(status === Status.WA || status === Status.NA) &&
-                            <div class="flex flex-row">
-                                <div class="w-6 shrink-0"></div>
+                            <div class="flex flex-row gap-x-2">
+                                <div class="w-4 shrink-0"></div>
                                 <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => postMessage(TestcasesMessageType.ACCEPT, { id })}>accept</button>
+                                {(status === Status.WA) &&
+                                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage(TestcasesMessageType.DIFF, { id })}>view diff</button>
+                                }
                             </div>
                         }
                         {(status === Status.AC) &&

@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -72,6 +74,9 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 break;
             case TestcasesMessageType.STDIN:
                 this._stdin(payload);
+                break;
+            case TestcasesMessageType.DIFF:
+                this._diff(payload);
                 break;
         }
     }
@@ -354,5 +359,20 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     private _stdin({ id, data }: { id: number, data: string }) {
         this._state[id]!.process?.process.stdin.write(data);
         this._state[id]!.stdin.write(data, false);
+    }
+
+    private _diff({ id }: { id: number }) {
+        fs.mkdtemp(path.join(os.tmpdir(), 'fastolympiccoding-'), (err, folder) => {
+            if (err) {
+                vscode.window.showErrorMessage(`Diff failed to open: ${err}`);
+                return;
+            }
+            
+            const outFile = path.join(folder, `${id}.out`);
+            const acOutFile = path.join(folder, `${id}.ac.out`);
+            fs.writeFileSync(outFile, this._state[id]!.stdout.data);
+            fs.writeFileSync(acOutFile, this._state[id]!.acceptedStdout.data);
+            vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(outFile), vscode.Uri.file(acOutFile), `Diff: Testcase #${id}`);
+        });
     }
 }
