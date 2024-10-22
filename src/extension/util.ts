@@ -78,6 +78,7 @@ export class Data {
     private _data: string = '';
     private _shortDataLength: number = 0;
     private _pending: string = '';
+    private _spacesCount: number = 0;
     private _newlineCount: number = 0;
     private _shortened: boolean = false;
     private _lastWrite: number = -Infinity;
@@ -90,7 +91,19 @@ export class Data {
     public write(data: string, last: boolean) {
         data = data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
 
-        this._data += data;
+        // Competitive Companion removes trailing spaces for every line
+        for (let i = 0; i < data.length; i++) {
+            if (data[i] === ' ') {
+                this._spacesCount++;
+            } else if (data[i] === '\n') {
+                this._data += '\n';
+                this._spacesCount = 0;
+            } else {
+                this._data += ' '.repeat(this._spacesCount);
+                this._data += data[i];
+                this._spacesCount = 0;
+            }
+        }
         if (this._shortened) {
             return;
         }
