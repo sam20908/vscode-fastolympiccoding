@@ -1,7 +1,7 @@
-.vscode
-node_modules
-out/
-src/
-tsconfig.json
-esbuild.js
-dist/**/*.map
+**/*
+
+!.vscodeignore
+!LICENSE
+!media/icon.png
+!dist/**/*.js
+!dist/styles.css
