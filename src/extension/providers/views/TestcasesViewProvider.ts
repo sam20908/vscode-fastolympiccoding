@@ -363,7 +363,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     }
 
     private _diff({ id }: { id: number }) {
-        fs.mkdtemp(path.join(os.tmpdir(), 'fastolympiccoding-'), (err, folder) => {
+        fs.mkdtemp(fs.realpathSync(os.tmpdir()) + path.sep, (err, folder) => {
             if (err) {
                 vscode.window.showErrorMessage(`Diff failed to open: ${err}`);
                 return;
