@@ -323,7 +323,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
     private _accept(id: number) {
         if (!this._state[id]!.toggled) {
-            this._toggle(id);
+            this._state[id]!.showTestcase = false;
+            super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: false, toggled: false });
         }
         this._state[id]!.status = Status.AC;
         this._state[id]!.acceptedStdout.reset();
