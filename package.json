@@ -118,16 +118,6 @@
         }
       },
       {
-        "title": "Competitive Companion",
-        "properties": {
-          "fastolympiccoding.showTestcaseStderrMessage": {
-            "type": "boolean",
-            "default": true,
-            "description": "Explain in stderr the testcase came from Competitive Companion."
-          }
-        }
-      },
-      {
         "title": "UI Display Limit",
         "properties": {
           "fastolympiccoding.maxDisplayCharacters": {

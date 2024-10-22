@@ -113,11 +113,10 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     public addFromCompetitiveCompanion(data: any) {
         this.deleteAll();
 
-        const showStderrMessage = vscode.workspace.getConfiguration('fastolympiccoding').get('showTestcaseStderrMessage') as boolean;
         for (const test of data['tests']) {
             this.nextTestcase({
                 stdin: test['input'],
-                stderr: showStderrMessage ? 'This is generated from Competitive Companion. Run this testcase to get rid of this message.' : '',
+                stderr: '',
                 stdout: '',
                 acceptedStdout: test['output'],
                 elapsed: 0,
