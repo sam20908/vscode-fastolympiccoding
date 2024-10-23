@@ -90,14 +90,15 @@ function listenForCompetitiveCompanion() {
         req.on('end', async () => {
             res.end();
 
+            const file = vscode.window.activeTextEditor?.document.fileName;
             const jsonData = JSON.parse(ccData);
             const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
-            let fileTo = vscode.window.activeTextEditor?.document.fileName;
-            if (askForWhichFile) {
+            let fileTo = file;
+            if (askForWhichFile || !file) {
                 fileTo = await vscode.window.showInputBox({
                     title: `Testcases for "${jsonData.name}"`,
-                    placeHolder: 'File path here...',
-                    value: vscode.window.activeTextEditor?.document.fileName,
+                    placeHolder: 'Full file path here...',
+                    value: file ?? vscode.workspace.workspaceFolders?.at(0)?.uri.path,
                     prompt: 'The file to put the testcases onto',
                     ignoreFocusOut: true,
                 });
