@@ -58,8 +58,6 @@ We can use the following variables in the syntax of `${...}`
 
 ### 📜 Testcase Window
 
-Trailing whitespaces matter when comparing answers because some problems require an exact format of the answer.
-
 ![LeetCode Gif](media/leetcode.gif)
 
 You can also view wrong answers in a diff view.
