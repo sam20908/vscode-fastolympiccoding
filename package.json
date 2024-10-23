@@ -133,6 +133,16 @@
             "minimum": 3
           }
         }
+      },
+      {
+        "title": "Competitive Companion",
+        "properties": {
+          "fastolympiccoding.askForWhichFile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Ask which file the testcases will go to every time incoming testcases are detected."
+          }
+        }
       }
     ],
     "commands": [

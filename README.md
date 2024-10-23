@@ -95,6 +95,8 @@ Required files (naming scheme configurable in settings):
 
 ![Competitive Companion Gif](media/competitive_companion.gif)
 
+- You can make the extension put the testcases onto another file by modifying the behavior in the settings.
+
 ---
 
 ### © Attributions

@@ -87,16 +87,30 @@ function listenForCompetitiveCompanion() {
         let ccData = '';
         req.setEncoding('utf-8');
         req.on('data', data => ccData += data);
-        req.on('end', () => {
-            const file = vscode.window.activeTextEditor?.document.fileName;
-            if (!file) {
-                vscode.window.showWarningMessage("Received data from Competitive Companion, but no opened file to write data to...");
-                res.end();
+        req.on('end', async () => {
+            res.end();
+
+            const jsonData = JSON.parse(ccData);
+            const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
+            let fileTo = vscode.window.activeTextEditor?.document.fileName;
+            if (askForWhichFile) {
+                fileTo = await vscode.window.showInputBox({
+                    title: `Testcases for "${jsonData.name}"`,
+                    placeHolder: 'File path here...',
+                    value: vscode.window.activeTextEditor?.document.fileName,
+                    prompt: 'The file to put the testcases onto',
+                    ignoreFocusOut: true,
+                });
+            }
+            if (fileTo === undefined || fileTo === '') {
+                vscode.window.showWarningMessage("No file specified to write testcases onto");
                 return;
             }
+            fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
 
-            testcasesViewProvider.addFromCompetitiveCompanion(JSON.parse(ccData));
-            res.end();
+            testcasesViewProvider.addFromCompetitiveCompanion(fileTo, jsonData);
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(fileTo));
+            vscode.window.showTextDocument(document);
         });
     });
     server.listen(1327);
