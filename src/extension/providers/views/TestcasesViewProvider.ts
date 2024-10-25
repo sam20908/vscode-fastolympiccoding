@@ -99,9 +99,11 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
+            super._postMessage(TestcasesMessageType.TOGGLE_VIEW, { value: false });
             return;
         }
 
+        super._postMessage(TestcasesMessageType.TOGGLE_VIEW, { value: true });
         const storage = super.readStorage();
         const fileData = storage[file] ?? [];
         for (let i = 0; i < fileData.length; i++) {

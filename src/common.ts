@@ -26,6 +26,7 @@ export enum TestcasesMessageType {
     CLEAR_OUTPUTS,
     CLEAR_TESTCASES,
     DELETE_TESTCASE,
+    TOGGLE_VIEW,
     // sent by webview
     LOADED,
     NEXT_TESTCASE,

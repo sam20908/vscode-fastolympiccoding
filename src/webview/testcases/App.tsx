@@ -7,6 +7,7 @@ import { ITestcasesMessage, Status, Stdio, TestcasesMessageType } from '../../co
 import { deepSignal } from 'deepsignal';
 
 const state = deepSignal<IState[]>([]);
+const showView = signal(true);
 const idToIndex: number[] = [];
 
 window.addEventListener('message', (event: MessageEvent) => {
@@ -102,6 +103,12 @@ window.addEventListener('message', (event: MessageEvent) => {
                 state.splice(idToIndex[id], 1);
             }
             break;
+        case TestcasesMessageType.TOGGLE_VIEW:
+            {
+                const { value } = payload;
+                showView.value = value;
+            }
+            break;
     }
 });
 
@@ -109,9 +116,11 @@ export default function App() {
     useEffect(() => postMessage(TestcasesMessageType.LOADED), []);
 
     return <>
-        {state.map(value => <Testcase key={value.id} testcase={value} />)}
-        <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postMessage(TestcasesMessageType.NEXT_TESTCASE)}>
-            next test
-        </button>
+        {showView.value && <>{
+            state.map(value => <Testcase key={value.id} testcase={value} />)}
+            <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postMessage(TestcasesMessageType.NEXT_TESTCASE)}>
+                next test
+            </button>
+        </>}
     </>;
 }
