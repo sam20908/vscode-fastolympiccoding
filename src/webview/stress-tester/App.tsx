@@ -1,6 +1,6 @@
 import { deepSignal } from "deepsignal";
 import { useEffect } from "preact/hooks";
-import { batch, useComputed } from "@preact/signals";
+import { batch, signal, useComputed } from "@preact/signals";
 
 import FileData from './components/FileData';
 import { BLUE_COLOR, RED_COLOR } from "../common";
@@ -14,6 +14,7 @@ interface IState {
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 const state = deepSignal<IState[]>([{ data: '', status: Status.NA }, { data: '', status: Status.NA }, { data: '', status: Status.NA }]);
+const showView = signal(true);
 
 const postMessage = (type: StressTesterMessageType, payload?: any) => vscode.postMessage({ type, payload });
 const view = (id: number) => postMessage(StressTesterMessageType.VIEW, { id });
@@ -41,6 +42,12 @@ window.addEventListener('message', (event: MessageEvent) => {
                 }
             });
             break;
+        case StressTesterMessageType.TOGGLE_VIEW:
+            {
+                const { value } = payload;
+                showView.value = value;
+            }
+            break;
     }
 });
 
@@ -55,25 +62,27 @@ export default function App() {
         return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.RUN)}>stress test</button>;
     });
 
-    return <>
-        <div class="container mx-auto mb-6">
-            <div class="flex flex-row">
-                <div class="w-6 shrink-0"></div>
-                <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                    {button}
-                </div>
-            </div>
-        </div>
-        <FileData data={state[0].$data!} status={state[0].status} id={0} onView={view} />
-        <FileData data={state[1].$data!} status={state[1].status} id={1} onView={view} />
-        <FileData data={state[2].$data!} status={state[2].status} id={2} onView={view} />
-        {(state[1].status === Status.WA) &&
+    return <>{showView.value &&
+        <>
             <div class="container mx-auto mb-6">
                 <div class="flex flex-row">
                     <div class="w-6 shrink-0"></div>
-                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.ADD)}>add testcase</button>
+                    <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+                        {button}
+                    </div>
                 </div>
             </div>
-        }
-    </>;
+            <FileData data={state[0].$data!} status={state[0].status} id={0} onView={view} />
+            <FileData data={state[1].$data!} status={state[1].status} id={1} onView={view} />
+            <FileData data={state[2].$data!} status={state[2].status} id={2} onView={view} />
+            {(state[1].status === Status.WA) &&
+                <div class="container mx-auto mb-6">
+                    <div class="flex flex-row">
+                        <div class="w-6 shrink-0"></div>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.ADD)}>add testcase</button>
+                    </div>
+                </div>
+            }
+        </>
+    }</>;
 }

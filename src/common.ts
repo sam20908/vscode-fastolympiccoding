@@ -48,6 +48,7 @@ export enum StressTesterMessageType {
     STATUS,
     STDIO,
     CLEAR,
+    TOGGLE_VIEW,
     // sent by webview
     LOADED,
     RUN,

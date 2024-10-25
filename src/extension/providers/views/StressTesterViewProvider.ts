@@ -76,9 +76,11 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
+            super._postMessage(StressTesterMessageType.TOGGLE_VIEW, { value: false });
             return;
         }
 
+        super._postMessage(StressTesterMessageType.TOGGLE_VIEW, { value: true });
         const storage = super.readStorage();
         const state: IData[] = storage[file] ?? [];
         for (let i = 0; i < state.length; i++) {
