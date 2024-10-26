@@ -104,6 +104,9 @@ export class Data {
                 this._spacesCount = 0;
             }
         }
+        if (last && this._data.at(-1) !== '\n') {
+            this._data += '\n';
+        }
         if (this._shortened) {
             return;
         }
@@ -276,7 +279,7 @@ export async function compile(file: string, compileCommand: string): Promise<num
 export function getExitCodeStatus(code: number | null, stdout: string, acceptedStdout: string) {
     if (code === null || code)
         return Status.RE;
-    else if (acceptedStdout === '')
+    else if (acceptedStdout === '\n')
         return Status.NA;
     else if (stdout === acceptedStdout)
         return Status.AC;

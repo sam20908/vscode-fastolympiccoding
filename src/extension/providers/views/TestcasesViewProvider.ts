@@ -249,9 +249,9 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         newTestcase.stderr.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDERR });
         newTestcase.stdout.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDOUT });
         newTestcase.acceptedStdout.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.ACCEPTED_STDOUT });
-        newTestcase.stdin.write(testcase?.stdin ?? '', true);
-        newTestcase.stderr.write(testcase?.stderr ?? '', true);
-        newTestcase.stdout.write(testcase?.stdout ?? '', true);
+        newTestcase.stdin.write(testcase?.stdin ?? '', !!testcase);
+        newTestcase.stderr.write(testcase?.stderr ?? '', !!testcase);
+        newTestcase.stdout.write(testcase?.stdout ?? '', !!testcase);
         newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? '', true);
         super._postMessage(TestcasesMessageType.STATUS, { id, status: newTestcase.status, elapsed: newTestcase.elapsed });
         super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: newTestcase.showTestcase, toggled: newTestcase.toggled });
@@ -386,7 +386,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 vscode.window.showErrorMessage(`Diff failed to open: ${err}`);
                 return;
             }
-            
+
             const outFile = path.join(folder, `${id}.out`);
             const acOutFile = path.join(folder, `${id}.ac.out`);
             fs.writeFileSync(outFile, `OUTPUT:\n\n${this._state[id]!.stdout.data}`);
