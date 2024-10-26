@@ -1,7 +1,7 @@
 {
   "name": "vscode-fastolympiccoding",
   "displayName": "Fast Olympic Coding",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Competitive programming in VSCode made easy",
   "icon": "./media/icon.png",
   "categories": [
