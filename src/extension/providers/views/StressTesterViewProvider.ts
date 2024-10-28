@@ -184,7 +184,6 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 break;
             } else {
                 await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
-                super._postMessage(StressTesterMessageType.CLEAR);
             }
         }
         this._stop();
