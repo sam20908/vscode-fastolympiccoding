@@ -87,6 +87,12 @@
             "default": 5,
             "description": "Delay (in milliseconds) between each generated testcases",
             "minimum": 5
+          },
+          "fastolympiccoding.maxRuntime": {
+            "type": "integer",
+            "default": 120000,
+            "description": "Maximum time (in milliseconds) to let the stress tester run. Use -1 to let it run infinitely.",
+            "minimum": -1
           }
         }
       },

@@ -135,8 +135,10 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RUNNING });
         }
 
+        const maxRuntime = vscode.workspace.getConfiguration('fastolympiccoding').get<number>('maxRuntime', 1000);
+        const start = Date.now();
         this._stopFlag = false;
-        while (!this._stopFlag) {
+        while (!this._stopFlag && (maxRuntime === -1 || Date.now() - start <= maxRuntime)) {
             super._postMessage(StressTesterMessageType.CLEAR);
             for (let i = 0; i < 3; i++) {
                 this._state[i].data.reset();
@@ -185,6 +187,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 super._postMessage(StressTesterMessageType.CLEAR);
             }
         }
+        this._stop();
     }
 
     private _stop() {
