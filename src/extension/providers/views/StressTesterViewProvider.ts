@@ -37,7 +37,6 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 break;
             case StressTesterMessageType.STOP:
                 this._stop();
-                this._saveState();
                 break;
             case StressTesterMessageType.VIEW:
                 {
@@ -137,6 +136,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
 
         const maxRuntime = vscode.workspace.getConfiguration('fastolympiccoding').get<number>('maxRuntime', 1000);
         const start = Date.now();
+        let anyFailed = false;
         this._stopFlag = false;
         while (!this._stopFlag && (maxRuntime === -1 || Date.now() - start <= maxRuntime)) {
             super._postMessage(StressTesterMessageType.CLEAR);
@@ -161,49 +161,45 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[2].process!.process.stdin.write(data);
             });
             this._state[0].process.process.stdout.on('end', () => this._state[0].data.write('', true));
-            this._state[0].process.process.on('close', code => {
-                if (code === null) {
-                    // the generator crashed and cannot provide input, so stop both solutions to avoid stalling
-                    this._state[1].process!.process.kill('SIGUSR1');
-                    this._state[2].process!.process.kill('SIGUSR1');
+
+            for (let i = 0; i < 3; i++) {
+                // if any process fails then the other 2 should be gracefully closed
+                for (let j = 0; j < 3; j++) {
+                    if (j !== i) {
+                        this._state[i].process?.process.on('close', code => {
+                            if (code === null) {
+                                this._state[j].process!.process.kill('SIGUSR1');
+                            }
+                        });
+                    }
                 }
-            });
+            }
 
             const codes = await Promise.allSettled(this._state.map(value => value.process!.promise));
-            let anyFailed = false;
             for (let i = 0; i < codes.length; i++) {
                 const code = (codes[i] as PromiseFulfilledResult<number>).value;
-                let status = Status.NA;
-                if (code) {
-                    anyFailed = true;
-                    status = Status.RE;
-                    super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RE });
-                    this._state[i].process = undefined;
-                }
-                this._state[i].status = status;
+                anyFailed ||= !!code;
+                this._state[i].status = code === 0 ? Status.NA : Status.RE;
             }
-            if (anyFailed) {
+            if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
                 break;
             }
-            if (this._state[1].data.data !== this._state[2].data.data) {
-                this._state[1].status = Status.WA;
-                super._postMessage(StressTesterMessageType.STATUS, { id: 1, status: Status.WA });
-                this._saveState();
-                break;
-            } else {
-                await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
-            }
+            await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
         }
-        this._stop();
+
+        if (!anyFailed && this._state[1].data.data !== this._state[2].data.data) {
+            this._state[1].status = Status.WA;
+        }
+        for (let i = 0; i < 3; i++) {
+            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: this._state[i].status });
+        }
+        this._saveState();
     }
 
     private _stop() {
         this._stopFlag = true;
         for (let i = 0; i < 3; i++) {
-            if (this._state[i].process) {
-                this._state[i].process!.process.kill();
-                super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.NA });
-            }
+            this._state[i].process?.process.kill('SIGUSR1');
         }
     }
 
