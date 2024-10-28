@@ -70,7 +70,7 @@
         }
       },
       {
-        "title": "Stress Test",
+        "title": "Stress Tester",
         "properties": {
           "fastolympiccoding.goodSolutionFile": {
             "type": "string",
