@@ -161,6 +161,13 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[2].process!.process.stdin.write(data);
             });
             this._state[0].process.process.stdout.on('end', () => this._state[0].data.write('', true));
+            this._state[0].process.process.on('close', code => {
+                if (code === null) {
+                    // the generator crashed and cannot provide input, so stop both solutions to avoid stalling
+                    this._state[1].process!.process.kill('SIGUSR1');
+                    this._state[2].process!.process.kill('SIGUSR1');
+                }
+            });
 
             const codes = await Promise.allSettled(this._state.map(value => value.process!.promise));
             let anyFailed = false;
@@ -171,6 +178,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                     anyFailed = true;
                     status = Status.RE;
                     super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RE });
+                    this._state[i].process = undefined;
                 }
                 this._state[i].status = status;
             }
@@ -192,8 +200,10 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
     private _stop() {
         this._stopFlag = true;
         for (let i = 0; i < 3; i++) {
-            this._state[i].process?.process.kill();
-            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RE });
+            if (this._state[i].process) {
+                this._state[i].process!.process.kill();
+                super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.NA });
+            }
         }
     }
 

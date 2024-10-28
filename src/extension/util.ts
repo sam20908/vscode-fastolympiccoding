@@ -62,7 +62,10 @@ export class RunningProcess {
         this.promise = new Promise(resolve => {
             this.process.on('spawn', () => this._startTime = Date.now());
             this.process.on('error', () => resolve(-1));
-            this.process.on('close', code => { this._endTime = Date.now(); resolve(code ?? 1); });
+            this.process.on('close', (code, signal) => {
+                this._endTime = Date.now();
+                resolve(signal === 'SIGUSR1' ? 0 :  (code ?? 1));
+            });
         });
     }
 
