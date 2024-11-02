@@ -204,7 +204,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     }
 
     private _onError(id: number, data: Error) {
-        super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDERR });
+        super._postMessage(TestcasesMessageType.STDIO, { id, data: data.message, stdio: Stdio.STDERR });
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
         this._saveState();
     }
