@@ -145,15 +145,18 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             }
 
             this._state[1].process = await this._runFile(runSettings.runCommand, '${file}');
+            this._state[1].process.process.on('error', data => this._state[1].data.write(data.message, true));
             this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
             this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
 
             this._state[2].process = await this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
+            this._state[2].process.process.on('error', data => this._state[2].data.write(data.message, true));
             this._state[2].process.process.stdout.on('data', data => this._state[2].data.write(data, false));
             this._state[2].process.process.stdout.on('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
             this._state[0].process = await this._runFile(runSettings.runCommand, config.get('generatorFile')!);
+            this._state[0].process.process.on('error', data => this._state[0].data.write(data.message, true));
             this._state[0].process.process.stdin.write(`${seed}\n`);
             this._state[0].process.process.stdout.on('data', data => {
                 this._state[0].data.write(data, false);
