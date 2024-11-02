@@ -120,11 +120,10 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 compile(await resolveVariables('${file}'), runSettings.compileCommand).then(callback.bind(this, 1)),
                 compile(await resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand).then(callback.bind(this, 2)),
             ];
-            const codes = await Promise.allSettled(promises);
+            const codes = await Promise.all(promises);
 
             for (let i = 0; i < 3; i++) {
-                const code = (codes[i] as PromiseFulfilledResult<number>).value;
-                if (code) {
+                if (codes[i]) {
                     return;
                 }
             }
@@ -134,7 +133,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RUNNING });
         }
 
-        const maxRuntime = vscode.workspace.getConfiguration('fastolympiccoding').get<number>('maxRuntime', 1000);
+        const maxRuntime = vscode.workspace.getConfiguration('fastolympiccoding').get('maxRuntime')! as number;
         const start = Date.now();
         let anyFailed = false;
         this._stopFlag = false;
