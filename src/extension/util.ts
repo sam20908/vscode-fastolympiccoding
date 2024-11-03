@@ -64,7 +64,7 @@ export class RunningProcess {
             this.process.on('error', () => resolve(-1));
             this.process.on('close', (code, signal) => {
                 this._endTime = Date.now();
-                resolve(signal === 'SIGUSR1' ? 0 :  (code ?? 1));
+                resolve(signal === 'SIGUSR1' ? 0 : (code ?? 1));
             });
         });
     }
@@ -164,6 +164,13 @@ export class DummyTerminal implements vscode.Pseudoterminal {
 
     close(): void {
         this._closeEmitter.fire(0);
+    }
+}
+
+export class ReadonlyStringDocumentContentProvider implements vscode.TextDocumentContentProvider {
+    public static SCHEME: string = "fastolympiccoding";
+    provideTextDocumentContent(uri: vscode.Uri): vscode.ProviderResult<string> {
+        return uri.path;
     }
 }
 
