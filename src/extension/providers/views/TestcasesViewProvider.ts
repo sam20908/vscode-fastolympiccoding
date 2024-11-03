@@ -1,9 +1,7 @@
-import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveCommandArgs } from '../../util';
+import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveCommandArgs, ReadonlyStringDocumentContentProvider } from '../../util';
 import { BaseViewProvider } from './BaseViewProvider';
 import { ITestcasesMessage, Status, Stdio, TestcasesMessageType } from '../../../common';
 import { compile, getExitCodeStatus } from '../../util';
@@ -381,17 +379,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     }
 
     private _diff({ id }: { id: number }) {
-        fs.mkdtemp(fs.realpathSync(os.tmpdir()) + path.sep, (err, folder) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Diff failed to open: ${err}`);
-                return;
-            }
-
-            const outFile = path.join(folder, `${id}.out`);
-            const acOutFile = path.join(folder, `${id}.ac.out`);
-            fs.writeFileSync(outFile, `OUTPUT:\n\n${this._state[id]!.stdout.data}`);
-            fs.writeFileSync(acOutFile, `ACCEPTED OUTPUT:\n\n${this._state[id]!.acceptedStdout.data}`);
-            vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(outFile), vscode.Uri.file(acOutFile), `Diff: Testcase #${id}`);
-        });
+        const stdout = vscode.Uri.parse(`${ReadonlyStringDocumentContentProvider.SCHEME}:OUTPUT:\n\n${this._state[id]!.stdout.data}`);
+        const acStdout = vscode.Uri.parse(`${ReadonlyStringDocumentContentProvider.SCHEME}:ACCEPTED OUTPUT:\n\n${this._state[id]!.acceptedStdout.data}`);
+        vscode.commands.executeCommand('vscode.diff', stdout, acStdout, `Diff: Testcase #${id}`);
     }
 }

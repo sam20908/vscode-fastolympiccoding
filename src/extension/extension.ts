@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 
 import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
 import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
-import { resolveVariables } from './util';
+import { ReadonlyStringDocumentContentProvider, resolveVariables } from './util';
 
 let testcasesViewProvider: TestcasesViewProvider;
 let stressTesterViewProvider: StressTesterViewProvider;
@@ -21,6 +21,13 @@ function registerViewProviders(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
         stressTesterViewProvider.getViewId(),
         stressTesterViewProvider
+    ));
+}
+
+function registerDocumentContentProviders(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(
+        ReadonlyStringDocumentContentProvider.SCHEME,
+        new ReadonlyStringDocumentContentProvider()
     ));
 }
 
@@ -120,5 +127,6 @@ function listenForCompetitiveCompanion() {
 export function activate(context: vscode.ExtensionContext): void {
     registerViewProviders(context);
     registerCommands(context);
+    registerDocumentContentProviders(context);
     listenForCompetitiveCompanion();
 }
