@@ -381,6 +381,6 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     private _diff({ id }: { id: number }) {
         const stdout = vscode.Uri.parse(`${ReadonlyStringDocumentContentProvider.SCHEME}:OUTPUT:\n\n${this._state[id]!.stdout.data}`);
         const acStdout = vscode.Uri.parse(`${ReadonlyStringDocumentContentProvider.SCHEME}:ACCEPTED OUTPUT:\n\n${this._state[id]!.acceptedStdout.data}`);
-        vscode.commands.executeCommand('vscode.diff', stdout, acStdout, `Diff: Testcase #${id}`);
+        vscode.commands.executeCommand('vscode.diff', stdout, acStdout, `Diff: Testcase #${id + 1}`);
     }
 }
