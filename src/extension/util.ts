@@ -142,6 +142,7 @@ export class Data {
         this._data = '';
         this._shortDataLength = 0;
         this._pending = '';
+        this._spacesCount = 0;
         this._newlineCount = 0;
         this._shortened = false;
         this._lastWrite = -Infinity;
