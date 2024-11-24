@@ -111,35 +111,26 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     }
 
     public addFromCompetitiveCompanion(file: string, data: any) {
+        const testcases: ITestcase[] = data['tests'].map((test: any) => {
+            return {
+                stdin: test['input'],
+                stderr: '',
+                stdout: '',
+                acceptedStdout: test['output'],
+                elapsed: 0,
+                status: Status.WA,
+                showTestcase: true,
+                toggled: false,
+            };
+        });
+
         if (file === vscode.window.activeTextEditor?.document.fileName) {
             this.deleteAll();
 
-            for (const test of data['tests']) {
-                this.nextTestcase({
-                    stdin: test['input'],
-                    stderr: '',
-                    stdout: '',
-                    acceptedStdout: test['output'],
-                    elapsed: 0,
-                    status: Status.WA,
-                    showTestcase: true,
-                    toggled: false,
-                });
+            for (const testcase of testcases) {
+                this.nextTestcase(testcase);
             }
         } else {
-            const testcases: ITestcase[] = [];
-            for (const test of data.tests) {
-                testcases.push({
-                    stdin: test['input'],
-                    stderr: '',
-                    stdout: '',
-                    acceptedStdout: test['output'],
-                    elapsed: 0,
-                    status: Status.WA,
-                    showTestcase: true,
-                    toggled: false,
-                });
-            }
             super.writeStorage(file, testcases);
         }
     }

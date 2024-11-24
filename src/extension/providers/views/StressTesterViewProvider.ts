@@ -39,10 +39,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._stop();
                 break;
             case StressTesterMessageType.VIEW:
-                {
-                    const { id } = payload;
-                    viewTextInEditor(this._state[id].data.data);
-                }
+                viewTextInEditor(this._state[payload.id].data.data);
                 break;
             case StressTesterMessageType.ADD:
                 this._add();
