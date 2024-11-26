@@ -178,26 +178,6 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         }
     }
 
-    private _onClose(id: number, process: RunningProcess, exitCode: number | null) {
-        const status = getExitCodeStatus(exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
-        const elapsed = process.elapsed;
-        super._postMessage(TestcasesMessageType.STATUS, { id, status, elapsed })
-        this._state[id]!.process = undefined;
-        this._state[id]!.status = status;
-        this._state[id]!.elapsed = elapsed;
-        if (!this._state[id]!.toggled) {
-            this._state[id]!.showTestcase = status !== Status.AC;
-            super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
-        }
-        this._saveState();
-    }
-
-    private _onError(id: number, data: Error) {
-        super._postMessage(TestcasesMessageType.STDIO, { id, data: data.message, stdio: Stdio.STDERR });
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
-        this._saveState();
-    }
-
     private _saveState() {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
@@ -290,8 +270,24 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         process.process.stdout.on('data', (data: string) => this._state[id]!.stdout.write(data, false));
         process.process.stderr.on('end', () => this._state[id]!.stderr.write('', true));
         process.process.stdout.on('end', () => this._state[id]!.stdout.write('', true));
-        process.process.on('error', this._onError.bind(this, id));
-        process.process.on('close', this._onClose.bind(this, id, process));
+        process.process.on('error', (data: Error) => {
+            super._postMessage(TestcasesMessageType.STDIO, { id, data: data.message, stdio: Stdio.STDERR });
+            super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
+            this._saveState();
+        });
+        process.process.on('close', (exitCode: number | null) => {
+            const status = getExitCodeStatus(exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
+            const elapsed = process.elapsed;
+            super._postMessage(TestcasesMessageType.STATUS, { id, status, elapsed })
+            this._state[id]!.process = undefined;
+            this._state[id]!.status = status;
+            this._state[id]!.elapsed = elapsed;
+            if (!this._state[id]!.toggled) {
+                this._state[id]!.showTestcase = status !== Status.AC;
+                super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
+            }
+            this._saveState();
+        })
     }
 
     private _stop(id: number) {
