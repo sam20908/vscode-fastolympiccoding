@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveCommandArgs, ReadonlyStringDocumentContentProvider } from '../../util';
+import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveCommandArgs, ReadonlyStringDocumentContentProvider, resolveVariables } from '../../util';
 import { BaseViewProvider } from './BaseViewProvider';
 import { ITestcasesMessage, Status, Stdio, TestcasesMessageType } from '../../../common';
 import { compile, getExitCodeStatus } from '../../util';
@@ -260,7 +260,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RUNNING });
 
         const resolvedArgs = await resolveCommandArgs(runSettings.runCommand);
-        const process = new RunningProcess(resolvedArgs[0], ...resolvedArgs.slice(1));
+        const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const process = new RunningProcess(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
         this._state[id]!.process = process;
         this._state[id]!.stderr.reset();
         this._state[id]!.stdout.reset();

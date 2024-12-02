@@ -112,6 +112,10 @@
                   "runCommand": {
                     "type": "string",
                     "description": "Command to run the solution."
+                  },
+                  "currentWorkingDirectory": {
+                    "type": "string",
+                    "description": "Current working directory to set for the solution."
                   }
                 },
                 "required": [

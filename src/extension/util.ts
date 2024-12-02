@@ -47,6 +47,7 @@ function normalizePath(str: string) {
 export interface ILanguageRunSettings {
     compileCommand?: string;
     runCommand: string;
+    currentWorkingDirectory?: string;
 }
 
 export class RunningProcess {
@@ -55,8 +56,8 @@ export class RunningProcess {
     private _startTime: number = 0;
     private _endTime: number = 0;
 
-    constructor(command: string, ...args: string[]) {
-        this.process = child_process.spawn(command, args);
+    constructor(command: string, cwd?: string, ...args: string[]) {
+        this.process = child_process.spawn(command, args, { cwd });
         this.process.stdout.setEncoding('utf-8');
         this.process.stderr.setEncoding('utf-8');
         this.promise = new Promise(resolve => {
@@ -252,7 +253,7 @@ export async function compile(file: string, compileCommand: string): Promise<num
     let promise = compilePromise.get(file);
     if (!promise) {
         promise = (async () => {
-            const process = new RunningProcess(resolvedArgs[0], ...resolvedArgs.slice(1));
+            const process = new RunningProcess(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
             let err = '';
             process.process.stderr.on('data', data => err += data.toString());
             process.process.on('error', data => err += data.stack);

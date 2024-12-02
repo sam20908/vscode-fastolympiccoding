@@ -130,7 +130,8 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RUNNING });
         }
 
-        const maxRuntime = vscode.workspace.getConfiguration('fastolympiccoding').get('maxRuntime')! as number;
+        const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const maxRuntime = config.get('maxRuntime')! as number;
         const start = Date.now();
         let anyFailed = false;
         this._stopFlag = false;
@@ -140,18 +141,18 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[i].data.reset();
             }
 
-            this._state[1].process = await this._runFile(runSettings.runCommand, '${file}');
+            this._state[1].process = await this._runFile(runSettings.runCommand, '${file}', cwd);
             this._state[1].process.process.on('error', data => this._state[1].data.write(data.message, true));
             this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
             this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
 
-            this._state[2].process = await this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!);
+            this._state[2].process = await this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!, cwd);
             this._state[2].process.process.on('error', data => this._state[2].data.write(data.message, true));
             this._state[2].process.process.stdout.on('data', data => this._state[2].data.write(data, false));
             this._state[2].process.process.stdout.on('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
-            this._state[0].process = await this._runFile(runSettings.runCommand, config.get('generatorFile')!);
+            this._state[0].process = await this._runFile(runSettings.runCommand, config.get('generatorFile')!, cwd);
             this._state[0].process.process.on('error', data => this._state[0].data.write(data.message, true));
             this._state[0].process.process.stdin.write(`${seed}\n`);
             this._state[0].process.process.stdout.on('data', data => {
@@ -234,9 +235,9 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         }));
     }
 
-    private async _runFile(runCommand: string, fileVariable: string) {
+    private async _runFile(runCommand: string, fileVariable: string, cwd?: string) {
         const resolvedFile = await resolveVariables(fileVariable);
         const resolvedArgs = await resolveCommandArgs(runCommand, resolvedFile);
-        return new RunningProcess(resolvedArgs[0], ...resolvedArgs.slice(1));
+        return new RunningProcess(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
     }
 }
