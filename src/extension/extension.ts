@@ -102,16 +102,31 @@ function listenForCompetitiveCompanion() {
             const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
             let fileTo = file;
             if (askForWhichFile || !file) {
-                fileTo = await vscode.window.showInputBox({
-                    title: `Testcases for "${jsonData.name}"`,
-                    placeHolder: 'Full file path here...',
-                    value: file ?? vscode.workspace.workspaceFolders?.at(0)?.uri.path,
-                    prompt: 'The file to put the testcases onto',
-                    ignoreFocusOut: true,
+                const items = (vscode.workspace.workspaceFolders ?
+                    fs.readdirSync(vscode.workspace.workspaceFolders[0].uri.path, { recursive: true, withFileTypes: true }).filter(value => value.isFile()) :
+                    []).map(file => ({ label: path.join(file.path, file.name) }));
+                const pick = vscode.window.createQuickPick();
+                pick.title = `Testcases for "${jsonData.name}"`;
+                pick.placeholder = 'Full file path to put testcases onto';
+                pick.value = file ?? vscode.workspace.workspaceFolders?.at(0)?.uri.path ?? '';
+                pick.ignoreFocusOut = true;
+                pick.onDidChangeValue(label => {
+                    if (!items.some(item => item.label === label)) {
+                        pick.items = [{ label }, ...items];
+                    }
                 });
+                pick.show();
+                fileTo = await new Promise(resolve => pick.onDidAccept(() => {
+                    resolve(pick.selectedItems[0].label);
+                    pick.hide();
+                }));
             }
             if (fileTo === undefined || fileTo === '') {
                 vscode.window.showWarningMessage("No file specified to write testcases onto");
+                return;
+            }
+            if (!fs.lstatSync(fileTo).isFile()) {
+                vscode.window.showErrorMessage(`${fileTo} is not a file!`);
                 return;
             }
             fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
