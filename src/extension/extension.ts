@@ -102,9 +102,7 @@ function listenForCompetitiveCompanion() {
             const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
             let fileTo = file;
             if (askForWhichFile || !file) {
-                const items = (vscode.workspace.workspaceFolders ?
-                    fs.readdirSync(vscode.workspace.workspaceFolders[0].uri.path, { recursive: true, withFileTypes: true }).filter(value => value.isFile()) :
-                    []).map(file => ({ label: path.join(file.path, file.name) }));
+                const items = (await vscode.workspace.findFiles('**/*')).map(file => ({ label: file.path }));
                 const pick = vscode.window.createQuickPick();
                 pick.title = `Testcases for "${jsonData.name}"`;
                 pick.placeholder = 'Full file path to put testcases onto';
