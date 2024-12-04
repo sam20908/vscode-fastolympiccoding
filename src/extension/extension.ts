@@ -117,7 +117,7 @@ function listenForCompetitiveCompanion() {
                     const pick = vscode.window.createQuickPick();
                     pick.title = `Testcases for "${problemDatas[i].name}"`;
                     pick.placeholder = 'Full file path to put testcases onto';
-                    pick.value = fileTo ?? '';
+                    pick.value = fileTo ?? vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
                     pick.ignoreFocusOut = true;
                     pick.onDidChangeValue(label => {
                         if (!files.some(item => item.label === label)) {
