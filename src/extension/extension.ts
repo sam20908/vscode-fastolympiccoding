@@ -137,7 +137,7 @@ function listenForCompetitiveCompanion() {
                     vscode.window.showWarningMessage(`No file to write testcases for "${problemDatas[i].name}"`);
                     continue;
                 }
-                if (!fs.lstatSync(fileTo).isFile()) {
+                if (fs.existsSync(fileTo) && !fs.lstatSync(fileTo).isFile()) {
                     vscode.window.showWarningMessage(`${fileTo} is not a file! Skipped writing testcases for "${problemDatas[i].name}"`);
                     continue;
                 }
