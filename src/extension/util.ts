@@ -61,17 +61,20 @@ export class RunningProcess {
         this.process.stdout.setEncoding('utf-8');
         this.process.stderr.setEncoding('utf-8');
         this.promise = new Promise(resolve => {
-            this.process.on('spawn', () => this._startTime = Date.now());
-            this.process.on('error', () => resolve(-1));
+            this.process.on('spawn', () => this._startTime = performance.now());
+            this.process.on('error', () => {
+                this._startTime = performance.now();
+                resolve(-1);
+            });
             this.process.on('close', (code, signal) => {
-                this._endTime = Date.now();
+                this._endTime = performance.now();
                 resolve(signal === 'SIGUSR1' ? 0 : (code ?? 1));
             });
         });
     }
 
     get elapsed(): number {
-        return this._endTime - this._startTime;
+        return Math.round(this._endTime - this._startTime);
     }
 };
 
