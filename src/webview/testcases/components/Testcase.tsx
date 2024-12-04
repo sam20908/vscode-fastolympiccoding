@@ -34,6 +34,10 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => view(Stdio.STDOUT)}>
             <path fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
         </svg>;
+    const acStdoutArrowButton =
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => view(Stdio.ACCEPTED_STDOUT)}>
+            <path fill={GREEN_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
+        </svg>
 
 
     switch (status) {
@@ -72,9 +76,7 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                         </div>}
                         {(status === Status.WA) &&
                             <div class="flex flex-row">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => view(Stdio.ACCEPTED_STDOUT)}>
-                                    <path fill={GREEN_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-                                </svg>
+                                {acStdoutArrowButton}
                                 <span class="whitespace-pre-line text-base display-font">{acceptedStdout}</span>
                             </div>
                         }
@@ -141,15 +143,22 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                     <div class="w-6 shrink-0"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
-                            const data = stdin.value;
-                            stdin.value = ''; // the extension host will send the shortened version
-                            postMessage(TestcasesMessageType.SAVE, { id, data });
+                            const newStdin = stdin.value;
+                            const newAcceptedStdout = acceptedStdout.value;
+                            // the extension host will send shortened version of both of these
+                            stdin.value = '';
+                            acceptedStdout.value = '';
+                            postMessage(TestcasesMessageType.SAVE, { id, newStdin, newAcceptedStdout });
                         }}>save</button>
                     </div>
                 </div>
                 <div class="flex flex-row">
-                    <div class="w-6 shrink-0"></div>
+                    {stdinArrowButton}
                     <AutoresizeTextarea input={stdin} onKeyUp={() => { }} />
+                </div>
+                <div class="flex flex-row">
+                    {acStdoutArrowButton}
+                    <AutoresizeTextarea input={acceptedStdout} onKeyUp={() => { }} />
                 </div>
             </div>;
         default:

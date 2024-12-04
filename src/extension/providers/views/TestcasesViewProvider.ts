@@ -318,10 +318,19 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._saveState();
     }
 
-    private _save({ id, data }: { id: number, data: string }) {
+    private _save({ id, newStdin, newAcceptedStdout }: { id: number, newStdin: string, newAcceptedStdout: string }) {
         this._state[id]!.stdin.reset();
-        this._state[id]!.stdin.write(data, true);
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: this._state[id]!.status });
+        this._state[id]!.acceptedStdout.reset();
+        this._state[id]!.stdin.write(newStdin, true);
+        this._state[id]!.acceptedStdout.write(newAcceptedStdout, true);
+        const stateStatus = this._state[id]!.status;
+        const status = newAcceptedStdout && stateStatus !== Status.RE && stateStatus != Status.CE ? getExitCodeStatus(0, this._state[id]!.stdout.data, newAcceptedStdout) : stateStatus;
+        this._state[id]!.status = status;
+        super._postMessage(TestcasesMessageType.STATUS, { id, status });
+        if (!this._state[id]!.toggled) {
+            this._state[id]!.showTestcase = status !== Status.AC;
+            super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
+        }
         this._saveState();
     }
 
