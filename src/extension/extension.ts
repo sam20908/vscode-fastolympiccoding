@@ -138,7 +138,7 @@ function listenForCompetitiveCompanion() {
                     continue;
                 }
                 if (!fs.lstatSync(fileTo).isFile()) {
-                    vscode.window.showErrorMessage(`${fileTo} is not a file!`);
+                    vscode.window.showWarningMessage(`${fileTo} is not a file! Skipped writing testcases for "${problemDatas[i].name}"`);
                     continue;
                 }
                 fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
