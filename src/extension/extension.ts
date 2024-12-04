@@ -85,6 +85,8 @@ function registerCommands(context: vscode.ExtensionContext): void {
 }
 
 function listenForCompetitiveCompanion() {
+    let problemDatas: any[] = [];
+    let cnt = 0;
     const server = http.createServer((req, res) => {
         if (req.method !== 'POST') {
             res.end();
@@ -95,43 +97,57 @@ function listenForCompetitiveCompanion() {
         req.setEncoding('utf-8');
         req.on('data', data => ccData += data);
         req.on('end', async () => {
+            problemDatas.push(JSON.parse(ccData));
             res.end();
+            vscode.window.showInformationMessage(`Received data for "${problemDatas.at(-1).name}"`);
+
+            if (cnt === 0) {
+                cnt = problemDatas[0].batch.size;
+            }
+            if (--cnt > 0) {
+                return;
+            }
 
             const file = vscode.window.activeTextEditor?.document.fileName;
-            const jsonData = JSON.parse(ccData);
             const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
-            let fileTo = file;
-            if (askForWhichFile || !file) {
-                const items = (await vscode.workspace.findFiles('**/*')).map(file => ({ label: file.path }));
-                const pick = vscode.window.createQuickPick();
-                pick.title = `Testcases for "${jsonData.name}"`;
-                pick.placeholder = 'Full file path to put testcases onto';
-                pick.value = file ?? vscode.workspace.workspaceFolders?.at(0)?.uri.path ?? '';
-                pick.ignoreFocusOut = true;
-                pick.onDidChangeValue(label => {
-                    if (!items.some(item => item.label === label)) {
-                        pick.items = [{ label }, ...items];
-                    }
-                });
-                pick.show();
-                fileTo = await new Promise(resolve => pick.onDidAccept(() => {
-                    resolve(pick.selectedItems[0].label);
-                    pick.hide();
-                }));
-            }
-            if (fileTo === undefined || fileTo === '') {
-                vscode.window.showWarningMessage("No file specified to write testcases onto");
-                return;
-            }
-            if (!fs.lstatSync(fileTo).isFile()) {
-                vscode.window.showErrorMessage(`${fileTo} is not a file!`);
-                return;
-            }
-            fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
+            const files = (await vscode.workspace.findFiles('**/*')).map(file => ({ label: file.path }));
+            for (let i = 0; i < problemDatas.length; i++) {
+                let fileTo = problemDatas[i].batch.size > 1 ? vscode.workspace.workspaceFolders?.at(0)?.uri.path : file;
+                if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
+                    const pick = vscode.window.createQuickPick();
+                    pick.title = `Testcases for "${problemDatas[i].name}"`;
+                    pick.placeholder = 'Full file path to put testcases onto';
+                    pick.value = fileTo ?? '';
+                    pick.ignoreFocusOut = true;
+                    pick.onDidChangeValue(label => {
+                        if (!files.some(item => item.label === label)) {
+                            pick.items = [{ label }, ...files];
+                        }
+                    });
+                    pick.show();
+                    fileTo = await new Promise(resolve => {
+                        pick.onDidAccept(() => {
+                            resolve(pick.selectedItems[0].label);
+                            pick.hide();
+                        });
+                        pick.onDidHide(() => resolve(undefined));
+                    });
+                }
+                if (fileTo === undefined || fileTo === '') {
+                    vscode.window.showWarningMessage(`No file to write testcases for "${problemDatas[i].name}"`);
+                    continue;
+                }
+                if (!fs.lstatSync(fileTo).isFile()) {
+                    vscode.window.showErrorMessage(`${fileTo} is not a file!`);
+                    continue;
+                }
+                fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
 
-            testcasesViewProvider.addFromCompetitiveCompanion(fileTo, jsonData);
-            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(fileTo));
-            vscode.window.showTextDocument(document);
+                testcasesViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
+                const document = await vscode.workspace.openTextDocument(vscode.Uri.file(fileTo));
+                await vscode.window.showTextDocument(document);
+            }
+            problemDatas = [];
         });
     });
     server.listen(1327);
