@@ -67,18 +67,19 @@ We can use the following variables in the syntax of `${...}`
 
 ### 📜 Testcase Window
 
-- Accepting the testcases' answers
-- Show/hide the testcases' details
-- View full text of visually shortened stdin/stderr/stdout/accepted stdout by clicking on their corresponding arrows
+#### 📄 Other features include...
+- Show/hide the testcase details
+- Shortened details of testcases for huge outputs
+  - **View full text by clicking on their corresponding arrows**
+- Color supported output for compile errors
 - ... and so much more!
 
 <img src="media/demo_2.gif" alt="2nd Demo Gif"/>
 
-You can also view wrong answers in a diff view.
 
-![Diff AC Image](media/diff-ac.png)
-
-
+| ![Diff View Image](media/diff-ac.png) |
+| :-----------------------------------: |
+| *View wrong answers in a diff view!*  |
 
 ---
 
@@ -90,38 +91,34 @@ Required files (naming scheme can be configured in settings):
 - `<name>__Generator.[ext]`: to generate inputs for the other 2 files
   - **The extension provides a 64-bit integer seed input for random number generators!**
 
-<figure>
-  <img src="media/stress_tester.gif" alt="Stress Tester Gif"/>
-  <figcaption>Stress Tester was able to find an counterexample due to an integer overflow bug!</figcaption>
-</figure>
+|                   ![Stress Tester Gif](media/stress_tester.gif)                    |
+| :--------------------------------------------------------------------------------: |
+| *Stress Tester was able to find an counterexample due to an integer overflow bug!* |
 
 ---
 
 ### 👜 Inserting Prewritten Code
 
-- Add the root directory of the templates to the settings
+- **Add the root directory of the templates to the settings**
 - Remove trailing newlines for fold to work (folding is optional via settings)
 
-<figure>
-  <img src="media/insert_file_template.gif" alt="Insert File Template Gif"/>
-  <figcaption>Adding a tree reroot DP template without switching files.</figcaption>
-</figure>
+| ![Insert File Template Gif](media/insert_file_template.gif) |
+| :---------------------------------------------------------: |
+| *Adding a tree reroot DP template without switching files*  |
 
 ---
 
 ### 🛜 Competitive Companion
 
-- **NOTE: Open the extension to start the listening process!**
+- **Open the extension to start the listening process!**
 
-<figure>
-  <img src="media/problem_parsing.gif" alt="Problem Parsing Gif"/>
-  <figcaption>Using Competitive Companion to parse a CodeForces problem.</figcaption>
-</figure>
+|      ![Problem Parsing Gif](media/problem_parsing.gif)      |
+| :---------------------------------------------------------: |
+| *Using Competitive Companion to parse a CodeForces problem* |
 
-<figure>
-  <img src="media/contest_parsing.gif" alt="Contest Parsing Gif"/>
-  <figcaption>We can parse an entire CodeForces Div.3 Contest!</figcaption>
-</figure>
+| ![Contest Parsing Gif](media/contest_parsing.gif)  |
+| :------------------------------------------------: |
+| *We can parse an entire CodeForces Div.3 Contest!* |
 
 ---
 
