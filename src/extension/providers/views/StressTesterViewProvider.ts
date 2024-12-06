@@ -42,7 +42,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 viewTextInEditor(this._state[payload.id].data.data);
                 break;
             case StressTesterMessageType.ADD:
-                this._add();
+                this._add(payload);
                 break;
         }
     }
@@ -203,19 +203,28 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         }
     }
 
-    private _add() {
+    private async _add({ id }: { id: number }) {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
         }
 
-        this.testcaseViewProvider.nextTestcase({
+        let resolvedFile;
+        if (id == 0) {
+            resolvedFile = await resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('generatorFile')!);
+        } else if (id == 1) {
+            resolvedFile = file;
+        } else {
+            resolvedFile = await resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('goodSolutionFile')!);
+        }
+
+        this.testcaseViewProvider.nextTestcase(resolvedFile, {
             stdin: this._state[0].data.data,
             stderr: '',
             stdout: this._state[1].data.data,
             acceptedStdout: this._state[2].data.data,
             elapsed: 0,
-            status: Status.WA,
+            status: this._state[id].status,
             showTestcase: true,
             toggled: false,
         });

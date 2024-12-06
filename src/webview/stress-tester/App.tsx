@@ -18,6 +18,7 @@ const showView = signal(true);
 
 const postMessage = (type: StressTesterMessageType, payload?: any) => vscode.postMessage({ type, payload });
 const view = (id: number) => postMessage(StressTesterMessageType.VIEW, { id });
+const addTestcase = (id: number) => postMessage(StressTesterMessageType.ADD, { id });
 
 window.addEventListener('message', (event: MessageEvent) => {
     const message: IStressTesterMessage = event.data;
@@ -72,17 +73,9 @@ export default function App() {
                     </div>
                 </div>
             </div>
-            <FileData data={state[0].$data!} status={state[0].status} id={0} onView={view} />
-            <FileData data={state[1].$data!} status={state[1].status} id={1} onView={view} />
-            <FileData data={state[2].$data!} status={state[2].status} id={2} onView={view} />
-            {(state[1].status === Status.WA) &&
-                <div class="container mx-auto mb-6">
-                    <div class="flex flex-row">
-                        <div class="w-6 shrink-0"></div>
-                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage(StressTesterMessageType.ADD)}>add testcase</button>
-                    </div>
-                </div>
-            }
+            <FileData data={state[0].$data!} status={state[0].status} id={0} onView={view} onAddTestcase={addTestcase} />
+            <FileData data={state[1].$data!} status={state[1].status} id={1} onView={view} onAddTestcase={addTestcase} />
+            <FileData data={state[2].$data!} status={state[2].status} id={2} onView={view} onAddTestcase={addTestcase} />
         </>
     }</>;
 }

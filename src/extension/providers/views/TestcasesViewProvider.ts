@@ -128,30 +128,44 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             this.deleteAll();
 
             for (const testcase of testcases) {
-                this.nextTestcase(testcase);
+                this.nextTestcase(file, testcase);
             }
         } else {
             super.writeStorage(file, testcases);
         }
     }
 
-    public nextTestcase(testcase?: ITestcase) {
-        let id = 0;
-        for (; id < this._state.length; id++) {
-            if (!this._state[id]) {
-                break;
+    public nextTestcase(file?: string, testcase?: ITestcase) {
+        const pickedFile = file ?? vscode.window.activeTextEditor?.document.fileName;
+        if (!pickedFile) {
+            return -1;
+        }
+
+        if (pickedFile == vscode.window.activeTextEditor?.document.fileName) {
+            let id = 0;
+            for (; id < this._state.length; id++) {
+                if (!this._state[id]) {
+                    break;
+                }
             }
+
+            const newTestcase = this._createTestcase(testcase, id);
+            if (id === this._state.length) {
+                this._state.push(newTestcase);
+            } else {
+                this._state[id] = newTestcase;
+            }
+            this._saveState();
+
+            return id;
+        } else if (testcase) {
+            const storage = super.readStorage();
+            const fileData: ITestcase[] = storage[pickedFile] ?? [];
+            fileData.push(testcase);
+            super.writeStorage(pickedFile, fileData);
         }
 
-        const newTestcase = this._createTestcase(testcase, id);
-        if (id === this._state.length) {
-            this._state.push(newTestcase);
-        } else {
-            this._state[id] = newTestcase;
-        }
-
-        this._saveState();
-        return id;
+        return -1;
     }
 
     public runAll() {
