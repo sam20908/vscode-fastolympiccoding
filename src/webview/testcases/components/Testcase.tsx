@@ -64,20 +64,20 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                     <>
                         {<div class="flex flex-row">
                             {stdinArrowButton}
-                            <span class="whitespace-pre-line text-base display-font">{stdin}</span>
+                            <pre class="text-base display-font">{stdin}</pre>
                         </div>}
                         {<div class="flex flex-row">
                             {stderrArrowButton}
-                            <span class="whitespace-pre-line text-base display-font">{stderr}</span>
+                            <pre class="text-base display-font">{stderr}</pre>
                         </div>}
                         {<div class="flex flex-row">
                             {stdoutArrowButton}
-                            <span class="whitespace-pre-line text-base display-font">{stdout}</span>
+                            <pre class="text-base display-font">{stdout}</pre>
                         </div>}
                         {(status === Status.WA) &&
                             <div class="flex flex-row">
                                 {acStdoutArrowButton}
-                                <span class="whitespace-pre-line text-base display-font">{acceptedStdout}</span>
+                                <pre class="text-base display-font">{acceptedStdout}</pre>
                             </div>
                         }
                         {(status === Status.WA || status === Status.NA) &&
@@ -117,7 +117,7 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                 </div>
                 {<div class="flex flex-row">
                     {stdinArrowButton}
-                    <span class="whitespace-pre-line text-base display-font">{stdin}</span>
+                    <pre class="text-base display-font">{stdin}</pre>
                 </div>}
                 <div class="flex flex-row">
                     <div class="w-6 shrink-0"></div>
@@ -130,11 +130,11 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                 </div>
                 {<div class="flex flex-row">
                     {stderrArrowButton}
-                    <span class="whitespace-pre-line text-base display-font">{stderr}</span>
+                    <pre class="text-base display-font">{stderr}</pre>
                 </div>}
                 {<div class="flex flex-row">
                     {stdoutArrowButton}
-                    <span class="whitespace-pre-line text-base display-font">{stdout}</span>
+                    <pre class="text-base display-font">{stdout}</pre>
                 </div>}
             </div>;
         case Status.EDITING:
