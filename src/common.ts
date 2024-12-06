@@ -21,7 +21,7 @@ export enum TestcasesMessageType {
     NEW_EMPTY_TESTCASE,
     STATUS,
     STDIO,
-    TOGGLE_STATUS,
+    SET_VISIBILITY,
     FULL_STDIN,
     CLEAR_OUTPUTS,
     CLEAR_TESTCASES,

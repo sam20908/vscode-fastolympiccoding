@@ -27,7 +27,7 @@ interface IState {
     showTestcase: boolean;
     toggled: boolean;
     id: number;
-    process: RunningProcess | undefined;
+    process: RunningProcess;
 }
 
 export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType> {
@@ -226,7 +226,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             showTestcase: testcase?.showTestcase ?? true,
             toggled: testcase?.toggled ?? false,
             id,
-            process: undefined,
+            process: new RunningProcess(),
         };
         newTestcase.stdin.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDIN });
         newTestcase.stderr.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDERR });
@@ -235,9 +235,9 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         newTestcase.stdin.write(testcase?.stdin ?? '', !!testcase);
         newTestcase.stderr.write(testcase?.stderr ?? '', !!testcase);
         newTestcase.stdout.write(testcase?.stdout ?? '', !!testcase);
-        newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? '', true);
+        newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? '', true); // always true to default to \n
         super._postMessage(TestcasesMessageType.STATUS, { id, status: newTestcase.status, elapsed: newTestcase.elapsed });
-        super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: newTestcase.showTestcase, toggled: newTestcase.toggled });
+        super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: newTestcase.showTestcase, toggled: newTestcase.toggled });
         this._order.push(id);
         return newTestcase;
     }
@@ -275,38 +275,39 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
         const resolvedArgs = await resolveCommandArgs(runSettings.runCommand);
         const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
-        const process = new RunningProcess(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
-        this._state[id]!.process = process;
         this._state[id]!.stderr.reset();
         this._state[id]!.stdout.reset();
+        this._state[id]!.process.run(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
 
-        process.process.stdin.write(this._state[id]!.stdin.data);
-        process.process.stderr.on('data', (data: string) => this._state[id]!.stderr.write(data, false));
-        process.process.stdout.on('data', (data: string) => this._state[id]!.stdout.write(data, false));
-        process.process.stderr.on('end', () => this._state[id]!.stderr.write('', true));
-        process.process.stdout.on('end', () => this._state[id]!.stdout.write('', true));
-        process.process.on('error', (data: Error) => {
+        this._state[id]!.process.process!.stdin.write(this._state[id]!.stdin.data);
+        this._state[id]!.process.process!.stderr.on('data', (data: string) => this._state[id]!.stderr.write(data, false));
+        this._state[id]!.process.process!.stdout.on('data', (data: string) => this._state[id]!.stdout.write(data, false));
+        this._state[id]!.process.process!.stderr.once('end', () => this._state[id]!.stderr.write('', true));
+        this._state[id]!.process.process!.stdout.once('end', () => this._state[id]!.stdout.write('', true));
+        this._state[id]!.process.process!.once('error', (data: Error) => {
             super._postMessage(TestcasesMessageType.STDIO, { id, data: data.message, stdio: Stdio.STDERR });
             super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
             this._saveState();
         });
-        process.process.on('close', (exitCode: number | null) => {
+        this._state[id]!.process.process!.once('close', (exitCode: number | null) => {
+            this._state[id]!.process.process!.stderr.removeAllListeners('data');
+            this._state[id]!.process.process!.stdout.removeAllListeners('data');
+
             const status = getExitCodeStatus(exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
-            const elapsed = process.elapsed;
+            const elapsed = this._state[id]!.process.elapsed;
             super._postMessage(TestcasesMessageType.STATUS, { id, status, elapsed })
-            this._state[id]!.process = undefined;
             this._state[id]!.status = status;
             this._state[id]!.elapsed = elapsed;
             if (!this._state[id]!.toggled) {
                 this._state[id]!.showTestcase = status !== Status.AC;
-                super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
+                super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: this._state[id]!.showTestcase, toggled: false });
             }
             this._saveState();
         })
     }
 
     private _stop(id: number) {
-        this._state[id]!.process?.process.kill();
+        this._state[id]!.process.process?.kill();
     }
 
     private _delete(id: number) {
@@ -328,7 +329,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     private _toggle(id: number) {
         this._state[id]!.showTestcase = !this._state[id]!.showTestcase;
         this._state[id]!.toggled = true;
-        super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: this._state[id]!.showTestcase, toggled: true });
+        super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: this._state[id]!.showTestcase, toggled: true });
         this._saveState();
     }
 
@@ -337,13 +338,11 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.acceptedStdout.reset();
         this._state[id]!.stdin.write(newStdin, true);
         this._state[id]!.acceptedStdout.write(newAcceptedStdout, true);
-        const stateStatus = this._state[id]!.status;
-        const status = newAcceptedStdout && stateStatus !== Status.RE && stateStatus != Status.CE ? getExitCodeStatus(0, this._state[id]!.stdout.data, newAcceptedStdout) : stateStatus;
-        this._state[id]!.status = status;
-        super._postMessage(TestcasesMessageType.STATUS, { id, status });
+        this._state[id]!.status = getExitCodeStatus(this._state[id]!.process.exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
+        super._postMessage(TestcasesMessageType.STATUS, { id, status: this._state[id]!.status });
         if (!this._state[id]!.toggled) {
-            this._state[id]!.showTestcase = status !== Status.AC;
-            super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: status !== Status.AC, toggled: false });
+            this._state[id]!.showTestcase = this._state[id]!.status !== Status.AC;
+            super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: this._state[id]!.showTestcase, toggled: false });
         }
         this._saveState();
     }
@@ -351,7 +350,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     private _accept(id: number) {
         if (!this._state[id]!.toggled) {
             this._state[id]!.showTestcase = false;
-            super._postMessage(TestcasesMessageType.TOGGLE_STATUS, { id, status: false, toggled: false });
+            super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: false, toggled: false });
         }
         this._state[id]!.status = Status.AC;
         this._state[id]!.acceptedStdout.reset();
@@ -385,7 +384,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
     }
 
     private _stdin({ id, data }: { id: number, data: string }) {
-        this._state[id]!.process?.process.stdin.write(data);
+        this._state[id]!.process.process!.stdin.write(data);
         this._state[id]!.stdin.write(data, false);
     }
 

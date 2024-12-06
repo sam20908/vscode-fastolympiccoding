@@ -15,14 +15,14 @@ interface IData {
 interface IState {
     data: Data;
     status: Status;
-    process: RunningProcess | undefined;
+    process: RunningProcess;
 }
 
 export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessageType> {
     private _state: IState[] = [
-        { data: new Data(), status: Status.NA, process: undefined },
-        { data: new Data(), status: Status.NA, process: undefined },
-        { data: new Data(), status: Status.NA, process: undefined },
+        { data: new Data(), status: Status.NA, process: new RunningProcess() },
+        { data: new Data(), status: Status.NA, process: new RunningProcess() },
+        { data: new Data(), status: Status.NA, process: new RunningProcess() },
     ]; // [generator, solution, good solution]
     private _stopFlag: boolean = false;
 
@@ -82,7 +82,6 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         for (let i = 0; i < state.length; i++) {
             this._state[i].data.write(state[i].data, true);
             this._state[i].status = state[i].status;
-            this._state[i].process = undefined;
             super._postMessage(StressTesterMessageType.STATUS, { id: i, status: state[i].status });
         }
     }
@@ -141,45 +140,47 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 this._state[i].data.reset();
             }
 
-            this._state[1].process = await this._runFile(runSettings.runCommand, '${file}', cwd);
-            this._state[1].process.process.on('error', data => this._state[1].data.write(data.message, true));
-            this._state[1].process.process.stdout.on('data', data => this._state[1].data.write(data, false));
-            this._state[1].process.process.stdout.on('end', () => this._state[1].data.write('', true));
+            const solutionRunArguments = await this._resolveRunArguments(runSettings.runCommand, '${file}');
+            this._state[1].process.run(solutionRunArguments[0], cwd, ...solutionRunArguments.slice(1));
+            this._state[1].process.process!.on('error', data => this._state[1].data.write(data.message, true));
+            this._state[1].process.process!.stdout.on('data', data => this._state[1].data.write(data, false));
+            this._state[1].process.process!.stdout.once('end', () => this._state[1].data.write('', true));
 
-            this._state[2].process = await this._runFile(runSettings.runCommand, config.get('goodSolutionFile')!, cwd);
-            this._state[2].process.process.on('error', data => this._state[2].data.write(data.message, true));
-            this._state[2].process.process.stdout.on('data', data => this._state[2].data.write(data, false));
-            this._state[2].process.process.stdout.on('end', () => this._state[2].data.write('', true));
+            const goodSolutionRunArguments = await this._resolveRunArguments(runSettings.runCommand, config.get('goodSolutionFile')!);
+            this._state[2].process.run(goodSolutionRunArguments[0], cwd, ...goodSolutionRunArguments.slice(1));
+            this._state[2].process.process!.on('error', data => this._state[2].data.write(data.message, true));
+            this._state[2].process.process!.stdout.on('data', data => this._state[2].data.write(data, false));
+            this._state[2].process.process!.stdout.once('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
-            this._state[0].process = await this._runFile(runSettings.runCommand, config.get('generatorFile')!, cwd);
-            this._state[0].process.process.on('error', data => this._state[0].data.write(data.message, true));
-            this._state[0].process.process.stdin.write(`${seed}\n`);
-            this._state[0].process.process.stdout.on('data', data => {
+            const generatorRunArguments = await this._resolveRunArguments(runSettings.runCommand, config.get('generatorFile')!);
+            this._state[0].process.run(generatorRunArguments[0], cwd, ...generatorRunArguments.slice(1));
+            this._state[0].process.process!.on('error', data => this._state[0].data.write(data.message, true));
+            this._state[0].process.process!.stdin.write(`${seed}\n`);
+            this._state[0].process.process!.stdout.on('data', data => {
                 this._state[0].data.write(data, false);
-                this._state[1].process!.process.stdin.write(data);
-                this._state[2].process!.process.stdin.write(data);
+                this._state[1].process.process!.stdin.write(data);
+                this._state[2].process.process!.stdin.write(data);
             });
-            this._state[0].process.process.stdout.on('end', () => this._state[0].data.write('', true));
+            this._state[0].process.process!.stdout.once('end', () => this._state[0].data.write('', true));
 
             for (let i = 0; i < 3; i++) {
                 // if any process fails then the other 2 should be gracefully closed
-                for (let j = 0; j < 3; j++) {
-                    if (j !== i) {
-                        this._state[i].process?.process.on('close', code => {
-                            if (code === null) {
-                                this._state[j].process!.process.kill('SIGUSR1');
+                this._state[i].process.process!.once('close', code => {
+                    if (code === null) {
+                        for (let j = 0; j < 3; j++) {
+                            if (j !== i) {
+                                this._state[j].process.process!.kill('SIGUSR1');
                             }
-                        });
+                        }
                     }
-                }
+                });
             }
 
-            const codes = await Promise.allSettled(this._state.map(value => value.process!.promise));
-            for (let i = 0; i < codes.length; i++) {
-                const code = (codes[i] as PromiseFulfilledResult<number>).value;
-                anyFailed ||= !!code;
-                this._state[i].status = code === 0 ? Status.NA : Status.RE;
+            await Promise.allSettled(this._state.map(value => value.process!.promise));
+            for (let i = 0; i < 3; i++) {
+                anyFailed ||= !!this._state[i].process!.exitCode;
+                this._state[i].status = this._state[i].process!.exitCode === 0 ? Status.NA : Status.RE;
             }
             if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
                 break;
@@ -199,7 +200,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
     private _stop() {
         this._stopFlag = true;
         for (let i = 0; i < 3; i++) {
-            this._state[i].process?.process.kill('SIGUSR1');
+            this._state[i].process.process?.kill('SIGUSR1');
         }
     }
 
@@ -244,9 +245,9 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         }));
     }
 
-    private async _runFile(runCommand: string, fileVariable: string, cwd?: string) {
+    private async _resolveRunArguments(runCommand: string, fileVariable: string) {
         const resolvedFile = await resolveVariables(fileVariable);
         const resolvedArgs = await resolveCommandArgs(runCommand, resolvedFile);
-        return new RunningProcess(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
+        return resolvedArgs;
     }
 }

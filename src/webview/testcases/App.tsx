@@ -66,10 +66,10 @@ window.addEventListener('message', (event: MessageEvent) => {
                 }
             }
             break;
-        case TestcasesMessageType.TOGGLE_STATUS:
+        case TestcasesMessageType.SET_VISIBILITY:
             {
-                const { id, status, toggled } = payload;
-                state[idToIndex[id]].showTestcase = status;
+                const { id, showTestcase, toggled } = payload;
+                state[idToIndex[id]].showTestcase = showTestcase;
                 state[idToIndex[id]].toggled = toggled;
             }
             break;

@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 
 import { Status } from '../common';
+import { start } from 'repl';
 
 const errorTerminal: Map<string, vscode.Terminal> = new Map();
 const lastCompiled: Map<string, [string, string]> = new Map();
@@ -51,30 +52,42 @@ export interface ILanguageRunSettings {
 }
 
 export class RunningProcess {
-    readonly process: child_process.ChildProcessWithoutNullStreams;
-    readonly promise: Promise<number>;
+    private _process: child_process.ChildProcessWithoutNullStreams | undefined = undefined;
+    private _promise: Promise<void> | undefined = undefined;
     private _startTime: number = 0;
     private _endTime: number = 0;
+    private _exitCode: number = 0;
 
-    constructor(command: string, cwd?: string, ...args: string[]) {
-        this.process = child_process.spawn(command, args, { cwd });
-        this.process.stdout.setEncoding('utf-8');
-        this.process.stderr.setEncoding('utf-8');
-        this.promise = new Promise(resolve => {
-            this.process.on('spawn', () => this._startTime = performance.now());
-            this.process.on('error', () => {
+    public run(command: string, cwd?: string, ...args: string[]) {
+        this._process = child_process.spawn(command, args, { cwd });
+        this._process.stdout.setEncoding('utf-8');
+        this._process.stderr.setEncoding('utf-8');
+        this._promise = new Promise(resolve => {
+            this._process!.once('spawn', () => this._startTime = performance.now());
+            this._process!.once('error', () => {
                 this._startTime = performance.now();
-                resolve(-1);
+                this._exitCode = -1;
+                resolve();
             });
-            this.process.on('close', (code, signal) => {
+            this._process!.once('close', (code, signal) => {
                 this._endTime = performance.now();
-                resolve(signal === 'SIGUSR1' ? 0 : (code ?? 1));
+                this._exitCode = signal === 'SIGUSR1' ? 0 : (code ?? 1);
+                resolve();
             });
         });
     }
 
+    get process() {
+        return this._process;
+    }
+    get promise() {
+        return this._promise;
+    }
     get elapsed(): number {
         return Math.round(this._endTime - this._startTime);
+    }
+    get exitCode(): number {
+        return this._exitCode;
     }
 };
 
@@ -87,7 +100,6 @@ export class Data {
     private _pending: string = '';
     private _spacesCount: number = 0;
     private _newlineCount: number = 0;
-    private _shortened: boolean = false;
     private _lastWrite: number = -Infinity;
     public callback: Function | undefined = undefined;
 
@@ -114,7 +126,7 @@ export class Data {
         if (last && this._data.at(-1) !== '\n') {
             this._data += '\n';
         }
-        if (this._shortened) {
+        if (this._shortDataLength > Data._maxDisplayCharacters) {
             return;
         }
 
@@ -134,7 +146,7 @@ export class Data {
         this._lastWrite = now;
         if (this._shortDataLength === Data._maxDisplayCharacters || this._newlineCount === Data._maxDisplayLines) {
             this._pending += '...';
-            this._shortened = true;
+            this._shortDataLength = Data._maxDisplayCharacters + 1;
         }
         if (this.callback) {
             this.callback(this._pending);
@@ -148,7 +160,6 @@ export class Data {
         this._pending = '';
         this._spacesCount = 0;
         this._newlineCount = 0;
-        this._shortened = false;
         this._lastWrite = -Infinity;
     }
 }
@@ -256,13 +267,15 @@ export async function compile(file: string, compileCommand: string): Promise<num
     let promise = compilePromise.get(file);
     if (!promise) {
         promise = (async () => {
-            const process = new RunningProcess(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
-            let err = '';
-            process.process.stderr.on('data', data => err += data.toString());
-            process.process.on('error', data => err += data.stack);
+            const process = new RunningProcess();
+            process.run(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
 
-            const code = await process.promise;
-            if (!code) {
+            let err = '';
+            process.process!.stderr.on('data', data => err += data.toString());
+            process.process!.on('error', data => err += data.stack);
+
+            await process.promise;
+            if (!process.exitCode) {
                 lastCompiled.set(file, [currentChecksum, currentCommand]);
                 return 0;
             }
@@ -281,7 +294,7 @@ export async function compile(file: string, compileCommand: string): Promise<num
 
             dummy.write(err);
             terminal.show(true);
-            return code;
+            return process.exitCode;
         })();
         compilePromise.set(file, promise);
     }
