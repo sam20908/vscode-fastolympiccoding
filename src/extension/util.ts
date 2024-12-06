@@ -96,7 +96,7 @@ export class Data {
     }
 
     public write(data: string, last: boolean) {
-        data = data.replace(/\\r\\n/g, '\n'); // just avoid \r\n entirely
+        data = data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
 
         // Competitive Companion removes trailing spaces for every line
         for (let i = 0; i < data.length; i++) {
