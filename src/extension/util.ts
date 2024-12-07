@@ -6,7 +6,6 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 
 import { Status } from '../common';
-import { start } from 'repl';
 
 const errorTerminal: Map<string, vscode.Terminal> = new Map();
 const lastCompiled: Map<string, [string, string]> = new Map();
