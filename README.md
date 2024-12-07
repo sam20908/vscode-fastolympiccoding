@@ -53,7 +53,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 We can use the following variables in the syntax of `${...}`
 - Most of [VSCode's built-in variables](https://code.visualstudio.com/docs/editor/variables-reference)
 - `${exeExtname}` returns `.exe` for Windows and an empty string for other platforms
-- `${path:*some value*}` turns \*some value\* into a valid path string for the current platform, which normalizes slashes and handles spaces
+- `${path:*value*}` normalizes \*value\* into a valid path string for the current platform
 
 <details>
   <summary>Possible settings per language</summary>

@@ -40,10 +40,6 @@ async function replaceAsync(string: string, regexp: RegExp, replacer: Function) 
     return string.replace(regexp, () => replacements[i++]);
 }
 
-function normalizePath(str: string) {
-    return path.normalize(os.platform() === 'win32' ? `"${str}"` : str.replace(/ /g, '\ '));
-}
-
 export interface ILanguageRunSettings {
     compileCommand?: string;
     runCommand: string;
@@ -232,7 +228,7 @@ export async function resolveVariables(string: string, recursive: boolean = fals
         string = string.replace(/\${env:(.*?)}/g, match => process.env[match] ?? '');
         string = string.replace(/\${config:(.*?)}/g, match => vscode.workspace.getConfiguration().get(match) ?? '');
         string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
-        string = await replaceAsync(string, /\${path:(.*?)}/g, async (match: string) => normalizePath(await resolveVariables(match, false, inContextOfFile)));
+        string = await replaceAsync(string, /\${path:(.*?)}/g, async (match: string) => path.normalize(await resolveVariables(match, false, inContextOfFile)));
     } while (recursive && oldString !== string);
     return string;
 }
