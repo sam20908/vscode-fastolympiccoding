@@ -76,7 +76,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
             const inserted = vscode.window.activeTextEditor?.edit((edit) => {
                 edit.insert(vscode.window.activeTextEditor!.selection.active, content);
             });
-            const foldTemplate = config.get('foldFileTemplate')!;
+            const foldTemplate = config.get('foldFileTemplate')! as boolean;
             if (inserted && foldTemplate) {
                 vscode.commands.executeCommand('editor.fold');
             }

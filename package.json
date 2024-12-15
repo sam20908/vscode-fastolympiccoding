@@ -64,7 +64,7 @@
           },
           "fastolympiccoding.foldFileTemplate": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "description": "Controls if the copied content would be folded by VSCode (only the first foldable content is folded)"
           }
         }
