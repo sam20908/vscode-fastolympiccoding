@@ -151,6 +151,16 @@
             "type": "boolean",
             "default": false,
             "description": "Ask which file the testcases will go to every time incoming testcases are detected."
+          },
+          "fastolympiccoding.includePattern": {
+            "type": "string",
+            "default": "**/*",
+            "description": "Glob pattern to filter in the files to include when asking for a file for incoming testcase."
+          },
+          "fastolympiccoding.excludePattern": {
+            "type": "string",
+            "default": "",
+            "description": "Glob pattern to filter out the files to include when asking for a file for incoming testcase."
           }
         }
       }

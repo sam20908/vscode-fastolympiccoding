@@ -109,34 +109,41 @@ function listenForCompetitiveCompanion() {
             }
 
             const file = vscode.window.activeTextEditor?.document.fileName;
+            const workspace = vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
             const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
-            const files = (await vscode.workspace.findFiles('**/*')).map(file => ({ label: file.path }));
+            const includePattern = vscode.workspace.getConfiguration('fastolympiccoding').get('includePattern')! as string;
+            const excludePattern = vscode.workspace.getConfiguration('fastolympiccoding').get('excludePattern')! as string;
+            const files = (await vscode.workspace.findFiles(includePattern, excludePattern)).map(file => ({
+                label: path.parse(file.fsPath).base,
+                description: path.parse(path.relative(workspace, file.fsPath)).dir,
+            }));
             for (let i = 0; i < problemDatas.length; i++) {
-                let fileTo = problemDatas[i].batch.size > 1 ? vscode.workspace.workspaceFolders?.at(0)?.uri.path : file;
+                let fileTo = problemDatas[i].batch.size === 1 && file ? path.parse(file).base : '';
                 if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
                     const pick = vscode.window.createQuickPick();
                     pick.title = `Testcases for "${problemDatas[i].name}"`;
                     pick.placeholder = 'Full file path to put testcases onto';
-                    pick.value = fileTo ?? vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
+                    pick.value = fileTo;
                     pick.ignoreFocusOut = true;
-                    pick.onDidChangeValue(label => {
-                        if (!files.some(item => item.label === label)) {
-                            pick.items = [{ label }, ...files];
-                        }
-                    });
+                    pick.items = files;
                     pick.show();
                     fileTo = await new Promise(resolve => {
                         pick.onDidAccept(() => {
-                            resolve(pick.selectedItems[0].label);
+                            if (pick.selectedItems.length === 0) {
+                                resolve(pick.value);
+                            } else {
+                                resolve(path.join(pick.selectedItems[0].description!, pick.selectedItems[0].label));
+                            }
                             pick.hide();
                         });
-                        pick.onDidHide(() => resolve(undefined));
+                        pick.onDidHide(() => resolve(''));
                     });
                 }
-                if (fileTo === undefined || fileTo === '') {
+                if (fileTo === '') {
                     vscode.window.showWarningMessage(`No file to write testcases for "${problemDatas[i].name}"`);
                     continue;
                 }
+                fileTo = path.join(workspace, fileTo);
                 if (fs.existsSync(fileTo) && !fs.lstatSync(fileTo).isFile()) {
                     vscode.window.showWarningMessage(`${fileTo} is not a file! Skipped writing testcases for "${problemDatas[i].name}"`);
                     continue;
@@ -145,7 +152,7 @@ function listenForCompetitiveCompanion() {
 
                 testcasesViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
                 const document = await vscode.workspace.openTextDocument(vscode.Uri.file(fileTo));
-                await vscode.window.showTextDocument(document);
+                vscode.window.showTextDocument(document);
             }
             problemDatas = [];
         });
