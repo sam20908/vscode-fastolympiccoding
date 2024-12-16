@@ -126,6 +126,8 @@ function listenForCompetitiveCompanion() {
                     pick.value = fileTo;
                     pick.ignoreFocusOut = true;
                     pick.items = files;
+                    pick.totalSteps = problemDatas[0].batch.size;
+                    pick.step = i + 1;
                     pick.show();
                     fileTo = await new Promise(resolve => {
                         pick.onDidAccept(() => {
