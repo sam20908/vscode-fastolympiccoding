@@ -56,9 +56,9 @@ We can use the following variables in the syntax of `${...}`
 - `${path:*value*}` normalizes \*value\* into a valid path string for the current platform
 
 <details>
-  <summary>Possible settings per language</summary>
+  <summary>Settings per language</summary>
 
-  - `compileCommand` (optional): Command to run before `runCommand`
+  - `compileCommand` (optional): Command to run before `runCommand` when the file content changed
   - `runCommand`: Command to run the solution
   - `currentWorkingDirectory` (optional): sets the current working directory for `runCommand`
 </details>
@@ -81,6 +81,15 @@ We can use the following variables in the syntax of `${...}`
 | :-----------------------------------: |
 | *View wrong answers in a diff view!*  |
 
+<details>
+  <summary>General setting for both Testcase Window and Stress Tester</summary>
+
+  - `font`: Font family used to render text (restart extension to apply)
+  - `runSettings`: Object of [run settings](#-setting-up)
+  - `maxDisplayCharacters`: Maximum number of characters to display for each output
+  - `maxDisplayLines`: Maximum number of lines to display for each output
+</details>
+
 ---
 
 ### 👨🏻‍💻 Stress Tester
@@ -95,6 +104,15 @@ Required files (naming scheme can be configured in settings):
 | :--------------------------------------------------------------------------------: |
 | *Stress Tester was able to find an counterexample due to an integer overflow bug!* |
 
+<details>
+  <summary>Settings for Stress Tester</summary>
+
+  - `goodSolutionFile`: Full path for good solution file (supports `${...}`)
+  - `generatorFile`: Full path for generator file (supports `${...}`)
+  - `delayBetweenTestcases`: Amount of delay between generated testcases in milliseconds **(minimum: `5`)**
+  - `maxRuntime`: Maximum time in milliseconds the Stress Tester is allowed to spend on one testcase **(`-1` for no limit)**
+</details>
+
 ---
 
 ### 👜 Inserting Prewritten Code
@@ -105,6 +123,13 @@ Required files (naming scheme can be configured in settings):
 | ![Insert File Template Gif](media/insert_file_template.gif) |
 | :---------------------------------------------------------: |
 | *Adding a tree reroot DP template without switching files*  |
+
+<details>
+  <summary>Possible settings</summary>
+
+  - `fileTemplatesBaseDirectory`: Full path to the base directory of all prewritten files (supports `${...}`)
+  - `foldFileTemplate` (default: `false`): Whether to fold the newly inserted prewritten code
+</details>
 
 ---
 
@@ -119,6 +144,14 @@ Required files (naming scheme can be configured in settings):
 | ![Contest Parsing Gif](media/contest_parsing.gif)  |
 | :------------------------------------------------: |
 | *We can parse an entire CodeForces Div.3 Contest!* |
+
+<details>
+  <summary>Settings for Competitive Companion integration</summary>
+
+  - `askForWhichFile` (default: `false`): Ask for which file to write testcase onto, even when a file is currently opened and only a single problem has been received
+  - `includePattern` (default: `**/*`): Glob pattern to filter in the included files for asking prompt
+  - `excludePattern` (default: *empty*): Glob pattern to filter out the included files for asking prompt
+</details>
 
 ---
 
