@@ -118,7 +118,7 @@ function listenForCompetitiveCompanion() {
                 description: path.parse(path.relative(workspace, file.fsPath)).dir,
             }));
             for (let i = 0; i < problemDatas.length; i++) {
-                let fileTo = problemDatas[i].batch.size === 1 && file ? path.parse(file).base : '';
+                let fileTo = problemDatas[i].batch.size === 1 && file ? path.relative(workspace, file) : '';
                 if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
                     const pick = vscode.window.createQuickPick();
                     pick.title = `Testcases for "${problemDatas[i].name}"`;
