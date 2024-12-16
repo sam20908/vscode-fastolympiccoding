@@ -86,6 +86,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 function listenForCompetitiveCompanion() {
     let problemDatas: any[] = [];
+    let filePaths: string[] = [];
     let cnt = 0;
     const server = http.createServer((req, res) => {
         if (req.method !== 'POST') {
@@ -153,10 +154,14 @@ function listenForCompetitiveCompanion() {
                 fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
 
                 testcasesViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
-                const document = await vscode.workspace.openTextDocument(vscode.Uri.file(fileTo));
-                vscode.window.showTextDocument(document);
+                filePaths.push(fileTo);
+            }
+            for (const filePath of filePaths) {
+                const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+                await vscode.window.showTextDocument(document);
             }
             problemDatas = [];
+            filePaths = [];
         });
     });
     server.listen(1327);
