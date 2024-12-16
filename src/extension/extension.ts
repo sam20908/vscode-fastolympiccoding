@@ -86,7 +86,6 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 function listenForCompetitiveCompanion() {
     let problemDatas: any[] = [];
-    let filePaths: string[] = [];
     let cnt = 0;
     const server = http.createServer((req, res) => {
         if (req.method !== 'POST') {
@@ -111,13 +110,16 @@ function listenForCompetitiveCompanion() {
 
             const file = vscode.window.activeTextEditor?.document.fileName;
             const workspace = vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
-            const askForWhichFile = vscode.workspace.getConfiguration('fastolympiccoding').get('askForWhichFile', false);
-            const includePattern = vscode.workspace.getConfiguration('fastolympiccoding').get('includePattern')! as string;
-            const excludePattern = vscode.workspace.getConfiguration('fastolympiccoding').get('excludePattern')! as string;
+            const config = vscode.workspace.getConfiguration('fastolympiccoding')
+            const openSelectedFiles = config.get('openSelectedFiles')! as boolean;
+            const askForWhichFile = config.get('askForWhichFile')! as boolean;
+            const includePattern = config.get('includePattern')! as string;
+            const excludePattern = config.get('excludePattern')! as string;
             const files = (await vscode.workspace.findFiles(includePattern, excludePattern)).map(file => ({
                 label: path.parse(file.fsPath).base,
                 description: path.parse(path.relative(workspace, file.fsPath)).dir,
             }));
+            let filePaths: string[] = [];
             for (let i = 0; i < problemDatas.length; i++) {
                 let fileTo = problemDatas[i].batch.size === 1 && file ? path.relative(workspace, file) : '';
                 if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
@@ -156,12 +158,13 @@ function listenForCompetitiveCompanion() {
                 testcasesViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
                 filePaths.push(fileTo);
             }
-            for (const filePath of filePaths) {
-                const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
-                await vscode.window.showTextDocument(document);
+            if (openSelectedFiles) {
+                for (const filePath of filePaths) {
+                    const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+                    await vscode.window.showTextDocument(document);
+                }
             }
             problemDatas = [];
-            filePaths = [];
         });
     });
     server.listen(1327);

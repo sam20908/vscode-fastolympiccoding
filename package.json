@@ -147,6 +147,11 @@
       {
         "title": "Competitive Companion",
         "properties": {
+          "fastolympiccoding.openSelectedFiles": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to open all the selected files for the testcases."
+          },
           "fastolympiccoding.askForWhichFile": {
             "type": "boolean",
             "default": false,
