@@ -101,6 +101,8 @@ Required files (naming scheme can be configured in settings):
 - `<name>__Generator.[ext]`: to generate inputs for the other 2 files
   - **The extension provides a 64-bit integer seed input for random number generators!**
 
+- **💡TIP**: To stress test for **Runtime Error** instead of **Wrong Answer**, have the good solution be the same as the one to bruteforce against!
+
 |                   ![Stress Tester Gif](media/stress_tester.gif)                    |
 | :--------------------------------------------------------------------------------: |
 | *Stress Tester was able to find an counterexample due to an integer overflow bug!* |
@@ -118,8 +120,9 @@ Required files (naming scheme can be configured in settings):
 
 ### 👜 Inserting Prewritten Code
 
-- **Add the root directory of the templates to the settings**
-- Remove trailing newlines for fold to work (folding is optional via settings)
+- Add the root directory of the templates to the settings
+- **NOTE**: Remove trailing newlines for fold to work (folding is optional via settings)
+  - Folding depends on VSCode support, which may require other extensions depending on the language.
 
 | ![Insert File Template Gif](media/insert_file_template.gif) |
 | :---------------------------------------------------------: |
