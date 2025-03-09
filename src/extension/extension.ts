@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 
 import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
 import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
-import { ReadonlyStringDocumentContentProvider, resolveVariables } from './util';
+import { compile, ILanguageRunSettings, ReadonlyStringDocumentContentProvider, resolveVariables } from './util';
 
 let testcasesViewProvider: TestcasesViewProvider;
 let stressTesterViewProvider: StressTesterViewProvider;
@@ -32,6 +32,23 @@ function registerDocumentContentProviders(context: vscode.ExtensionContext): voi
 }
 
 function registerCommands(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(vscode.commands.registerTextEditorCommand(
+        'fastolympiccoding.compile',
+        () => {
+            const file = vscode.window.activeTextEditor!.document.fileName
+            const config = vscode.workspace.getConfiguration('fastolympiccoding');
+            const extension = path.extname(file);
+            const runSettings: ILanguageRunSettings | undefined = config.get<any>('runSettings')[extension];
+            if (!runSettings) {
+                vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
+                return;
+            }
+            if (runSettings.compileCommand) {
+                compile(file, runSettings.compileCommand);
+            }
+        }
+    ));
+
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.runAll',
         () => testcasesViewProvider.runAll()

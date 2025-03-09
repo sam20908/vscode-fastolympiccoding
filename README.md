@@ -20,7 +20,8 @@ Fast Olympic Coding is an extension to assist with various tasks in competitive 
 
 ### 💻 Keybinds
 
-- Compile (if file has compile command and file had changed) and run all testcases: `Ctrl+Alt+B`
+- Compile: `Ctrl+Alt+C`
+- Compile and run all testcases: `Ctrl+Alt+B`
 - Stop all testcases: `Ctrl+Alt+K`
 - Delete all testcases: `Ctrl+Alt+D`
 - Run stress test: `Ctrl+Alt+G`

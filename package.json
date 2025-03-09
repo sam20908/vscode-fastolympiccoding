@@ -172,6 +172,11 @@
     ],
     "commands": [
       {
+        "command": "fastolympiccoding.compile",
+        "title": "Compile",
+        "category": "Fast Olympic Coding"
+      },
+      {
         "command": "fastolympiccoding.runAll",
         "title": "Run All Testcases",
         "category": "Fast Olympic Coding"
@@ -203,6 +208,11 @@
       }
     ],
     "keybindings": [
+      {
+        "command": "fastolympiccoding.compile",
+        "key": "ctrl+alt+c",
+        "when": "editorFocus"
+      },
       {
         "command": "fastolympiccoding.runAll",
         "key": "ctrl+alt+b",
