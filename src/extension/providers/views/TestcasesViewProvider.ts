@@ -269,6 +269,11 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.CE });
                 return;
             }
+            
+            // the user switched to a different file during compilation, so double check we're on the same file
+            if (vscode.window.activeTextEditor?.document.fileName !== file) {
+                return;
+            }
         }
         super._postMessage(TestcasesMessageType.CLEAR_OUTPUTS, { id });
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RUNNING });
