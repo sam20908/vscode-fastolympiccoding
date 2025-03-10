@@ -194,9 +194,19 @@ function listenForCompetitiveCompanion() {
     server.listen(1327);
 }
 
+function addActiveStatus(context: vscode.ExtensionContext): void {
+    const statusItem = vscode.window.createStatusBarItem('fastolympiccoding.active', vscode.StatusBarAlignment.Left);
+    statusItem.name = 'Fast Olympic Coding Indicator';
+    statusItem.text = '$(zap)';
+    statusItem.tooltip = 'Fast Olympic Coding is Active';
+    statusItem.show();
+    context.subscriptions.push(statusItem);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
     registerViewProviders(context);
     registerCommands(context);
     registerDocumentContentProviders(context);
     listenForCompetitiveCompanion();
+    addActiveStatus(context);
 }
