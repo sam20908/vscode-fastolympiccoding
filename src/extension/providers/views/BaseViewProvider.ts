@@ -14,7 +14,7 @@ function getNonce(): string {
 export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider {
     private _webview?: vscode.Webview = undefined;
 
-    constructor(public readonly view: string, private _context: vscode.ExtensionContext) { }
+    constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
 
     abstract onMessage(message: IMessage<T>): void;
     abstract onDispose(): void;

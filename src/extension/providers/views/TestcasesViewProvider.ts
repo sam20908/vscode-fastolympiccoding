@@ -264,7 +264,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         }
 
         if (runSettings.compileCommand) {
-            const code = await compile(file, runSettings.compileCommand);
+            const code = await compile(file, runSettings.compileCommand, this._context);
             if (code) {
                 super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.CE });
                 return;

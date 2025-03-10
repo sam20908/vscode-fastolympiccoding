@@ -112,9 +112,9 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
                 return code;
             };
             const promises = [
-                compile(await resolveVariables(config.get('generatorFile')!), runSettings.compileCommand).then(callback.bind(this, 0)),
-                compile(await resolveVariables('${file}'), runSettings.compileCommand).then(callback.bind(this, 1)),
-                compile(await resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand).then(callback.bind(this, 2)),
+                compile(await resolveVariables(config.get('generatorFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 0)),
+                compile(await resolveVariables('${file}'), runSettings.compileCommand, this._context).then(callback.bind(this, 1)),
+                compile(await resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 2)),
             ];
             const codes = await Promise.all(promises);
 

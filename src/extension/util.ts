@@ -243,7 +243,7 @@ export async function resolveCommandArgs(command: string, inContextOfFile?: stri
     return await Promise.all(args.map(arg => resolveVariables(arg, false, inContextOfFile)));
 }
 
-export async function compile(file: string, compileCommand: string): Promise<number> {
+export async function compile(file: string, compileCommand: string, context: vscode.ExtensionContext): Promise<number> {
     errorTerminal.get(file)?.dispose();
 
     if (!fs.existsSync(file)) {
@@ -262,6 +262,13 @@ export async function compile(file: string, compileCommand: string): Promise<num
     let promise = compilePromise.get(file);
     if (!promise) {
         promise = (async () => {
+            const compilationStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+            compilationStatusItem.name = 'Compilation Status';
+            compilationStatusItem.text = `$(zap) ${path.basename(file)}`;
+            compilationStatusItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+            compilationStatusItem.show();
+            context.subscriptions.push(compilationStatusItem);
+
             const process = new RunningProcess();
             process.run(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
 
@@ -270,6 +277,7 @@ export async function compile(file: string, compileCommand: string): Promise<num
             process.process!.on('error', data => err += data.stack);
 
             await process.promise;
+            compilationStatusItem.dispose();
             if (!process.exitCode) {
                 lastCompiled.set(file, [currentChecksum, currentCommand]);
                 return 0;

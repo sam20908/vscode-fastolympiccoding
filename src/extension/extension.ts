@@ -32,6 +32,13 @@ function registerDocumentContentProviders(context: vscode.ExtensionContext): voi
 }
 
 function registerCommands(context: vscode.ExtensionContext): void {
+    const compilationStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    compilationStatusItem.name = 'Compilation Status';
+    compilationStatusItem.text = '$(zap) Compiling...';
+    compilationStatusItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    compilationStatusItem.hide(); // enable and disable it as necessary
+    context.subscriptions.push(compilationStatusItem);
+
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.compile',
         () => {
@@ -44,7 +51,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
                 return;
             }
             if (runSettings.compileCommand) {
-                compile(file, runSettings.compileCommand);
+                compile(file, runSettings.compileCommand, context); // we don't care about exit code of compilation
             }
         }
     ));
