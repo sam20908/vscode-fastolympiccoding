@@ -18,7 +18,9 @@
     "url": "https://github.com/sam20908/vscode-fastolympiccoding.git"
   },
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
