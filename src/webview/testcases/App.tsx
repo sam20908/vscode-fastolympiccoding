@@ -30,6 +30,7 @@ window.addEventListener('message', (event: MessageEvent) => {
                     status: Status.NA,
                     showTestcase: true,
                     toggled: false,
+                    skipped: false,
                     id
                 });
             }
@@ -73,6 +74,12 @@ window.addEventListener('message', (event: MessageEvent) => {
                 state[idToIndex[id]].toggled = toggled;
             }
             break;
+        case TestcasesMessageType.SET_SKIP:
+            {
+                const { id, skipped } = payload;
+                state[idToIndex[id]].skipped = skipped;
+            }
+            break
         case TestcasesMessageType.FULL_STDIN:
             {
                 const { id, data } = payload;

@@ -15,6 +15,7 @@ interface ITestcase {
     status: Status;
     showTestcase: boolean;
     toggled: boolean;
+    skipped: boolean;
 }
 
 interface IState {
@@ -26,6 +27,7 @@ interface IState {
     status: number;
     showTestcase: boolean;
     toggled: boolean;
+    skipped: boolean;
     id: number;
     process: RunningProcess;
 }
@@ -67,6 +69,9 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             case TestcasesMessageType.DECLINE:
                 this._decline(payload.id);
                 break;
+            case TestcasesMessageType.TOGGLE_SKIP:
+                this._toggle_skip(payload.id);
+                break
             case TestcasesMessageType.VIEW:
                 this._view(payload);
                 break;
@@ -209,6 +214,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 status: this._state[i]!.status,
                 showTestcase: this._state[i]!.showTestcase,
                 toggled: this._state[i]!.toggled,
+                skipped: this._state[i]!.skipped,
             });
         }
         super.writeStorage(file, testcases);
@@ -225,6 +231,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             status: testcase?.status ?? Status.NA,
             showTestcase: testcase?.showTestcase ?? true,
             toggled: testcase?.toggled ?? false,
+            skipped: testcase?.skipped ?? false,
             id,
             process: new RunningProcess(),
         };
@@ -253,6 +260,10 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             await this._state[id]!.process.promise; // wait for status update to be sent
         }
 
+        if (this._state[id]!.skipped) {
+            return;
+        }
+
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.COMPILING });
 
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
@@ -269,7 +280,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
                 super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.CE });
                 return;
             }
-            
+
             // the user switched to a different file during compilation, so double check we're on the same file
             if (vscode.window.activeTextEditor?.document.fileName !== file) {
                 return;
@@ -368,6 +379,13 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.acceptedStdout.reset();
         this._state[id]!.status = Status.NA;
         super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.NA });
+        this._saveState();
+    }
+
+    private _toggle_skip(id: number) {
+        this._state[id]!.skipped = !this._state[id]!.skipped;
+        super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: !this._state[id]!.skipped, toggled: this._state[id]!.toggled });
+        super._postMessage(TestcasesMessageType.SET_SKIP, { id, skipped: this._state[id]!.skipped });
         this._saveState();
     }
 

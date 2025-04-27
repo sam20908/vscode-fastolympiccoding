@@ -5,7 +5,7 @@ import { BLUE_COLOR, GREEN_COLOR, RED_COLOR } from '../../common';
 import AutoresizeTextarea from '../../util/components/AutoresizeTextarea';
 import { Status, Stdio, TestcasesMessageType } from '../../../common';
 
-export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout, elapsed, status, showTestcase, toggled, id } }: { testcase: IState }) {
+export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout, elapsed, status, showTestcase, toggled, skipped, id } }: { testcase: IState }) {
     const toggle = () => postMessage(TestcasesMessageType.TOGGLE, { id });
     const view = (stdin: Stdio) => postMessage(TestcasesMessageType.VIEW, { id, stdin });
 
@@ -46,10 +46,10 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
         case Status.AC:
         case Status.RE:
         case Status.CE:
-            return <div class="container mx-auto mb-6">
-                <div class="flex flex-row">
+            return <div className={`container mx-auto mb-6 ${skipped ? 'skipped' : ''}`}>
+                <div class="flex flex-row unskip">
                     <div class="w-6 shrink-0"></div>
-                    <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+                    <div class="flex justify-start gap-x-2 bg-zinc-800 grow unskip">
                         {statusItem}
                         <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postMessage(TestcasesMessageType.EDIT, { id })}>edit</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
@@ -58,6 +58,10 @@ export default function app({ testcase: { stdin, stderr, stdout, acceptedStdout,
                         }}>run</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage(TestcasesMessageType.DELETE, { id })}>delete</button>
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{elapsed}ms</p>
+                        {skipped ?
+                            <button class="text-base leading-tight bg-black px-3 w-fit display-font unskip" onClick={() => postMessage(TestcasesMessageType.TOGGLE_SKIP, { id })}>unskip</button> :
+                            <button class="text-base leading-tight bg-black px-3 w-fit display-font" onClick={() => postMessage(TestcasesMessageType.TOGGLE_SKIP, { id })}>skip</button>
+                        }
                     </div>
                 </div>
                 {(showTestcase && !(status === Status.AC && !toggled)) &&

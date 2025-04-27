@@ -13,6 +13,7 @@ export interface IState {
     status: Status;
     showTestcase: boolean;
     toggled: boolean;
+    skipped: boolean;
     id: number;
 }
 
