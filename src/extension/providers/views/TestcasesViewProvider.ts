@@ -57,8 +57,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             case TestcasesMessageType.EDIT:
                 this._edit(payload.id);
                 break;
-            case TestcasesMessageType.TOGGLE:
-                this._toggle(payload.id);
+            case TestcasesMessageType.TOGGLE_VISIBILITY:
+                this._toggle_visibility(payload.id);
                 break;
             case TestcasesMessageType.SAVE:
                 this._save(payload);
@@ -72,8 +72,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             case TestcasesMessageType.TOGGLE_SKIP:
                 this._toggle_skip(payload.id);
                 break
-            case TestcasesMessageType.VIEW:
-                this._view(payload);
+            case TestcasesMessageType.VIEW_TEXT:
+                this._view_text(payload);
                 break;
             case TestcasesMessageType.STDIN:
                 this._stdin(payload);
@@ -102,11 +102,11 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
-            super._postMessage(TestcasesMessageType.TOGGLE_VIEW, { value: false });
+            super._postMessage(TestcasesMessageType.SET_WEBVIEW_VISIBILITY, { value: false });
             return;
         }
 
-        super._postMessage(TestcasesMessageType.TOGGLE_VIEW, { value: true });
+        super._postMessage(TestcasesMessageType.SET_WEBVIEW_VISIBILITY, { value: true });
         const storage = super.readStorage();
         const fileData = storage[file] ?? [];
         for (let i = 0; i < fileData.length; i++) {
@@ -235,15 +235,15 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             id,
             process: new RunningProcess(),
         };
-        newTestcase.stdin.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDIN });
-        newTestcase.stderr.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDERR });
-        newTestcase.stdout.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.STDOUT });
-        newTestcase.acceptedStdout.callback = (data: string) => super._postMessage(TestcasesMessageType.STDIO, { id, data, stdio: Stdio.ACCEPTED_STDOUT });
+        newTestcase.stdin.callback = (data: string) => super._postMessage(TestcasesMessageType.APPEND_STDIO, { id, data, stdio: Stdio.STDIN });
+        newTestcase.stderr.callback = (data: string) => super._postMessage(TestcasesMessageType.APPEND_STDIO, { id, data, stdio: Stdio.STDERR });
+        newTestcase.stdout.callback = (data: string) => super._postMessage(TestcasesMessageType.APPEND_STDIO, { id, data, stdio: Stdio.STDOUT });
+        newTestcase.acceptedStdout.callback = (data: string) => super._postMessage(TestcasesMessageType.APPEND_STDIO, { id, data, stdio: Stdio.ACCEPTED_STDOUT });
         newTestcase.stdin.write(testcase?.stdin ?? '', !!testcase);
         newTestcase.stderr.write(testcase?.stderr ?? '', !!testcase);
         newTestcase.stdout.write(testcase?.stdout ?? '', !!testcase);
         newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? '', true); // always true to default to \n
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: newTestcase.status, elapsed: newTestcase.elapsed });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: newTestcase.status, elapsed: newTestcase.elapsed });
         super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: newTestcase.showTestcase, toggled: newTestcase.toggled });
         this._order.push(id);
         return newTestcase;
@@ -264,7 +264,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             return;
         }
 
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.COMPILING });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.COMPILING });
 
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const extension = path.extname(file);
@@ -277,7 +277,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         if (runSettings.compileCommand) {
             const code = await compile(file, runSettings.compileCommand, this._context);
             if (code) {
-                super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.CE });
+                super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.CE });
                 return;
             }
 
@@ -287,7 +287,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
             }
         }
         super._postMessage(TestcasesMessageType.CLEAR_OUTPUTS, { id });
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RUNNING });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.RUNNING });
 
         const resolvedArgs = await resolveCommandArgs(runSettings.runCommand);
         const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
@@ -301,8 +301,8 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.process.process!.stderr.once('end', () => this._state[id]!.stderr.write('', true));
         this._state[id]!.process.process!.stdout.once('end', () => this._state[id]!.stdout.write('', true));
         this._state[id]!.process.process!.once('error', (data: Error) => {
-            super._postMessage(TestcasesMessageType.STDIO, { id, data: data.message, stdio: Stdio.STDERR });
-            super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.RE });
+            super._postMessage(TestcasesMessageType.APPEND_STDIO, { id, data: data.message, stdio: Stdio.STDERR });
+            super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.RE });
             this._saveState();
         });
         this._state[id]!.process.process!.once('close', (exitCode: number | null) => {
@@ -311,7 +311,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
             const status = getExitCodeStatus(exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
             const elapsed = this._state[id]!.process.elapsed;
-            super._postMessage(TestcasesMessageType.STATUS, { id, status, elapsed })
+            super._postMessage(TestcasesMessageType.SET_STATUS, { id, status, elapsed })
             this._state[id]!.status = status;
             this._state[id]!.elapsed = elapsed;
             if (!this._state[id]!.toggled) {
@@ -339,10 +339,10 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
 
     private _edit(id: number) {
         super._postMessage(TestcasesMessageType.FULL_STDIN, { id, data: this._state[id]!.stdin.data });
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.EDITING });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.EDITING });
     }
 
-    private _toggle(id: number) {
+    private _toggle_visibility(id: number) {
         this._state[id]!.showTestcase = !this._state[id]!.showTestcase;
         this._state[id]!.toggled = true;
         super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: this._state[id]!.showTestcase, toggled: true });
@@ -355,7 +355,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.stdin.write(newStdin, true);
         this._state[id]!.acceptedStdout.write(newAcceptedStdout, true);
         this._state[id]!.status = getExitCodeStatus(this._state[id]!.process.exitCode, this._state[id]!.stdout.data, this._state[id]!.acceptedStdout.data);
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: this._state[id]!.status });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: this._state[id]!.status });
         if (!this._state[id]!.toggled) {
             this._state[id]!.showTestcase = this._state[id]!.status !== Status.AC;
             super._postMessage(TestcasesMessageType.SET_VISIBILITY, { id, showTestcase: this._state[id]!.showTestcase, toggled: false });
@@ -371,14 +371,14 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._state[id]!.status = Status.AC;
         this._state[id]!.acceptedStdout.reset();
         this._state[id]!.acceptedStdout.write(this._state[id]!.stdout.data, true);
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.AC });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.AC });
         this._saveState();
     }
 
     private _decline(id: number) {
         this._state[id]!.acceptedStdout.reset();
         this._state[id]!.status = Status.NA;
-        super._postMessage(TestcasesMessageType.STATUS, { id, status: Status.NA });
+        super._postMessage(TestcasesMessageType.SET_STATUS, { id, status: Status.NA });
         this._saveState();
     }
 
@@ -389,7 +389,7 @@ export class TestcasesViewProvider extends BaseViewProvider<TestcasesMessageType
         this._saveState();
     }
 
-    private _view({ id, stdin }: { id: number, stdin: Stdio }) {
+    private _view_text({ id, stdin }: { id: number, stdin: Stdio }) {
         switch (stdin) {
             case Stdio.STDIN:
                 viewTextInEditor(this._state[id]!['stdin'].data);

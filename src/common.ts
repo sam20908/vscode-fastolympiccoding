@@ -19,15 +19,15 @@ export enum Stdio {
 export enum TestcasesMessageType {
     // sent by extension host
     NEW_EMPTY_TESTCASE,
-    STATUS,
-    STDIO,
+    SET_STATUS,
+    APPEND_STDIO,
     SET_VISIBILITY,
     SET_SKIP,
     FULL_STDIN,
     CLEAR_OUTPUTS,
     CLEAR_TESTCASES,
     DELETE_TESTCASE,
-    TOGGLE_VIEW,
+    SET_WEBVIEW_VISIBILITY,
     // sent by webview
     LOADED,
     NEXT_TESTCASE,
@@ -35,12 +35,12 @@ export enum TestcasesMessageType {
     STOP,
     DELETE,
     EDIT,
-    TOGGLE,
+    TOGGLE_VISIBILITY,
     SAVE,
     ACCEPT,
     DECLINE,
     TOGGLE_SKIP,
-    VIEW,
+    VIEW_TEXT,
     STDIN,
     DIFF,
 }
