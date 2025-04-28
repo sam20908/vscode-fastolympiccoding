@@ -16,7 +16,7 @@ const extensionConfig = {
     platform: "node",
     mainFields: ["module", "main"],
     format: "cjs",
-    entryPoints: ["./src/extension/extension.ts"],
+    entryPoints: ["./src/extension.ts"],
     outfile: "./dist/extension.js",
     external: ["vscode"],
 };
@@ -30,7 +30,7 @@ function getWebviewConfig(subsystem) {
         ...baseConfig,
         target: "es2020",
         format: "esm",
-        entryPoints: [`./src/webview/${subsystem}/index.tsx`],
+        entryPoints: [`./src/views/${subsystem}/webview/index.tsx`],
         outfile: `./dist/${subsystem}/index.js`
     };
 }
@@ -38,8 +38,8 @@ function getWebviewConfig(subsystem) {
 /** @type BuildOptions[] */
 const configs = [
     extensionConfig,
-    getWebviewConfig("testcases"),
-    getWebviewConfig("stress-tester"),
+    getWebviewConfig("judge"),
+    getWebviewConfig("stress"),
 ];
 
 (async () => {

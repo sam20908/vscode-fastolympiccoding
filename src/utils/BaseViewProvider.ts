@@ -1,6 +1,4 @@
-import * as vscode from 'vscode';
-
-import { IMessage } from '../../../common';
+import vscode from 'vscode';
 
 function getNonce(): string {
     const CHOICES = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -11,12 +9,12 @@ function getNonce(): string {
     return nonce;
 }
 
-export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider {
+export default abstract class <ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
     private _webview?: vscode.Webview = undefined;
 
     constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
 
-    abstract onMessage(message: IMessage<T>): void;
+    abstract onMessage(msg: ProviderMessageType): void;
     abstract onDispose(): void;
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -48,8 +46,8 @@ export abstract class BaseViewProvider<T> implements vscode.WebviewViewProvider 
         this._context.workspaceState.update(this.view, undefined);
     }
 
-    protected _postMessage(type: T, payload?: any): void {
-        this._webview?.postMessage({ type, payload });
+    protected _postMessage(msg: WebviewMessageType): void {
+        this._webview?.postMessage(msg);
     }
 
     private _getWebviewContent(webview: vscode.Webview): string {

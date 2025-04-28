@@ -1,18 +1,19 @@
 import { Signal } from "@preact/signals";
-import { Status } from "../../../common";
-import { BLUE_COLOR, RED_COLOR } from "../../common";
+
+import { Status } from "~common/common";
+import { BLUE_COLOR, RED_COLOR } from "~common/webview";
 
 interface Props {
     data: Signal<string>;
     status: Status;
     id: number;
     onView: (id: number) => void;
-    onAddTestcase: (id: number) => void;
+    onAdd: (id: number) => void;
 }
 
 const from = ['Generator', 'Solution', 'Good Solution'];
 
-export default function App({ data, status, id, onView, onAddTestcase }: Props) {
+export default function ({ data, status, id, onView, onAdd }: Props) {
     const statusItem = (() => {
         if (status === Status.WA)
             return <p class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }}>WA</p>
@@ -53,7 +54,7 @@ export default function App({ data, status, id, onView, onAddTestcase }: Props) 
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{from[id]}</p>
                         {statusItem}
                         {(status === Status.RE || status === Status.WA) &&
-                            <button class="text-base leading-tight px-3 w-fit display-font" style={{ background: BLUE_COLOR }} onClick={() => onAddTestcase(id)}>add testcase</button>}
+                            <button class="text-base leading-tight px-3 w-fit display-font" style={{ background: BLUE_COLOR }} onClick={() => onAdd(id)}>add testcase</button>}
                     </div>
                 </div>
                 <div class="flex flex-row">

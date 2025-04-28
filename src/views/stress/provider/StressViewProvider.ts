@@ -1,11 +1,13 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
+import path from 'path';
+import vscode from 'vscode';
 
-import { Data, RunningProcess, ILanguageRunSettings, viewTextInEditor, resolveVariables, resolveCommandArgs } from '../../util';
-import { BaseViewProvider } from "./BaseViewProvider";
-import { TestcasesViewProvider } from './TestcasesViewProvider';
-import { IStressTesterMessage, Status, StressTesterMessageType } from '../../../common';
-import { compile } from '../../util';
+import BaseViewProvider from '~utils/BaseViewProvider';
+import JudgeViewProvider from '../../judge/provider/JudgeViewProvider';
+import { IAddMessage, IViewMessage, ProviderMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from '../message';
+import { Status } from '~common/common';
+import { resolveCommand, resolveVariables, TextHandler } from '~utils/vscode';
+import { compile, Runnable } from '~utils/runtime';
+import { ILanguageSettings } from '~common/provider';
 
 interface IData {
     data: string;
@@ -13,36 +15,35 @@ interface IData {
 }
 
 interface IState {
-    data: Data;
+    data: TextHandler;
     status: Status;
-    process: RunningProcess;
+    process: Runnable;
 }
 
-export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessageType> {
+export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
     private _state: IState[] = [
-        { data: new Data(), status: Status.NA, process: new RunningProcess() },
-        { data: new Data(), status: Status.NA, process: new RunningProcess() },
-        { data: new Data(), status: Status.NA, process: new RunningProcess() },
+        { data: new TextHandler(), status: Status.NA, process: new Runnable() },
+        { data: new TextHandler(), status: Status.NA, process: new Runnable() },
+        { data: new TextHandler(), status: Status.NA, process: new Runnable() },
     ]; // [generator, solution, good solution]
     private _stopFlag: boolean = false;
 
-    onMessage(message: IStressTesterMessage) {
-        const { type, payload } = message;
-        switch (type) {
-            case StressTesterMessageType.LOADED:
+    onMessage(msg: ProviderMessage): void {
+        switch (msg.type) {
+            case ProviderMessageType.LOADED:
                 this.loadSavedData();
                 break;
-            case StressTesterMessageType.RUN:
+            case ProviderMessageType.RUN:
                 this.run();
                 break;
-            case StressTesterMessageType.STOP:
+            case ProviderMessageType.STOP:
                 this._stop();
                 break;
-            case StressTesterMessageType.VIEW:
-                viewTextInEditor(this._state[payload.id].data.data);
+            case ProviderMessageType.VIEW:
+                this._view(msg);
                 break;
-            case StressTesterMessageType.ADD:
-                this._add(payload);
+            case ProviderMessageType.ADD:
+                this._add(msg);
                 break;
         }
     }
@@ -51,38 +52,38 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         this._stop();
     }
 
-    constructor(context: vscode.ExtensionContext, private testcaseViewProvider: TestcasesViewProvider) {
+    constructor(context: vscode.ExtensionContext, private testcaseViewProvider: JudgeViewProvider) {
         super('stress-tester', context);
 
-        this._state[0].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 0, data });
-        this._state[1].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 1, data });
-        this._state[2].data.callback = (data: string) => super._postMessage(StressTesterMessageType.STDIO, { id: 2, data });
+        for (let id = 0; id < 3; id++) {
+            this._state[id].data.callback = (data: string) => super._postMessage({ type: WebviewMessageType.STDIO, id, data });
+        }
 
         vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
     }
 
     public async loadSavedData(): Promise<void> {
         this._stop();
-        for (let i = 0; i < 3; i++) {
-            this._state[i].data.reset();
-            this._state[i].status = Status.NA;
-            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.NA });
+        for (let id = 0; id < 3; id++) {
+            this._state[id].data.reset();
+            this._state[id].status = Status.NA;
+            super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.NA });
         }
-        super._postMessage(StressTesterMessageType.CLEAR);
+        super._postMessage({ type: WebviewMessageType.CLEAR });
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
-            super._postMessage(StressTesterMessageType.TOGGLE_VIEW, { value: false });
+            super._postMessage({ type: WebviewMessageType.SHOW, visible: false });
             return;
         }
+        super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-        super._postMessage(StressTesterMessageType.TOGGLE_VIEW, { value: true });
         const storage = super.readStorage();
         const state: IData[] = storage[file] ?? [];
-        for (let i = 0; i < state.length; i++) {
-            this._state[i].data.write(state[i].data, true);
-            this._state[i].status = state[i].status;
-            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: state[i].status });
+        for (let id = 0; id < state.length; id++) {
+            this._state[id].data.write(state[id].data, true);
+            this._state[id].status = state[id].status;
+            super._postMessage({ type: WebviewMessageType.STATUS, id, status: state[id].status });
         }
     }
 
@@ -95,20 +96,21 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         const extension = path.extname(file);
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const delayBetweenTestcases: number = config.get('delayBetweenTestcases')!;
-        const runSettings: ILanguageRunSettings | undefined = config.get<any>('runSettings')[extension];
+        const runSettings: ILanguageSettings | undefined = config.get<any>('runSettings')[extension];
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
             return;
         }
 
         if (runSettings.compileCommand) {
-            for (let i = 0; i < 3; i++) {
-                super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.COMPILING });
+            for (let id = 0; id < 3; id++) {
+                super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.COMPILING });
             }
+
             const callback = (id: number, code: number) => {
                 const status = code ? Status.CE : Status.NA;
                 this._state[id].status = status;
-                super._postMessage(StressTesterMessageType.STATUS, { id, status });
+                super._postMessage({ type: WebviewMessageType.STATUS, id, status });
                 return code;
             };
             const promises = [
@@ -125,8 +127,8 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             }
         }
 
-        for (let i = 0; i < 3; i++) {
-            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: Status.RUNNING });
+        for (let id = 0; id < 3; id++) {
+            super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.RUNNING });
         }
 
         const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
@@ -135,7 +137,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         let anyFailed = false;
         this._stopFlag = false;
         while (!this._stopFlag && (maxRuntime === -1 || Date.now() - start <= maxRuntime)) {
-            super._postMessage(StressTesterMessageType.CLEAR);
+            super._postMessage({ type: WebviewMessageType.CLEAR })
             for (let i = 0; i < 3; i++) {
                 this._state[i].data.reset();
             }
@@ -191,8 +193,8 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         if (!anyFailed && this._state[1].data.data !== this._state[2].data.data) {
             this._state[1].status = Status.WA;
         }
-        for (let i = 0; i < 3; i++) {
-            super._postMessage(StressTesterMessageType.STATUS, { id: i, status: this._state[i].status });
+        for (let id = 0; id < 3; id++) {
+            super._postMessage({ type: WebviewMessageType.STATUS, id, status: this._state[id].status });
         }
         this._saveState();
     }
@@ -204,7 +206,11 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
         }
     }
 
-    private async _add({ id }: { id: number }) {
+    private _view({ id }: IViewMessage) {
+
+    }
+
+    private async _add({ id }: IAddMessage) {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -219,15 +225,16 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
             resolvedFile = await resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('goodSolutionFile')!);
         }
 
-        this.testcaseViewProvider.nextTestcase(resolvedFile, {
+        this.testcaseViewProvider.addTestcaseToFile(resolvedFile, {
             stdin: this._state[0].data.data,
             stderr: '',
             stdout: this._state[1].data.data,
             acceptedStdout: this._state[2].data.data,
             elapsed: 0,
             status: this._state[id].status,
-            showTestcase: true,
+            shown: true,
             toggled: false,
+            skipped: false,
         });
     }
 
@@ -247,7 +254,7 @@ export class StressTesterViewProvider extends BaseViewProvider<StressTesterMessa
 
     private async _resolveRunArguments(runCommand: string, fileVariable: string) {
         const resolvedFile = await resolveVariables(fileVariable);
-        const resolvedArgs = await resolveCommandArgs(runCommand, resolvedFile);
+        const resolvedArgs = await resolveCommand(runCommand, resolvedFile);
         return resolvedArgs;
     }
 }

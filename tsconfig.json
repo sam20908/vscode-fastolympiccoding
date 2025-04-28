@@ -6,8 +6,15 @@
             "ESNext",
             "DOM"
         ],
+        "paths": {
+            "~common/*": [
+                "./src/common/*"
+            ],
+            "~utils/*": [
+                "./src/utils/*"
+            ]
+        },
         "sourceMap": true,
-        "rootDir": "src",
         "strict": true,
         "jsx": "react-jsx",
         "jsxImportSource": "preact"

@@ -1,23 +1,25 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import * as http from 'http'
-import * as vscode from 'vscode';
+import path from 'path';
+import fs from 'fs';
+import http from 'http'
+import vscode from 'vscode';
 
-import { TestcasesViewProvider } from './providers/views/TestcasesViewProvider';
-import { StressTesterViewProvider } from './providers/views/StressTesterViewProvider';
-import { compile, ILanguageRunSettings, ReadonlyStringDocumentContentProvider, resolveVariables } from './util';
+import JudgeViewProvider from './views/judge/provider/JudgeViewProvider';
+import StressViewProvider from './views/stress/provider/StressViewProvider';
+import { ReadonlyStringProvider, resolveVariables } from '~utils/vscode';
+import { ILanguageSettings } from '~common/provider';
+import { compile } from '~utils/runtime';
 
-let testcasesViewProvider: TestcasesViewProvider;
-let stressTesterViewProvider: StressTesterViewProvider;
+let testcasesViewProvider: JudgeViewProvider;
+let stressTesterViewProvider: StressViewProvider;
 
 function registerViewProviders(context: vscode.ExtensionContext): void {
-    testcasesViewProvider = new TestcasesViewProvider(context);
+    testcasesViewProvider = new JudgeViewProvider(context);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
         testcasesViewProvider.getViewId(),
         testcasesViewProvider
     ));
 
-    stressTesterViewProvider = new StressTesterViewProvider(context, testcasesViewProvider);
+    stressTesterViewProvider = new StressViewProvider(context, testcasesViewProvider);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
         stressTesterViewProvider.getViewId(),
         stressTesterViewProvider
@@ -26,8 +28,8 @@ function registerViewProviders(context: vscode.ExtensionContext): void {
 
 function registerDocumentContentProviders(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(
-        ReadonlyStringDocumentContentProvider.SCHEME,
-        new ReadonlyStringDocumentContentProvider()
+        ReadonlyStringProvider.SCHEME,
+        new ReadonlyStringProvider()
     ));
 }
 
@@ -45,7 +47,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
             const file = vscode.window.activeTextEditor!.document.fileName
             const config = vscode.workspace.getConfiguration('fastolympiccoding');
             const extension = path.extname(file);
-            const runSettings: ILanguageRunSettings | undefined = config.get<any>('runSettings')[extension];
+            const runSettings: ILanguageSettings | undefined = config.get<any>('runSettings')[extension];
             if (!runSettings) {
                 vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
                 return;
