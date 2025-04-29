@@ -1,6 +1,6 @@
-import vscode from 'vscode';
-import path from 'path';
-import os from 'os';
+import * as vscode from 'vscode';
+import * as path from 'path';
+import * as os from 'os';
 
 export class ReadonlyTerminal implements vscode.Pseudoterminal {
   private _writeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter();
@@ -34,7 +34,7 @@ export class TextHandler {
   private _spacesCount: number = 0;
   private _newlineCount: number = 0;
   private _lastWrite: number = -Infinity;
-  public callback: Function | undefined = undefined;
+  public callback: ((data: string) => void) | undefined = undefined;
 
   get data() {
     return this._data;
@@ -114,13 +114,8 @@ export class ReadonlyStringProvider implements vscode.TextDocumentContentProvide
   }
 }
 
-export async function replaceAsync(string: string, regexp: RegExp, replacer: Function) {
-  const replacements = await Promise.all(Array.from(string.matchAll(regexp), match => replacer(...match.slice(1), match.index, match[0])));
-  let i = 0;
-  return string.replace(regexp, () => replacements[i++]);
-}
 
-export async function resolveVariables(string: string, recursive: boolean = false, inContextOfFile?: string): Promise<string> {
+export function resolveVariables(string: string, inContextOfFile?: string): string {
   const workspaces = vscode.workspace.workspaceFolders;
   const workspace = vscode.workspace.workspaceFolders?.at(0);
   const activeEditor = inContextOfFile ? undefined : vscode.window.activeTextEditor;
@@ -137,40 +132,41 @@ export async function resolveVariables(string: string, recursive: boolean = fals
     }
   }
 
-  let oldString = '';
-  do {
-    oldString = string;
+  const vscodeSubstitutions: { [regex: string]: string } = {
+    "${userHome}": os.homedir(),
+    "${workspaceFolder}": workspace?.uri.fsPath ?? '',
+    "${workspaceFolderBasename}": workspace?.name ?? '',
+    "${file}": absoluteFilePath ?? '',
+    "${fileWorkspaceFolder}": activeWorkspace?.uri.fsPath ?? '',
+    "${relativeFile}": relativeFilePath ?? '',
+    "${relativeFileDirname}": relativeFilePath ? relativeFilePath.substring(0, relativeFilePath.lastIndexOf(path.sep)) : '',
+    "${fileBasename}": parsedPath?.base ?? '',
+    "${fileBasenameNoExtension}": parsedPath?.name ?? '',
+    "${fileExtname}": parsedPath?.ext ?? '',
+    "${fileDirname}": parsedPath?.dir ?? '',
+    "${fileDirnameBasename}": parsedPath ? parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1) : '',
+    "${cwd}": parsedPath?.dir ?? '',
+    "${lineNumber}": `${activeEditor?.selection.start.line? + 1 : ''}`,
+    "${selectedText}": activeEditor?.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end)) ?? '',
+    "${execPath}": process.execPath,
+    "${pathSeparator}": path.sep,
+    "${/}": path.sep,
+    "${exeExtname}": os.platform() === 'win32' ? '.exe' : ''
+  };
 
-    string = workspace ? string.replace(/\${userHome}/g, os.homedir()) : string;
-    string = workspace ? string.replace(/\${workspaceFolder}/g, workspace.uri.fsPath) : string;
-    string = workspace ? string.replace(/\${workspaceFolderBasename}/g, workspace.name) : string;
-    string = absoluteFilePath ? string.replace(/\${file}/g, absoluteFilePath) : string;
-    string = activeWorkspace ? string.replace(/\${fileWorkspaceFolder}/g, activeWorkspace.uri.fsPath) : string;
-    string = relativeFilePath ? string.replace(/\${relativeFile}/g, relativeFilePath) : string;
-    string = relativeFilePath ? string.replace(/\${relativeFileDirname}/g, relativeFilePath.substring(0, relativeFilePath.lastIndexOf(path.sep))) : string;
-    string = parsedPath ? string.replace(/\${fileBasename}/g, parsedPath.base) : string;
-    string = parsedPath ? string.replace(/\${fileBasenameNoExtension}/g, parsedPath.name) : string;
-    string = parsedPath ? string.replace(/\${fileExtname}/g, parsedPath.ext) : string;
-    string = parsedPath ? string.replace(/\${fileDirname}/g, parsedPath.dir) : string;
-    string = parsedPath ? string.replace(/\${fileDirnameBasename}/g, parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1)) : string;
-    string = parsedPath ? string.replace(/\${cwd}/g, parsedPath.dir) : string;
-    string = activeEditor ? string.replace(/\${lineNumber}/g, `${activeEditor.selection.start.line + 1}`) : string;
-    string = activeEditor ? string.replace(/\${selectedText}/g, `${activeEditor.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end))}`) : string;
-    string = string.replace(/\${execPath}/g, process.execPath);
-    string = await replaceAsync(string, /\${defaultBuildTask}/g, async () => await getDefaultBuildTaskName()); // only get name when necessary because it's slow
-    string = string.replace(/\${pathSeparator}/g, path.sep);
-    string = string.replace(/\${\/}/g, path.sep);
-    string = string.replace(/\${env:(.*?)}/g, match => process.env[match] ?? '');
-    string = string.replace(/\${config:(.*?)}/g, match => vscode.workspace.getConfiguration().get(match) ?? '');
-    string = string.replace(/\${exeExtname}/, os.platform() === 'win32' ? '.exe' : '');
-    string = await replaceAsync(string, /\${path:(.*?)}/g, async (match: string) => path.normalize(await resolveVariables(match, false, inContextOfFile)));
-  } while (recursive && oldString !== string);
-  return string;
+  // Replace all regexes with their matches at once
+  const vscodeVariableRgex = new RegExp(Object.keys(vscodeSubstitutions).join('|'), 'g');
+  const vscodeResolvedString = string.replace(vscodeVariableRgex, (variable) => vscodeSubstitutions[variable]);
+
+  // Resolve ${path:...} last
+  const resolved = vscodeResolvedString.replace(/\${path:(.*?)}/g, (match) => path.normalize(match));
+
+  return resolved;
 }
 
-export async function resolveCommand(command: string, inContextOfFile?: string) {
+export function resolveCommand(command: string, inContextOfFile?: string) {
   const args = command.trim().split(' ');
-  return await Promise.all(args.map(arg => resolveVariables(arg, false, inContextOfFile)));
+  return args.map(arg => resolveVariables(arg, inContextOfFile));
 }
 
 export async function openInNewEditor(content: string): Promise<void> {

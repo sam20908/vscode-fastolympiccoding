@@ -2,7 +2,7 @@ import { useEffect } from "preact/hooks";
 import { batch, signal, useComputed } from "@preact/signals";
 
 import FileData from './FileData';
-import { observable, PreactObservable } from "~utils/observable";
+import { observable, PreactObservable } from "~external/observable";
 import { Status } from "~common/common";
 import { IShowMessage, IStatusMessage, IStdioMessage, ProviderMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from "../message";
 import { BLUE_COLOR, RED_COLOR } from "~common/webview";
@@ -12,7 +12,7 @@ interface IState {
     status: Status;
 }
 
-// @ts-ignore
+// @ts-expect-error: acquireVscCodeApi is exposed by VSCode itself
 const vscode = acquireVsCodeApi();
 const postMessage = (msg: ProviderMessage) => vscode.postMessage(msg);
 

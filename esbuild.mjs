@@ -1,4 +1,4 @@
-const { build, context } = require("esbuild");
+import { build, context } from "esbuild";
 
 //@ts-check
 /** @typedef {import('esbuild').BuildOptions} BuildOptions **/
@@ -19,6 +19,7 @@ const extensionConfig = {
     entryPoints: ["./src/extension.ts"],
     outfile: "./dist/extension.js",
     external: ["vscode"],
+    tsconfig: "./tsconfig.node.json",
 };
 
 /**
@@ -31,7 +32,8 @@ function getWebviewConfig(subsystem) {
         target: "es2020",
         format: "esm",
         entryPoints: [`./src/views/${subsystem}/webview/index.tsx`],
-        outfile: `./dist/${subsystem}/index.js`
+        outfile: `./dist/${subsystem}/index.js`,
+        tsconfig: "./tsconfig.app.json",
     };
 }
 

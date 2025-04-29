@@ -1,8 +1,8 @@
-import path from 'path';
-import vscode from 'vscode';
+import * as path from 'path';
+import * as vscode from 'vscode';
 
 import { ITestcase, Status, Stdio } from '~common/common';
-import { ILanguageSettings } from '~common/provider';
+import { ILanguageSettings, IProblem, ITest } from '~common/provider';
 import BaseViewProvider from '~utils/BaseViewProvider';
 import { openInNewEditor, ReadonlyStringProvider, resolveCommand, resolveVariables, TextHandler } from '~utils/vscode';
 import { compile, Runnable } from '~utils/runtime';
@@ -28,7 +28,7 @@ function getExitCodeStatus(code: number | null, stdout: string, acceptedStdout: 
         return Status.WA;
 }
 
-export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
+export default class extends BaseViewProvider<ITestcase[], ProviderMessage, WebviewMessage> {
     private _testcases: Map<number, IState> = new Map(); // Map also remembers insertion order :D
     private _newId: number = 0;
 
@@ -60,7 +60,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
     }
 
     constructor(context: vscode.ExtensionContext) {
-        super('testcases', context);
+        super('judge', context);
 
         vscode.window.onDidChangeActiveTextEditor(this.loadCurrentFileTestcases, this);
     }
@@ -87,8 +87,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
         }
     }
 
-    public addFromCompetitiveCompanion(file: string, data: any) {
-        const testcases: ITestcase[] = data['tests'].map((test: any): ITestcase => {
+    public addFromCompetitiveCompanion(file: string, data: IProblem) {
+        const testcases: ITestcase[] = data['tests'].map((test: ITest): ITestcase => {
             return {
                 stdin: test['input'],
                 stderr: '',
@@ -257,7 +257,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
         const extension = path.extname(file);
-        const runSettings: ILanguageSettings | undefined = config.get<any>('runSettings')[extension];
+        const runSettings = config.get<ILanguageSettings>(`runSettings.${extension}`);
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
             return;

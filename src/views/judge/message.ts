@@ -64,7 +64,7 @@ export interface ISetMessage {
   type: WebviewMessageType.SET;
   id: number;
   property: keyof ITestcase
-  value: any
+  value: unknown
 }
 export interface IStdioMessage {
   type: WebviewMessageType.STDIO;

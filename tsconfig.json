@@ -1,22 +1,24 @@
 {
     "compilerOptions": {
-        "module": "NodeNext",
-        "target": "ESNext",
-        "lib": [
-            "ESNext",
-            "DOM"
-        ],
         "paths": {
             "~common/*": [
                 "./src/common/*"
             ],
             "~utils/*": [
                 "./src/utils/*"
+            ],
+            "~external/*": [
+                "./src/external/*"
             ]
         },
-        "sourceMap": true,
-        "strict": true,
-        "jsx": "react-jsx",
-        "jsxImportSource": "preact"
-    }
+        "strict": true
+    },
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        },
+        {
+            "path": "./tsconfig.app.json"
+        }
+    ]
 }

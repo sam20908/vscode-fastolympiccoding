@@ -1,28 +1,28 @@
-import path from 'path';
-import fs from 'fs';
-import http from 'http'
-import vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as http from 'http'
+import * as vscode from 'vscode';
 
 import JudgeViewProvider from './views/judge/provider/JudgeViewProvider';
 import StressViewProvider from './views/stress/provider/StressViewProvider';
 import { ReadonlyStringProvider, resolveVariables } from '~utils/vscode';
-import { ILanguageSettings } from '~common/provider';
+import { ILanguageSettings, IProblem } from '~common/provider';
 import { compile } from '~utils/runtime';
 
-let testcasesViewProvider: JudgeViewProvider;
-let stressTesterViewProvider: StressViewProvider;
+let judgeViewProvider: JudgeViewProvider;
+let stressViewProvider: StressViewProvider;
 
 function registerViewProviders(context: vscode.ExtensionContext): void {
-    testcasesViewProvider = new JudgeViewProvider(context);
+    judgeViewProvider = new JudgeViewProvider(context);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
-        testcasesViewProvider.getViewId(),
-        testcasesViewProvider
+        judgeViewProvider.getViewId(),
+        judgeViewProvider
     ));
 
-    stressTesterViewProvider = new StressViewProvider(context, testcasesViewProvider);
+    stressViewProvider = new StressViewProvider(context, judgeViewProvider);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(
-        stressTesterViewProvider.getViewId(),
-        stressTesterViewProvider
+        stressViewProvider.getViewId(),
+        stressViewProvider
     ));
 }
 
@@ -47,7 +47,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
             const file = vscode.window.activeTextEditor!.document.fileName
             const config = vscode.workspace.getConfiguration('fastolympiccoding');
             const extension = path.extname(file);
-            const runSettings: ILanguageSettings | undefined = config.get<any>('runSettings')[extension];
+            const runSettings = config.get<ILanguageSettings>(`runSettings.${extension}`);
             if (!runSettings) {
                 vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
                 return;
@@ -60,29 +60,29 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.runAll',
-        () => testcasesViewProvider.runAll()
+        () => judgeViewProvider.runAll()
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.stopAll',
-        () => testcasesViewProvider.stopAll()
+        () => judgeViewProvider.stopAll()
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.deleteAll',
-        () => testcasesViewProvider.deleteAll()
+        () => judgeViewProvider.deleteAll()
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.stressTest',
-        () => stressTesterViewProvider.run()
+        () => stressViewProvider.run()
     ));
 
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(
         'fastolympiccoding.clearData',
         () => {
-            testcasesViewProvider.clearData();
-            stressTesterViewProvider.clearData();
+            judgeViewProvider.clearData();
+            stressViewProvider.clearData();
         }
     ));
 
@@ -99,7 +99,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
             }
 
             const content = fs.readFileSync(path.join(pickedFile.description, pickedFile.label), { encoding: 'utf-8' });
-            const inserted = vscode.window.activeTextEditor?.edit((edit) => {
+            const inserted = vscode.window.activeTextEditor?.edit((edit: vscode.TextEditorEdit) => {
                 edit.insert(vscode.window.activeTextEditor!.selection.active, content);
             });
             const foldTemplate = config.get('foldFileTemplate')! as boolean;
@@ -111,7 +111,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 }
 
 function listenForCompetitiveCompanion() {
-    let problemDatas: any[] = [];
+    let problemDatas: IProblem[] = [];
     let cnt = 0;
     const server = http.createServer((req, res) => {
         if (req.method !== 'POST') {
@@ -125,7 +125,7 @@ function listenForCompetitiveCompanion() {
         req.on('end', async () => {
             problemDatas.push(JSON.parse(ccData));
             res.end();
-            vscode.window.showInformationMessage(`Received data for "${problemDatas.at(-1).name}"`);
+            vscode.window.showInformationMessage(`Received data for "${problemDatas.at(-1)!.name}"`);
 
             if (cnt === 0) {
                 cnt = problemDatas[0].batch.size;
@@ -137,15 +137,15 @@ function listenForCompetitiveCompanion() {
             const file = vscode.window.activeTextEditor?.document.fileName;
             const workspace = vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
             const config = vscode.workspace.getConfiguration('fastolympiccoding')
-            const openSelectedFiles = config.get('openSelectedFiles')! as boolean;
-            const askForWhichFile = config.get('askForWhichFile')! as boolean;
-            const includePattern = config.get('includePattern')! as string;
-            const excludePattern = config.get('excludePattern')! as string;
+            const openSelectedFiles = config.get<boolean>('openSelectedFiles')!;
+            const askForWhichFile = config.get<boolean>('askForWhichFile')!;
+            const includePattern = config.get<string>('includePattern')!;
+            const excludePattern = config.get<string>('excludePattern')!;
             const files = (await vscode.workspace.findFiles(includePattern, excludePattern)).map(file => ({
                 label: path.parse(file.fsPath).base,
                 description: path.parse(path.relative(workspace, file.fsPath)).dir,
             }));
-            let filePaths: string[] = [];
+            const filePaths: string[] = [];
             for (let i = 0; i < problemDatas.length; i++) {
                 let fileTo = problemDatas[i].batch.size === 1 && file ? path.relative(workspace, file) : '';
                 if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
@@ -181,7 +181,7 @@ function listenForCompetitiveCompanion() {
                 }
                 fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
 
-                testcasesViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
+                judgeViewProvider.addFromCompetitiveCompanion(fileTo, problemDatas[i]);
                 filePaths.push(fileTo);
             }
             if (openSelectedFiles) {

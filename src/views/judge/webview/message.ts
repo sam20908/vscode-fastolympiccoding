@@ -1,6 +1,6 @@
 import { ProviderMessage } from "../message";
 
-// @ts-ignore
+// @ts-expect-error: acquireVscCodeApi is exposed by VSCode itself
 const vscode = acquireVsCodeApi();
 
 export const postMessage = (msg: ProviderMessage) => {

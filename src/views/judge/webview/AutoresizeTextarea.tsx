@@ -1,5 +1,6 @@
 import { Signal } from '@preact/signals';
 import { useLayoutEffect, useRef } from 'preact/hooks'
+import { JSX } from 'preact/jsx-runtime';
 
 interface Props {
     input: Signal<string>;
@@ -21,5 +22,5 @@ export default function App({ input, onKeyUp }: Props) {
         background: "none",
         width: "100%",
         overflowY: "hidden"
-    }} value={input.value} onInput={e => input.value = e.currentTarget.value} onKeyUp={onKeyUp} placeholder="Input here..." />;
+    }} value={input.value} onInput={(event: JSX.TargetedEvent<HTMLTextAreaElement>) => input.value = event.currentTarget.value} onKeyUp={onKeyUp} placeholder="Input here..." />;
 }

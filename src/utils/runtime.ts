@@ -1,8 +1,8 @@
-import vscode from 'vscode';
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
-import child_process from 'child_process';
+import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
+import * as child_process from 'child_process';
 
 import { ReadonlyTerminal, resolveCommand } from './vscode';
 

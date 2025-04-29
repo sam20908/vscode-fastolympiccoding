@@ -1,11 +1,11 @@
-import path from 'path';
-import vscode from 'vscode';
+import * as path from 'path';
+import * as vscode from 'vscode';
 
 import BaseViewProvider from '~utils/BaseViewProvider';
 import JudgeViewProvider from '../../judge/provider/JudgeViewProvider';
 import { IAddMessage, IViewMessage, ProviderMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from '../message';
 import { Status } from '~common/common';
-import { resolveCommand, resolveVariables, TextHandler } from '~utils/vscode';
+import { openInNewEditor, resolveCommand, resolveVariables, TextHandler } from '~utils/vscode';
 import { compile, Runnable } from '~utils/runtime';
 import { ILanguageSettings } from '~common/provider';
 
@@ -20,7 +20,7 @@ interface IState {
     process: Runnable;
 }
 
-export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
+export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewMessage> {
     private _state: IState[] = [
         { data: new TextHandler(), status: Status.NA, process: new Runnable() },
         { data: new TextHandler(), status: Status.NA, process: new Runnable() },
@@ -53,7 +53,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
     }
 
     constructor(context: vscode.ExtensionContext, private testcaseViewProvider: JudgeViewProvider) {
-        super('stress-tester', context);
+        super('stress', context);
 
         for (let id = 0; id < 3; id++) {
             this._state[id].data.callback = (data: string) => super._postMessage({ type: WebviewMessageType.STDIO, id, data });
@@ -78,8 +78,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
         }
         super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-        const storage = super.readStorage();
-        const state: IData[] = storage[file] ?? [];
+        const state = super.readStorage()[file] ?? [];
         for (let id = 0; id < state.length; id++) {
             this._state[id].data.write(state[id].data, true);
             this._state[id].status = state[id].status;
@@ -95,8 +94,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 
         const extension = path.extname(file);
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const delayBetweenTestcases: number = config.get('delayBetweenTestcases')!;
-        const runSettings: ILanguageSettings | undefined = config.get<any>('runSettings')[extension];
+        const delayBetweenTestcases = config.get<number>('delayBetweenTestcases')!;
+        const runSettings = config.get<ILanguageSettings>(`runSettings.${extension}`);
         if (!runSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
             return;
@@ -207,7 +206,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
     }
 
     private _view({ id }: IViewMessage) {
-
+        openInNewEditor(this._state[id].data.data);
     }
 
     private async _add({ id }: IAddMessage) {

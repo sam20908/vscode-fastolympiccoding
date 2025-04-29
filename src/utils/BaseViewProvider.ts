@@ -1,4 +1,8 @@
-import vscode from 'vscode';
+import * as vscode from 'vscode';
+
+interface IWorkspaceState<Data> {
+    [key: string]: Data;
+}
 
 function getNonce(): string {
     const CHOICES = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -9,7 +13,7 @@ function getNonce(): string {
     return nonce;
 }
 
-export default abstract class <ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
+export default abstract class <Data, ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
     private _webview?: vscode.Webview = undefined;
 
     constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
@@ -24,7 +28,7 @@ export default abstract class <ProviderMessageType, WebviewMessageType> implemen
             localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist')],
         };
         webviewView.webview.html = this._getWebviewContent(webviewView.webview);
-        webviewView.webview.onDidReceiveMessage(message => this.onMessage(message));
+        webviewView.webview.onDidReceiveMessage((message: ProviderMessageType) => this.onMessage(message));
         webviewView.onDidDispose(() => this.onDispose());
         webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
     }
@@ -33,12 +37,12 @@ export default abstract class <ProviderMessageType, WebviewMessageType> implemen
         return `fastolympiccoding.${this.view}`;
     }
 
-    public readStorage(): any {
-        return this._context.workspaceState.get<any>(this.view, {});
+    public readStorage() {
+        return this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
     }
 
-    public writeStorage(file: string, data: any): void {
-        const fileData = this._context.workspaceState.get<any>(this.view, {});
+    public writeStorage(file: string, data: Data) {
+        const fileData = this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
         this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
     }
 

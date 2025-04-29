@@ -2,7 +2,7 @@ import { signal, useComputed } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import Testcase from './Testcase';
-import { observable } from '~utils/observable';
+import { observable } from '~external/observable';
 import { IDeleteMessage, INewMessage, ISetMessage, IShowMessage, IStdioMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from '../message';
 import { ITestcase, Status, Stdio } from '~common/common';
 
@@ -46,7 +46,7 @@ function handleNew({ id }: INewMessage) {
 }
 
 function handleSet({ id, property, value }: ISetMessage) {
-    (testcases.get(id)![property] as any) = value;
+    (testcases.get(id)![property] as unknown) = value;
 }
 
 function handleStdio({ id, data, stdio }: IStdioMessage) {
@@ -84,7 +84,6 @@ export default function () {
         return components;
     });
 
-    console.log('main component');
     return <>{
         show.value && <>{testcaseComponents}
             <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postMessage({ type: ProviderMessageType.NEXT })}>next test</button>

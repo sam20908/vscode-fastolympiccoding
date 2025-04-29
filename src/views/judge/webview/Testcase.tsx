@@ -1,8 +1,8 @@
 import { useComputed, useSignal } from '@preact/signals';
 
 import { ITestcase, Status, Stdio } from '~common/common';
-import AutoresizeTextarea from '../../../utils/AutoresizeTextarea';
-import { PreactObservable } from '../../../utils/observable';
+import AutoresizeTextarea from './AutoresizeTextarea';
+import { PreactObservable } from '~external/observable';
 import { Action, ProviderMessageType } from '../message';
 import { BLUE_COLOR, GREEN_COLOR, RED_COLOR } from '~common/webview';
 

@@ -1,8 +1,8 @@
 // originally from https://github.com/melnikov-s/preact-observables/blob/main/src/index.ts
 // modified to use @preact/signals instead
 
-
 import { signal, effect, computed, batch, Signal } from "@preact/signals";
+
 import {
   createGraph,
   getAdministration,
