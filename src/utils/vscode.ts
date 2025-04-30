@@ -132,6 +132,8 @@ export function resolveVariables(string: string, inContextOfFile?: string): stri
     }
   }
 
+  // ${getDefaultBuildTaskName} is not supported because it is painful to implement. Bark if necessary :)
+
   const vscodeSubstitutions: { [regex: string]: string } = {
     "${userHome}": os.homedir(),
     "${workspaceFolder}": workspace?.uri.fsPath ?? '',

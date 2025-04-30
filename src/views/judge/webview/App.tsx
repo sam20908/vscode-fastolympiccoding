@@ -9,22 +9,22 @@ import { ITestcase, Status, Stdio } from '~common/common';
 const testcases = observable(new Map<number, ITestcase>());
 const show = signal(true);
 
-window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
-    switch (event.data.type) {
+window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
+    switch (msg.data.type) {
         case WebviewMessageType.NEW:
-            handleNew(event.data);
+            handleNew(msg.data);
             break;
         case WebviewMessageType.SET:
-            handleSet(event.data);
+            handleSet(msg.data);
             break;
         case WebviewMessageType.STDIO:
-            handleStdio(event.data);
+            handleStdio(msg.data);
             break;
         case WebviewMessageType.DELETE:
-            handleDelete(event.data);
+            handleDelete(msg.data);
             break;
         case WebviewMessageType.SHOW:
-            handleShow(event.data);
+            handleShow(msg.data);
             break;
     }
 });

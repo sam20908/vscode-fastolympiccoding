@@ -34,7 +34,7 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 this.loadSavedData();
                 break;
             case ProviderMessageType.RUN:
-                this.run();
+                void this.run();
                 break;
             case ProviderMessageType.STOP:
                 this._stop();
@@ -52,17 +52,17 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
         this._stop();
     }
 
-    constructor(context: vscode.ExtensionContext, private testcaseViewProvider: JudgeViewProvider) {
+    constructor(context: vscode.ExtensionContext, private _testcaseViewProvider: JudgeViewProvider) {
         super('stress', context);
 
         for (let id = 0; id < 3; id++) {
             this._state[id].data.callback = (data: string) => super._postMessage({ type: WebviewMessageType.STDIO, id, data });
         }
 
-        vscode.window.onDidChangeActiveTextEditor(this.loadSavedData, this);
+        vscode.window.onDidChangeActiveTextEditor(() => this.loadSavedData(), this);
     }
 
-    public async loadSavedData(): Promise<void> {
+    public loadSavedData() {
         this._stop();
         for (let id = 0; id < 3; id++) {
             this._state[id].data.reset();
@@ -113,9 +113,9 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 return code;
             };
             const promises = [
-                compile(await resolveVariables(config.get('generatorFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 0)),
-                compile(await resolveVariables('${file}'), runSettings.compileCommand, this._context).then(callback.bind(this, 1)),
-                compile(await resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 2)),
+                compile(resolveVariables(config.get('generatorFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 0)),
+                compile(resolveVariables('${file}'), runSettings.compileCommand, this._context).then(callback.bind(this, 1)),
+                compile(resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 2)),
             ];
             const codes = await Promise.all(promises);
 
@@ -130,9 +130,10 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
             super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.RUNNING });
         }
 
-        const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
-        const maxRuntime = config.get('maxRuntime')! as number;
+        const cwd = runSettings.currentWorkingDirectory ? resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const maxRuntime = config.get<number>('maxRuntime')!;
         const start = Date.now();
+
         let anyFailed = false;
         this._stopFlag = false;
         while (!this._stopFlag && (maxRuntime === -1 || Date.now() - start <= maxRuntime)) {
@@ -141,24 +142,24 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 this._state[i].data.reset();
             }
 
-            const solutionRunArguments = await this._resolveRunArguments(runSettings.runCommand, '${file}');
+            const solutionRunArguments = this._resolveRunArguments(runSettings.runCommand, '${file}');
             this._state[1].process.run(solutionRunArguments[0], cwd, ...solutionRunArguments.slice(1));
             this._state[1].process.process!.on('error', data => this._state[1].data.write(data.message, true));
-            this._state[1].process.process!.stdout.on('data', data => this._state[1].data.write(data, false));
+            this._state[1].process.process!.stdout.on('data', (data: string) => this._state[1].data.write(data, false));
             this._state[1].process.process!.stdout.once('end', () => this._state[1].data.write('', true));
 
-            const goodSolutionRunArguments = await this._resolveRunArguments(runSettings.runCommand, config.get('goodSolutionFile')!);
+            const goodSolutionRunArguments = this._resolveRunArguments(runSettings.runCommand, config.get('goodSolutionFile')!);
             this._state[2].process.run(goodSolutionRunArguments[0], cwd, ...goodSolutionRunArguments.slice(1));
             this._state[2].process.process!.on('error', data => this._state[2].data.write(data.message, true));
-            this._state[2].process.process!.stdout.on('data', data => this._state[2].data.write(data, false));
+            this._state[2].process.process!.stdout.on('data', (data: string) => this._state[2].data.write(data, false));
             this._state[2].process.process!.stdout.once('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
-            const generatorRunArguments = await this._resolveRunArguments(runSettings.runCommand, config.get('generatorFile')!);
+            const generatorRunArguments = this._resolveRunArguments(runSettings.runCommand, config.get('generatorFile')!);
             this._state[0].process.run(generatorRunArguments[0], cwd, ...generatorRunArguments.slice(1));
             this._state[0].process.process!.on('error', data => this._state[0].data.write(data.message, true));
             this._state[0].process.process!.stdin.write(`${seed}\n`);
-            this._state[0].process.process!.stdout.on('data', data => {
+            this._state[0].process.process!.stdout.on('data', (data: string) => {
                 this._state[0].data.write(data, false);
                 this._state[1].process.process!.stdin.write(data);
                 this._state[2].process.process!.stdin.write(data);
@@ -178,10 +179,10 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 });
             }
 
-            await Promise.allSettled(this._state.map(value => value.process!.promise));
+            await Promise.allSettled(this._state.map(value => value.process.promise));
             for (let i = 0; i < 3; i++) {
-                anyFailed ||= !!this._state[i].process!.exitCode;
-                this._state[i].status = this._state[i].process!.exitCode === 0 ? Status.NA : Status.RE;
+                anyFailed ||= !!this._state[i].process.exitCode;
+                this._state[i].status = this._state[i].process.exitCode === 0 ? Status.NA : Status.RE;
             }
             if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
                 break;
@@ -206,10 +207,10 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
     }
 
     private _view({ id }: IViewMessage) {
-        openInNewEditor(this._state[id].data.data);
+        void openInNewEditor(this._state[id].data.data);
     }
 
-    private async _add({ id }: IAddMessage) {
+    private _add({ id }: IAddMessage) {
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
             return;
@@ -217,14 +218,14 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
 
         let resolvedFile;
         if (id == 0) {
-            resolvedFile = await resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('generatorFile')!);
+            resolvedFile = resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('generatorFile')!);
         } else if (id == 1) {
             resolvedFile = file;
         } else {
-            resolvedFile = await resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('goodSolutionFile')!);
+            resolvedFile = resolveVariables(vscode.workspace.getConfiguration('fastolympiccoding').get('goodSolutionFile')!);
         }
 
-        this.testcaseViewProvider.addTestcaseToFile(resolvedFile, {
+        this._testcaseViewProvider.addTestcaseToFile(resolvedFile, {
             stdin: this._state[0].data.data,
             stderr: '',
             stdout: this._state[1].data.data,
@@ -251,9 +252,9 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
         }));
     }
 
-    private async _resolveRunArguments(runCommand: string, fileVariable: string) {
-        const resolvedFile = await resolveVariables(fileVariable);
-        const resolvedArgs = await resolveCommand(runCommand, resolvedFile);
+    private _resolveRunArguments(runCommand: string, fileVariable: string) {
+        const resolvedFile = resolveVariables(fileVariable);
+        const resolvedArgs = resolveCommand(runCommand, resolvedFile);
         return resolvedArgs;
     }
 }

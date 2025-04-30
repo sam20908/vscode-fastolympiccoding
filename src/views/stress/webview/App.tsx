@@ -1,7 +1,8 @@
 import { useEffect } from "preact/hooks";
 import { batch, signal, useComputed } from "@preact/signals";
+import 'vscode-webview';
 
-import FileData from './FileData';
+import State from './State';
 import { observable, PreactObservable } from "~external/observable";
 import { Status } from "~common/common";
 import { IShowMessage, IStatusMessage, IStdioMessage, ProviderMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from "../message";
@@ -12,8 +13,8 @@ interface IState {
     status: Status;
 }
 
-// @ts-expect-error: acquireVscCodeApi is exposed by VSCode itself
 const vscode = acquireVsCodeApi();
+
 const postMessage = (msg: ProviderMessage) => vscode.postMessage(msg);
 
 const state: PreactObservable<IState[]> = observable([{ data: '', status: Status.NA }, { data: '', status: Status.NA }, { data: '', status: Status.NA }]);
@@ -80,9 +81,9 @@ export default function App() {
                     </div>
                 </div>
             </div>
-            <FileData data={state[0].$data!} status={state[0].status} id={0} onView={expand} onAdd={add} />
-            <FileData data={state[1].$data!} status={state[1].status} id={1} onView={expand} onAdd={add} />
-            <FileData data={state[2].$data!} status={state[2].status} id={2} onView={expand} onAdd={add} />
+            <State data={state[0].$data!} status={state[0].status} id={0} onView={expand} onAdd={add} />
+            <State data={state[1].$data!} status={state[1].status} id={1} onView={expand} onAdd={add} />
+            <State data={state[2].$data!} status={state[2].status} id={2} onView={expand} onAdd={add} />
         </>
     }</>;
 }

@@ -56,7 +56,7 @@ export default abstract class <Data, ProviderMessageType, WebviewMessageType> im
 
     private _getWebviewContent(webview: vscode.Webview): string {
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
-        const font = config.get('font')!;
+        const font = config.get<string>('font')!;
         const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
         const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
         const nonce = getNonce();
@@ -83,7 +83,7 @@ export default abstract class <Data, ProviderMessageType, WebviewMessageType> im
         `;
     }
 
-    private _getUri(webview: vscode.Webview, paths: string[]): vscode.Uri {
-        return webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths));
+    private _getUri(webview: vscode.Webview, paths: string[]) {
+        return webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths)).toString();
     }
 }

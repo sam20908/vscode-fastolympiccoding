@@ -8,7 +8,7 @@
                 "./src/utils/*"
             ],
             "~external/*": [
-                "./src/external/*"
+                "./external/*"
             ]
         },
         "strict": true

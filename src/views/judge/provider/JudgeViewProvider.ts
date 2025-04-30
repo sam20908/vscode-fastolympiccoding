@@ -29,7 +29,7 @@ function getExitCodeStatus(code: number | null, stdout: string, acceptedStdout: 
 }
 
 export default class extends BaseViewProvider<ITestcase[], ProviderMessage, WebviewMessage> {
-    private _testcases: Map<number, IState> = new Map(); // Map also remembers insertion order :D
+    private _state: Map<number, IState> = new Map(); // Map also remembers insertion order :D
     private _newId: number = 0;
 
     onMessage(msg: ProviderMessage) {
@@ -38,7 +38,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
                 this.loadCurrentFileTestcases();
                 break;
             case ProviderMessageType.NEXT:
-                this._run(this.addTestcaseToFile());
+                void this._run(this.addTestcaseToFile());
                 break;
             case ProviderMessageType.ACTION:
                 this._action(msg);
@@ -62,15 +62,15 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     constructor(context: vscode.ExtensionContext) {
         super('judge', context);
 
-        vscode.window.onDidChangeActiveTextEditor(this.loadCurrentFileTestcases, this);
+        vscode.window.onDidChangeActiveTextEditor(() => this.loadCurrentFileTestcases(), this);
     }
 
     public loadCurrentFileTestcases() {
         this.stopAll();
-        for (const id of this._testcases.keys()) {
+        for (const id of this._state.keys()) {
             super._postMessage({ type: WebviewMessageType.DELETE, id });
         }
-        this._testcases.clear();
+        this._state.clear();
 
         const file = vscode.window.activeTextEditor?.document.fileName;
         if (!file) {
@@ -79,10 +79,9 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         }
         super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-        const storage = super.readStorage();
-        const fileData = storage[file] ?? [];
+        const fileData = super.readStorage()[file] ?? [];
         for (let i = 0; i < fileData.length; i++) {
-            this._testcases.set(this._newId, this._createTestcaseState(fileData[i], this._newId))
+            this._state.set(this._newId, this._createTestcaseState(fileData[i], this._newId))
             this._newId++;
         }
     }
@@ -120,7 +119,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         }
 
         if (pickedFile === vscode.window.activeTextEditor?.document.fileName) {
-            this._testcases.set(this._newId, this._createTestcaseState(testcase, this._newId));
+            this._state.set(this._newId, this._createTestcaseState(testcase, this._newId));
             this._saveTestcases();
             return this._newId++;
         } else if (testcase) {
@@ -134,19 +133,19 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     public runAll() {
-        for (const id of this._testcases.keys()) {
-            this._run(id);
+        for (const id of this._state.keys()) {
+            void this._run(id);
         }
     }
 
     public stopAll() {
-        for (const id of this._testcases.keys()) {
+        for (const id of this._state.keys()) {
             this._stop(id);
         }
     }
 
     public deleteAll() {
-        for (const id of this._testcases.keys()) {
+        for (const id of this._state.keys()) {
             this._delete(id);
         }
     }
@@ -154,7 +153,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     private _action({ id, action }: IActionMessage) {
         switch (action) {
             case Action.RUN:
-                this._run(id);
+                void this._run(id);
                 break;
             case Action.STOP:
                 this._stop(id);
@@ -190,7 +189,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         }
 
         const testcases: ITestcase[] = [];
-        for (const testcase of this._testcases.values()) {
+        for (const testcase of this._state.values()) {
             testcases.push({
                 stdin: testcase.stdin.data,
                 stderr: testcase.stderr.data,
@@ -245,7 +244,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         if (!file) {
             return;
         }
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         // stop already-running process
         this._stop(id);
@@ -282,8 +281,8 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'stdout', value: '' });
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.RUNNING });
 
-        const resolvedArgs = await resolveCommand(runSettings.runCommand);
-        const cwd = runSettings.currentWorkingDirectory ? await resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const resolvedArgs = resolveCommand(runSettings.runCommand);
+        const cwd = runSettings.currentWorkingDirectory ? resolveVariables(runSettings.currentWorkingDirectory) : undefined;
         testcase.stderr.reset();
         testcase.stdout.reset();
         testcase.process.run(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
@@ -311,28 +310,28 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _stop(id: number) {
-        this._testcases.get(id)!.process.process?.kill();
+        this._state.get(id)!.process.process?.kill();
     }
 
     private _delete(id: number) {
         this._stop(id);
         super._postMessage({ type: WebviewMessageType.DELETE, id });
-        this._testcases.delete(id);
+        this._state.delete(id);
         this._saveTestcases();
     }
 
     private _edit(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.EDITING });
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'stdin', value: testcase.stdin.data });
     }
 
     private _accept(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
-        super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.AC });
-        super._postMessage({ type: WebviewMessageType.SET, id, property: 'acceptedStdout', value: '' });
         testcase.status = Status.AC;
+        super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: testcase.status });
+        super._postMessage({ type: WebviewMessageType.SET, id, property: 'acceptedStdout', value: '' });
         testcase.acceptedStdout.reset();
         testcase.acceptedStdout.write(testcase.stdout.data, true);
 
@@ -340,7 +339,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _decline(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         testcase.status = Status.NA;
         testcase.acceptedStdout.reset();
@@ -350,7 +349,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _toggleVisibility(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         testcase.shown = testcase.toggled ? !testcase.shown : testcase.status === Status.AC;
         testcase.toggled = true;
@@ -360,7 +359,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _toggleSkip(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         testcase.skipped = !testcase.skipped;
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'skipped', value: testcase.skipped });
@@ -368,7 +367,7 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _viewDiff(id: number) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
         const stdout = vscode.Uri.parse(`${ReadonlyStringProvider.SCHEME}:OUTPUT:\n\n${testcase.stdout.data}`);
         const acStdout = vscode.Uri.parse(`${ReadonlyStringProvider.SCHEME}:ACCEPTED OUTPUT:\n\n${testcase.acceptedStdout.data}`);
 
@@ -376,32 +375,32 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     private _viewStdio({ id, stdio }: IViewMessage) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         switch (stdio) {
             case Stdio.STDIN:
-                openInNewEditor(testcase.stdin.data);
+                void openInNewEditor(testcase.stdin.data);
                 break;
             case Stdio.STDERR:
-                openInNewEditor(testcase.stderr.data);
+                void openInNewEditor(testcase.stderr.data);
                 break;
             case Stdio.STDOUT:
-                openInNewEditor(testcase.stdout.data);
+                void openInNewEditor(testcase.stdout.data);
                 break;
             case Stdio.ACCEPTED_STDOUT:
-                openInNewEditor(testcase.acceptedStdout.data);
+                void openInNewEditor(testcase.acceptedStdout.data);
                 break;
         }
     }
 
     private _stdin({ id, data }: IStdinMessage) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
         testcase.process.process!.stdin.write(data);
         testcase.stdin.write(data, false);
     }
 
     private _save({ id, stdin, acceptedStdout }: ISaveMessage) {
-        const testcase = this._testcases.get(id)!;
+        const testcase = this._state.get(id)!;
 
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'stdin', value: '' });
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'acceptedStdout', value: '' });

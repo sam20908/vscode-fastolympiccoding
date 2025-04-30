@@ -1,10 +1,9 @@
 {
     "compilerOptions": {
         "composite": true,
-        "declaration": true,
-        "outDir": "./dist/types",
         "module": "CommonJS",
         "moduleResolution": "node",
+        "types": [],
         "target": "ESNext",
         "lib": [
             "ESNext",
@@ -21,6 +20,6 @@
         "./src/views/stress/message.ts",
         "./src/common/**/*.ts",
         "./src/utils/**/*.ts",
-        "src/external/observable.ts"
+        "./external/observable.ts"
     ]
 }

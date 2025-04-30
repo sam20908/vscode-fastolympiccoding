@@ -47,15 +47,16 @@ export class Runnable {
 };
 
 export async function getFileChecksum(file: string): Promise<string> {
-  const hash = crypto.createHash('md5'); // good enough to verify file integrity with good speed
-  hash.setEncoding('hex');
-  const stream = fs.createReadStream(file);
-  return new Promise(resolve => {
-    stream.on('end', () => {
-      hash.end();
-      resolve(hash.read());
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('md5');
+    fs.readFile(file, { encoding: 'utf8' }, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        hash.update(data);
+      }
     });
-    stream.pipe(hash);
+    resolve(hash.digest('hex'));
   });
 }
 
@@ -70,7 +71,7 @@ export async function compile(file: string, compileCommand: string, context: vsc
     return 1;
   }
 
-  const resolvedArgs = await resolveCommand(compileCommand, file);
+  const resolvedArgs = resolveCommand(compileCommand, file);
   const currentCommand = resolvedArgs.join(' ');
   const currentChecksum = await getFileChecksum(file);
   const [cachedChecksum, cachedCommand] = lastCompiled.get(file) ?? [-1, ''];
@@ -92,7 +93,7 @@ export async function compile(file: string, compileCommand: string, context: vsc
       process.run(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
 
       let err = '';
-      process.process!.stderr.on('data', data => err += data.toString());
+      process.process!.stderr.on('data', (data: string) => err += data);
       process.process!.on('error', data => err += data.stack);
 
       await process.promise;
