@@ -20,7 +20,7 @@ interface IState {
   process: Runnable;
 }
 
-export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewMessage> {
+export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
   private _state: IState[] = [
     { data: new TextHandler(), status: Status.NA, process: new Runnable() },
     { data: new TextHandler(), status: Status.NA, process: new Runnable() },
@@ -78,11 +78,14 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
     }
     super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-    const state = super.readStorage()[file] ?? [];
+    const fileData = super.readStorage()[file];
+    const state = fileData && Array.isArray(fileData) ? fileData : [];
     for (let id = 0; id < state.length; id++) {
-      this._state[id].data.write(state[id].data, true);
-      this._state[id].status = state[id].status;
-      super._postMessage({ type: WebviewMessageType.STATUS, id, status: state[id].status });
+      const testcase = state[id] !== 'null' && typeof state[id] === 'object' ? state[id] as Partial<IData>: {};
+
+      this._state[id].data.write(testcase.data ?? '', true);
+      this._state[id].status = testcase.status ?? Status.NA;
+      super._postMessage({ type: WebviewMessageType.STATUS, id, status: this._state[id].status });
     }
   }
 

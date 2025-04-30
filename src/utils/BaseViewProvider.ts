@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-interface IWorkspaceState<Data> {
-  [key: string]: Data;
+interface IWorkspaceState {
+  [key: string]: unknown;
 }
 
 function getNonce(): string {
@@ -13,7 +13,7 @@ function getNonce(): string {
   return nonce;
 }
 
-export default abstract class <Data, ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
+export default abstract class <ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
   private _webview?: vscode.Webview = undefined;
 
   constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
@@ -37,12 +37,16 @@ export default abstract class <Data, ProviderMessageType, WebviewMessageType> im
     return `fastolympiccoding.${this.view}`;
   }
 
-  public readStorage() {
-    return this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
+  public readStorage(): IWorkspaceState {
+    const data = this._context.workspaceState.get(this.view, {} as IWorkspaceState);
+    if (!data || typeof data !== 'object') {
+      return {};
+    }
+    return data;
   }
 
-  public writeStorage(file: string, data: Data) {
-    const fileData = this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
+  public writeStorage(file: string, data: object) {
+    const fileData = this._context.workspaceState.get(this.view, {});
     this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
   }
 

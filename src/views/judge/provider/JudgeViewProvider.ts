@@ -9,12 +9,12 @@ import { compile, Runnable } from '~utils/runtime';
 import { ProviderMessageType, ProviderMessage, WebviewMessage, WebviewMessageType, IActionMessage, Action, IViewMessage, ISaveMessage, IStdinMessage } from '../message';
 
 interface IState extends Omit<ITestcase, 'stdin' | 'stderr' | 'stdout' | 'acceptedStdout'> {
-    stdin: TextHandler;
-    stderr: TextHandler;
-    stdout: TextHandler;
-    acceptedStdout: TextHandler;
-    id: number;
-    process: Runnable;
+  stdin: TextHandler;
+  stderr: TextHandler;
+  stdout: TextHandler;
+  acceptedStdout: TextHandler;
+  id: number;
+  process: Runnable;
 }
 
 function getExitCodeStatus(code: number | null, stdout: string, acceptedStdout: string) {
@@ -28,7 +28,7 @@ function getExitCodeStatus(code: number | null, stdout: string, acceptedStdout: 
     return Status.WA;
 }
 
-export default class extends BaseViewProvider<ITestcase[], ProviderMessage, WebviewMessage> {
+export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
   private _state: Map<number, IState> = new Map(); // Map also remembers insertion order :D
   private _newId: number = 0;
 
@@ -79,9 +79,11 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
     super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-    const fileData = super.readStorage()[file] ?? [];
-    for (let i = 0; i < fileData.length; i++) {
-      this._state.set(this._newId, this._createTestcaseState(fileData[i], this._newId));
+    const fileData = super.readStorage()[file];
+    const state = Array.isArray(fileData) ? fileData : [];
+    for (let i = 0; i < state.length; i++) {
+      const testcase: Partial<ITestcase> = state[i] !== 'null' && typeof state[i] === 'object' ? state[i] as Partial<ITestcase> : {};
+      this._state.set(this._newId, this._createTestcaseState(this._newId, testcase));
       this._newId++;
     }
   }
@@ -119,14 +121,14 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     }
 
     if (pickedFile === vscode.window.activeTextEditor?.document.fileName) {
-      this._state.set(this._newId, this._createTestcaseState(testcase, this._newId));
+      this._state.set(this._newId, this._createTestcaseState(this._newId, testcase));
       this._saveTestcases();
       return this._newId++;
     } else if (testcase) {
-      const storage = super.readStorage();
-      const fileData: ITestcase[] = storage[pickedFile] ?? [];
-      fileData.push(testcase);
-      super.writeStorage(pickedFile, fileData);
+      const fileData = super.readStorage()[pickedFile];
+      const state = Array.isArray(fileData) ? fileData : [];
+      state.push(testcase);
+      super.writeStorage(pickedFile, state);
     }
 
     return -1;
@@ -205,7 +207,8 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     super.writeStorage(file, testcases);
   }
 
-  private _createTestcaseState(testcase: ITestcase | undefined, id: number) {
+  private _createTestcaseState(id: number, testcase?: Partial<ITestcase>) {
+    // using partial type to have backward compatibility with old testcases
     // create a new testcase in webview and fill it in later
     super._postMessage({ type: WebviewMessageType.NEW, id });
 
@@ -287,30 +290,30 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     testcase.stdout.reset();
     testcase.process.run(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
 
-        testcase.process.process!.stdin.write(testcase.stdin.data);
-        testcase.process.process!.stderr.on('data', (data: string) => testcase.stderr.write(data, false));
-        testcase.process.process!.stdout.on('data', (data: string) => testcase.stdout.write(data, false));
-        testcase.process.process!.stderr.once('end', () => testcase.stderr.write('', true));
-        testcase.process.process!.stdout.once('end', () => testcase.stdout.write('', true));
-        testcase.process.process!.once('error', (data: Error) => {
-          super._postMessage({ type: WebviewMessageType.STDIO, id, stdio: Stdio.STDERR, data: data.message });
-          super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.RE });
-          this._saveTestcases();
-        });
-        testcase.process.process!.once('close', (exitCode: number | null) => {
-            testcase.process.process!.stderr.removeAllListeners('data');
-            testcase.process.process!.stdout.removeAllListeners('data');
-            testcase.status = getExitCodeStatus(exitCode, testcase.stdout.data, testcase.acceptedStdout.data);
-            testcase.elapsed = testcase.process.elapsed;
-            super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: testcase.status });
-            super._postMessage({ type: WebviewMessageType.SET, id, property: 'elapsed', value: testcase.elapsed });
+    testcase.process.process!.stdin.write(testcase.stdin.data);
+    testcase.process.process!.stderr.on('data', (data: string) => testcase.stderr.write(data, false));
+    testcase.process.process!.stdout.on('data', (data: string) => testcase.stdout.write(data, false));
+    testcase.process.process!.stderr.once('end', () => testcase.stderr.write('', true));
+    testcase.process.process!.stdout.once('end', () => testcase.stdout.write('', true));
+    testcase.process.process!.once('error', (data: Error) => {
+      super._postMessage({ type: WebviewMessageType.STDIO, id, stdio: Stdio.STDERR, data: data.message });
+      super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.RE });
+      this._saveTestcases();
+    });
+    testcase.process.process!.once('close', (exitCode: number | null) => {
+      testcase.process.process!.stderr.removeAllListeners('data');
+      testcase.process.process!.stdout.removeAllListeners('data');
+      testcase.status = getExitCodeStatus(exitCode, testcase.stdout.data, testcase.acceptedStdout.data);
+      testcase.elapsed = testcase.process.elapsed;
+      super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: testcase.status });
+      super._postMessage({ type: WebviewMessageType.SET, id, property: 'elapsed', value: testcase.elapsed });
 
-            this._saveTestcases();
-        });
+      this._saveTestcases();
+    });
   }
 
   private _stop(id: number) {
-        this._state.get(id)!.process.process?.kill();
+    this._state.get(id)!.process.process?.kill();
   }
 
   private _delete(id: number) {
@@ -395,8 +398,8 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
 
   private _stdin({ id, data }: IStdinMessage) {
     const testcase = this._state.get(id)!;
-        testcase.process.process!.stdin.write(data);
-        testcase.stdin.write(data, false);
+    testcase.process.process!.stdin.write(data);
+    testcase.stdin.write(data, false);
   }
 
   private _save({ id, stdin, acceptedStdout }: ISaveMessage) {
