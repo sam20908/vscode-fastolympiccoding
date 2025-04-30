@@ -2,8 +2,8 @@
     "compilerOptions": {
         "composite": true,
         "module": "CommonJS",
-        "moduleResolution": "node",
-        "types": [],
+        "moduleResolution": "node10",
+        "types": ["vscode-webview"],
         "target": "ESNext",
         "lib": [
             "ESNext",
@@ -15,8 +15,10 @@
     "extends": "./tsconfig.json",
     "include": [
         "./src/views/judge/webview/**/*.tsx",
+        "./src/views/judge/webview/**/*.ts",
         "./src/views/judge/message.ts",
         "./src/views/stress/webview/**/*.tsx",
+        "./src/views/stress/webview/**/*.ts",
         "./src/views/stress/message.ts",
         "./src/common/**/*.ts",
         "./src/utils/**/*.ts",
