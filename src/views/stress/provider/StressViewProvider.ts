@@ -94,14 +94,16 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
 
         const extension = path.extname(file);
         const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const runSettings = vscode.workspace.getConfiguration('fastolympiccoding.runSettings');
         const delayBetweenTestcases = config.get<number>('delayBetweenTestcases')!;
-        const runSettings = config.get<ILanguageSettings>(`runSettings.${extension}`);
-        if (!runSettings) {
+
+        const languageSettings = runSettings[extension] as ILanguageSettings | undefined;
+        if (!languageSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
             return;
         }
 
-        if (runSettings.compileCommand) {
+        if (languageSettings.compileCommand) {
             for (let id = 0; id < 3; id++) {
                 super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.COMPILING });
             }
@@ -113,9 +115,9 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 return code;
             };
             const promises = [
-                compile(resolveVariables(config.get('generatorFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 0)),
-                compile(resolveVariables('${file}'), runSettings.compileCommand, this._context).then(callback.bind(this, 1)),
-                compile(resolveVariables(config.get('goodSolutionFile')!), runSettings.compileCommand, this._context).then(callback.bind(this, 2)),
+                compile(resolveVariables(config.get('generatorFile')!), languageSettings.compileCommand, this._context).then(callback.bind(this, 0)),
+                compile(resolveVariables('${file}'), languageSettings.compileCommand, this._context).then(callback.bind(this, 1)),
+                compile(resolveVariables(config.get('goodSolutionFile')!), languageSettings.compileCommand, this._context).then(callback.bind(this, 2)),
             ];
             const codes = await Promise.all(promises);
 
@@ -130,7 +132,7 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
             super._postMessage({ type: WebviewMessageType.STATUS, id, status: Status.RUNNING });
         }
 
-        const cwd = runSettings.currentWorkingDirectory ? resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const cwd = languageSettings.currentWorkingDirectory ? resolveVariables(languageSettings.currentWorkingDirectory) : undefined;
         const maxRuntime = config.get<number>('maxRuntime')!;
         const start = Date.now();
 
@@ -142,20 +144,20 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
                 this._state[i].data.reset();
             }
 
-            const solutionRunArguments = this._resolveRunArguments(runSettings.runCommand, '${file}');
+            const solutionRunArguments = this._resolveRunArguments(languageSettings.runCommand, '${file}');
             this._state[1].process.run(solutionRunArguments[0], cwd, ...solutionRunArguments.slice(1));
             this._state[1].process.process!.on('error', data => this._state[1].data.write(data.message, true));
             this._state[1].process.process!.stdout.on('data', (data: string) => this._state[1].data.write(data, false));
             this._state[1].process.process!.stdout.once('end', () => this._state[1].data.write('', true));
 
-            const goodSolutionRunArguments = this._resolveRunArguments(runSettings.runCommand, config.get('goodSolutionFile')!);
+            const goodSolutionRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('goodSolutionFile')!);
             this._state[2].process.run(goodSolutionRunArguments[0], cwd, ...goodSolutionRunArguments.slice(1));
             this._state[2].process.process!.on('error', data => this._state[2].data.write(data.message, true));
             this._state[2].process.process!.stdout.on('data', (data: string) => this._state[2].data.write(data, false));
             this._state[2].process.process!.stdout.once('end', () => this._state[2].data.write('', true));
 
             const seed = Math.round(Math.random() * 9007199254740991);
-            const generatorRunArguments = this._resolveRunArguments(runSettings.runCommand, config.get('generatorFile')!);
+            const generatorRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('generatorFile')!);
             this._state[0].process.run(generatorRunArguments[0], cwd, ...generatorRunArguments.slice(1));
             this._state[0].process.process!.on('error', data => this._state[0].data.write(data.message, true));
             this._state[0].process.process!.stdin.write(`${seed}\n`);

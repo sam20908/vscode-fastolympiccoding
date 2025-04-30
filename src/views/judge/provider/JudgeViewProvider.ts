@@ -254,17 +254,17 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
             return;
         }
 
-        const config = vscode.workspace.getConfiguration('fastolympiccoding');
+        const runSettings = vscode.workspace.getConfiguration('fastolympiccoding.runSettings');
         const extension = path.extname(file);
-        const runSettings = config.get<ILanguageSettings>(`runSettings.${extension}`);
-        if (!runSettings) {
+        const languageSettings = runSettings[extension] as ILanguageSettings | undefined;
+        if (!languageSettings) {
             vscode.window.showWarningMessage(`No run setting detected for file extension "${extension}"`);
             return;
         }
 
-        if (runSettings.compileCommand) {
+        if (languageSettings.compileCommand) {
             super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.COMPILING });
-            const code = await compile(file, runSettings.compileCommand, this._context);
+            const code = await compile(file, languageSettings.compileCommand, this._context);
             if (code) {
                 super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.CE });
                 return;
@@ -281,8 +281,8 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'stdout', value: '' });
         super._postMessage({ type: WebviewMessageType.SET, id, property: 'status', value: Status.RUNNING });
 
-        const resolvedArgs = resolveCommand(runSettings.runCommand);
-        const cwd = runSettings.currentWorkingDirectory ? resolveVariables(runSettings.currentWorkingDirectory) : undefined;
+        const resolvedArgs = resolveCommand(languageSettings.runCommand);
+        const cwd = languageSettings.currentWorkingDirectory ? resolveVariables(languageSettings.currentWorkingDirectory) : undefined;
         testcase.stderr.reset();
         testcase.stdout.reset();
         testcase.process.run(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
