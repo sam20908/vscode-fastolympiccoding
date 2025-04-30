@@ -3,16 +3,16 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 import { JSX } from 'preact/jsx-runtime';
 
 interface Props {
-    input: Signal<string>;
-    onKeyUp: (event: KeyboardEvent) => void;
+  input: Signal<string>;
+  onKeyUp: (event: KeyboardEvent) => void;
 }
 
 export default function App({ input, onKeyUp }: Props) {
   const textarea = useRef<HTMLTextAreaElement>(null);
 
   useLayoutEffect(() => {
-        textarea.current!.style.height = 'inherit';
-        textarea.current!.style.height = `${textarea.current!.scrollHeight}px`;
+    textarea.current!.style.height = 'inherit';
+    textarea.current!.style.height = `${textarea.current!.scrollHeight}px`;
   }, [input.value]);
 
   return <textarea ref={textarea} class="text-base" rows={1} style={{

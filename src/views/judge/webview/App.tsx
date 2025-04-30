@@ -12,21 +12,21 @@ const show = signal(true);
 
 window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
   switch (msg.data.type) {
-  case WebviewMessageType.NEW:
-    handleNew(msg.data);
-    break;
-  case WebviewMessageType.SET:
-    handleSet(msg.data);
-    break;
-  case WebviewMessageType.STDIO:
-    handleStdio(msg.data);
-    break;
-  case WebviewMessageType.DELETE:
-    handleDelete(msg.data);
-    break;
-  case WebviewMessageType.SHOW:
-    handleShow(msg.data);
-    break;
+    case WebviewMessageType.NEW:
+      handleNew(msg.data);
+      break;
+    case WebviewMessageType.SET:
+      handleSet(msg.data);
+      break;
+    case WebviewMessageType.STDIO:
+      handleStdio(msg.data);
+      break;
+    case WebviewMessageType.DELETE:
+      handleDelete(msg.data);
+      break;
+    case WebviewMessageType.SHOW:
+      handleShow(msg.data);
+      break;
   }
 });
 
@@ -52,18 +52,18 @@ function handleSet({ id, property, value }: ISetMessage) {
 
 function handleStdio({ id, data, stdio }: IStdioMessage) {
   switch (stdio) {
-  case Stdio.STDIN:
-            testcases.get(id)!.stdin += data;
-    break;
-  case Stdio.STDERR:
-            testcases.get(id)!.stderr += data;
-    break;
-  case Stdio.STDOUT:
-            testcases.get(id)!.stdout += data;
-    break;
-  case Stdio.ACCEPTED_STDOUT:
-            testcases.get(id)!.acceptedStdout += data;
-    break;
+    case Stdio.STDIN:
+      testcases.get(id)!.stdin += data;
+      break;
+    case Stdio.STDERR:
+      testcases.get(id)!.stderr += data;
+      break;
+    case Stdio.STDOUT:
+      testcases.get(id)!.stdout += data;
+      break;
+    case Stdio.ACCEPTED_STDOUT:
+      testcases.get(id)!.acceptedStdout += data;
+      break;
   }
 }
 

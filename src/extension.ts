@@ -53,7 +53,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
         return;
       }
       if (runSettings.compileCommand) {
-                compile(file, runSettings.compileCommand, context) as unknown as void; // we don't care about exit code of compilation
+        compile(file, runSettings.compileCommand, context) as unknown as void; // we don't care about exit code of compilation
       }
     }
   ));

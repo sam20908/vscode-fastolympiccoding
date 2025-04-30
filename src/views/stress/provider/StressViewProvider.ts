@@ -10,14 +10,14 @@ import { compile, Runnable } from '~utils/runtime';
 import { ILanguageSettings } from '~common/provider';
 
 interface IData {
-    data: string;
-    status: Status;
+  data: string;
+  status: Status;
 }
 
 interface IState {
-    data: TextHandler;
-    status: Status;
-    process: Runnable;
+  data: TextHandler;
+  status: Status;
+  process: Runnable;
 }
 
 export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewMessage> {
@@ -30,21 +30,21 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
 
   onMessage(msg: ProviderMessage): void {
     switch (msg.type) {
-    case ProviderMessageType.LOADED:
-      this.loadSavedData();
-      break;
-    case ProviderMessageType.RUN:
-      void this.run();
-      break;
-    case ProviderMessageType.STOP:
-      this._stop();
-      break;
-    case ProviderMessageType.VIEW:
-      this._view(msg);
-      break;
-    case ProviderMessageType.ADD:
-      this._add(msg);
-      break;
+      case ProviderMessageType.LOADED:
+        this.loadSavedData();
+        break;
+      case ProviderMessageType.RUN:
+        void this.run();
+        break;
+      case ProviderMessageType.STOP:
+        this._stop();
+        break;
+      case ProviderMessageType.VIEW:
+        this._view(msg);
+        break;
+      case ProviderMessageType.ADD:
+        this._add(msg);
+        break;
     }
   }
 
@@ -146,50 +146,50 @@ export default class extends BaseViewProvider<IData[], ProviderMessage, WebviewM
 
       const solutionRunArguments = this._resolveRunArguments(languageSettings.runCommand, '${file}');
       this._state[1].process.run(solutionRunArguments[0], cwd, ...solutionRunArguments.slice(1));
-            this._state[1].process.process!.on('error', data => this._state[1].data.write(data.message, true));
-            this._state[1].process.process!.stdout.on('data', (data: string) => this._state[1].data.write(data, false));
-            this._state[1].process.process!.stdout.once('end', () => this._state[1].data.write('', true));
+      this._state[1].process.process!.on('error', data => this._state[1].data.write(data.message, true));
+      this._state[1].process.process!.stdout.on('data', (data: string) => this._state[1].data.write(data, false));
+      this._state[1].process.process!.stdout.once('end', () => this._state[1].data.write('', true));
 
-            const goodSolutionRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('goodSolutionFile')!);
-            this._state[2].process.run(goodSolutionRunArguments[0], cwd, ...goodSolutionRunArguments.slice(1));
-            this._state[2].process.process!.on('error', data => this._state[2].data.write(data.message, true));
-            this._state[2].process.process!.stdout.on('data', (data: string) => this._state[2].data.write(data, false));
-            this._state[2].process.process!.stdout.once('end', () => this._state[2].data.write('', true));
+      const goodSolutionRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('goodSolutionFile')!);
+      this._state[2].process.run(goodSolutionRunArguments[0], cwd, ...goodSolutionRunArguments.slice(1));
+      this._state[2].process.process!.on('error', data => this._state[2].data.write(data.message, true));
+      this._state[2].process.process!.stdout.on('data', (data: string) => this._state[2].data.write(data, false));
+      this._state[2].process.process!.stdout.once('end', () => this._state[2].data.write('', true));
 
-            const seed = Math.round(Math.random() * 9007199254740991);
-            const generatorRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('generatorFile')!);
-            this._state[0].process.run(generatorRunArguments[0], cwd, ...generatorRunArguments.slice(1));
-            this._state[0].process.process!.on('error', data => this._state[0].data.write(data.message, true));
-            this._state[0].process.process!.stdin.write(`${seed}\n`);
-            this._state[0].process.process!.stdout.on('data', (data: string) => {
-              this._state[0].data.write(data, false);
-                this._state[1].process.process!.stdin.write(data);
-                this._state[2].process.process!.stdin.write(data);
-            });
-            this._state[0].process.process!.stdout.once('end', () => this._state[0].data.write('', true));
+      const seed = Math.round(Math.random() * 9007199254740991);
+      const generatorRunArguments = this._resolveRunArguments(languageSettings.runCommand, config.get('generatorFile')!);
+      this._state[0].process.run(generatorRunArguments[0], cwd, ...generatorRunArguments.slice(1));
+      this._state[0].process.process!.on('error', data => this._state[0].data.write(data.message, true));
+      this._state[0].process.process!.stdin.write(`${seed}\n`);
+      this._state[0].process.process!.stdout.on('data', (data: string) => {
+        this._state[0].data.write(data, false);
+        this._state[1].process.process!.stdin.write(data);
+        this._state[2].process.process!.stdin.write(data);
+      });
+      this._state[0].process.process!.stdout.once('end', () => this._state[0].data.write('', true));
 
-            for (let i = 0; i < 3; i++) {
-                // if any process fails then the other 2 should be gracefully closed
-                this._state[i].process.process!.once('close', code => {
-                  if (code === null) {
-                    for (let j = 0; j < 3; j++) {
-                      if (j !== i) {
-                                this._state[j].process.process!.kill('SIGUSR1');
-                      }
-                    }
-                  }
-                });
+      for (let i = 0; i < 3; i++) {
+        // if any process fails then the other 2 should be gracefully closed
+        this._state[i].process.process!.once('close', code => {
+          if (code === null) {
+            for (let j = 0; j < 3; j++) {
+              if (j !== i) {
+                this._state[j].process.process!.kill('SIGUSR1');
+              }
             }
+          }
+        });
+      }
 
-            await Promise.allSettled(this._state.map(value => value.process.promise));
-            for (let i = 0; i < 3; i++) {
-              anyFailed ||= !!this._state[i].process.exitCode;
-              this._state[i].status = this._state[i].process.exitCode === 0 ? Status.NA : Status.RE;
-            }
-            if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
-              break;
-            }
-            await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
+      await Promise.allSettled(this._state.map(value => value.process.promise));
+      for (let i = 0; i < 3; i++) {
+        anyFailed ||= !!this._state[i].process.exitCode;
+        this._state[i].status = this._state[i].process.exitCode === 0 ? Status.NA : Status.RE;
+      }
+      if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
+        break;
+      }
+      await new Promise<void>(resolve => setTimeout(() => resolve(), delayBetweenTestcases));
     }
 
     if (!anyFailed && this._state[1].data.data !== this._state[2].data.data) {

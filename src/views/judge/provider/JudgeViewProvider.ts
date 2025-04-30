@@ -34,24 +34,24 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
 
   onMessage(msg: ProviderMessage) {
     switch (msg.type) {
-    case ProviderMessageType.LOADED:
-      this.loadCurrentFileTestcases();
-      break;
-    case ProviderMessageType.NEXT:
-      void this._run(this.addTestcaseToFile());
-      break;
-    case ProviderMessageType.ACTION:
-      this._action(msg);
-      break;
-    case ProviderMessageType.SAVE:
-      this._save(msg);
-      break;
-    case ProviderMessageType.VIEW:
-      this._viewStdio(msg);
-      break;
-    case ProviderMessageType.STDIN:
-      this._stdin(msg);
-      break;
+      case ProviderMessageType.LOADED:
+        this.loadCurrentFileTestcases();
+        break;
+      case ProviderMessageType.NEXT:
+        void this._run(this.addTestcaseToFile());
+        break;
+      case ProviderMessageType.ACTION:
+        this._action(msg);
+        break;
+      case ProviderMessageType.SAVE:
+        this._save(msg);
+        break;
+      case ProviderMessageType.VIEW:
+        this._viewStdio(msg);
+        break;
+      case ProviderMessageType.STDIN:
+        this._stdin(msg);
+        break;
     }
   }
 
@@ -152,33 +152,33 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
 
   private _action({ id, action }: IActionMessage) {
     switch (action) {
-    case Action.RUN:
-      void this._run(id);
-      break;
-    case Action.STOP:
-      this._stop(id);
-      break;
-    case Action.DELETE:
-      this._delete(id);
-      break;
-    case Action.EDIT:
-      this._edit(id);
-      break;
-    case Action.ACCEPT:
-      this._accept(id);
-      break;
-    case Action.DECLINE:
-      this._decline(id);
-      break;
-    case Action.TOGGLE_VISIBILITY:
-      this._toggleVisibility(id);
-      break;
-    case Action.TOGGLE_SKIP:
-      this._toggleSkip(id);
-      break;
-    case Action.VIEW_DIFF:
-      this._viewDiff(id);
-      break;
+      case Action.RUN:
+        void this._run(id);
+        break;
+      case Action.STOP:
+        this._stop(id);
+        break;
+      case Action.DELETE:
+        this._delete(id);
+        break;
+      case Action.EDIT:
+        this._edit(id);
+        break;
+      case Action.ACCEPT:
+        this._accept(id);
+        break;
+      case Action.DECLINE:
+        this._decline(id);
+        break;
+      case Action.TOGGLE_VISIBILITY:
+        this._toggleVisibility(id);
+        break;
+      case Action.TOGGLE_SKIP:
+        this._toggleSkip(id);
+        break;
+      case Action.VIEW_DIFF:
+        this._viewDiff(id);
+        break;
     }
   }
 
@@ -378,18 +378,18 @@ export default class extends BaseViewProvider<ITestcase[], ProviderMessage, Webv
     const testcase = this._state.get(id)!;
 
     switch (stdio) {
-    case Stdio.STDIN:
-      void openInNewEditor(testcase.stdin.data);
-      break;
-    case Stdio.STDERR:
-      void openInNewEditor(testcase.stderr.data);
-      break;
-    case Stdio.STDOUT:
-      void openInNewEditor(testcase.stdout.data);
-      break;
-    case Stdio.ACCEPTED_STDOUT:
-      void openInNewEditor(testcase.acceptedStdout.data);
-      break;
+      case Stdio.STDIN:
+        void openInNewEditor(testcase.stdin.data);
+        break;
+      case Stdio.STDERR:
+        void openInNewEditor(testcase.stderr.data);
+        break;
+      case Stdio.STDOUT:
+        void openInNewEditor(testcase.stdout.data);
+        break;
+      case Stdio.ACCEPTED_STDOUT:
+        void openInNewEditor(testcase.acceptedStdout.data);
+        break;
     }
   }
 

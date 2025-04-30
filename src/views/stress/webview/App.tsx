@@ -9,8 +9,8 @@ import { IShowMessage, IStatusMessage, IStdioMessage, ProviderMessageType, Webvi
 import { BLUE_COLOR, RED_COLOR } from '~common/webview';
 
 interface IState {
-    data: string;
-    status: Status;
+  data: string;
+  status: Status;
 }
 
 const state: PreactObservable<IState[]> = observable([{ data: '', status: Status.NA }, { data: '', status: Status.NA }, { data: '', status: Status.NA }]);
@@ -21,18 +21,18 @@ const add = (id: number) => postProviderMessage({ type: ProviderMessageType.ADD,
 
 window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
   switch (event.data.type) {
-  case WebviewMessageType.STATUS:
-    handleStatus(event.data);
-    break;
-  case WebviewMessageType.STDIO:
-    handleStdio(event.data);
-    break;
-  case WebviewMessageType.CLEAR:
-    handleClear();
-    break;
-  case WebviewMessageType.SHOW:
-    handleShow(event.data);
-    break;
+    case WebviewMessageType.STATUS:
+      handleStatus(event.data);
+      break;
+    case WebviewMessageType.STDIO:
+      handleStdio(event.data);
+      break;
+    case WebviewMessageType.CLEAR:
+      handleClear();
+      break;
+    case WebviewMessageType.SHOW:
+      handleShow(event.data);
+      break;
   }
 });
 
@@ -68,18 +68,18 @@ export default function App() {
   });
 
   return <>{showView.value &&
-        <>
-          <div class="container mx-auto mb-6">
-            <div class="flex flex-row">
-              <div class="w-6 shrink-0"></div>
-              <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                {button}
-              </div>
-            </div>
+    <>
+      <div class="container mx-auto mb-6">
+        <div class="flex flex-row">
+          <div class="w-6 shrink-0"></div>
+          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+            {button}
           </div>
-          <State data={state[0].$data!} status={state[0].status} id={0} onView={expand} onAdd={add} />
-          <State data={state[1].$data!} status={state[1].status} id={1} onView={expand} onAdd={add} />
-          <State data={state[2].$data!} status={state[2].status} id={2} onView={expand} onAdd={add} />
-        </>
+        </div>
+      </div>
+      <State data={state[0].$data!} status={state[0].status} id={0} onView={expand} onAdd={add} />
+      <State data={state[1].$data!} status={state[1].status} id={1} onView={expand} onAdd={add} />
+      <State data={state[2].$data!} status={state[2].status} id={2} onView={expand} onAdd={add} />
+    </>
   }</>;
 }

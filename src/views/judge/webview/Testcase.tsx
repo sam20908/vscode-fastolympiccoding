@@ -19,16 +19,16 @@ export default function ({ id, testcase }: Props) {
   const newStdin = useSignal('');
   const headerBar = useComputed(() => {
     switch (testcase.status) {
-    case Status.CE:
-      return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>CE</button>;
-    case Status.RE:
-      return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>RE</button>;
-    case Status.WA:
-      return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>WA</button>;
-    case Status.AC:
-      return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={toggleVisibility}>AC</button>;
-    default:
-      return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={toggleVisibility}>NA</button>;
+      case Status.CE:
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>CE</button>;
+      case Status.RE:
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>RE</button>;
+      case Status.WA:
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>WA</button>;
+      case Status.AC:
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={toggleVisibility}>AC</button>;
+      default:
+        return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={toggleVisibility}>NA</button>;
     }
   });
   const toggleSkipButton = useComputed(() => {
@@ -58,27 +58,27 @@ export default function ({ id, testcase }: Props) {
 
 
   switch (testcase.status) {
-  case Status.NA:
-  case Status.WA:
-  case Status.AC:
-  case Status.RE:
-  case Status.CE:
-    return <div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
-      <div class="flex flex-row unfade">
-        <div class="w-6 shrink-0"></div>
-        <div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
-          {headerBar}
-          <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.EDIT })}>edit</button>
-          <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
-            newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
-            postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.RUN });
-          }}>run</button>
-          <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DELETE })}>delete</button>
-          <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{testcase.$elapsed}ms</p>
-          {toggleSkipButton}
+    case Status.NA:
+    case Status.WA:
+    case Status.AC:
+    case Status.RE:
+    case Status.CE:
+      return <div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
+        <div class="flex flex-row unfade">
+          <div class="w-6 shrink-0"></div>
+          <div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
+            {headerBar}
+            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.EDIT })}>edit</button>
+            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
+              newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
+              postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.RUN });
+            }}>run</button>
+            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DELETE })}>delete</button>
+            <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{testcase.$elapsed}ms</p>
+            {toggleSkipButton}
+          </div>
         </div>
-      </div>
-      {(!testcase.skipped && testcase.shown && !(testcase.status === Status.AC && !testcase.toggled)) &&
+        {(!testcase.skipped && testcase.shown && !(testcase.status === Status.AC && !testcase.toggled)) &&
                     <>
                       {<div class="flex flex-row">
                         {stdinArrowButton}
@@ -114,72 +114,72 @@ export default function ({ id, testcase }: Props) {
                             </div>
                       }
                     </>
-      }
-    </div>;
-  case Status.COMPILING:
-    return <div class="container mx-auto mb-6">
-      <div class="flex flex-row">
-        <div class="w-6 shrink-0"></div>
-        <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-          <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">compiling</p>
+        }
+      </div>;
+    case Status.COMPILING:
+      return <div class="container mx-auto mb-6">
+        <div class="flex flex-row">
+          <div class="w-6 shrink-0"></div>
+          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+            <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">compiling</p>
+          </div>
         </div>
-      </div>
-    </div>;
-  case Status.RUNNING:
-    return <div class="container mx-auto mb-6">
-      <div class="flex flex-row">
-        <div class="w-6 shrink-0"></div>
-        <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-          <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.STOP })}>stop</button>
+      </div>;
+    case Status.RUNNING:
+      return <div class="container mx-auto mb-6">
+        <div class="flex flex-row">
+          <div class="w-6 shrink-0"></div>
+          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.STOP })}>stop</button>
+          </div>
         </div>
-      </div>
-      {<div class="flex flex-row">
-        {stdinArrowButton}
-        <pre class="text-base display-font">{testcase.$stdin}</pre>
-      </div>}
-      <div class="flex flex-row">
-        <div class="w-6 shrink-0"></div>
-        <AutoresizeTextarea input={newStdin} onKeyUp={event => {
-          if (event.key === 'Enter') {
-            postProviderMessage({ type: ProviderMessageType.STDIN, id, data: newStdin.value });
-            newStdin.value = '';
-          }
-        }} />
-      </div>
-      {<div class="flex flex-row">
-        {stderrArrowButton}
-        <pre class="text-base display-font">{testcase.$stderr}</pre>
-      </div>}
-      {<div class="flex flex-row">
-        {stdoutArrowButton}
-        <pre class="text-base display-font">{testcase.$stdout}</pre>
-      </div>}
-    </div>;
-  case Status.EDITING:
-    return <div class="container mx-auto mb-6">
-      <div class="flex flex-row">
-        <div class="w-6 shrink-0"></div>
-        <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-          <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
-            const stdin = testcase.stdin;
-            const acceptedStdout = testcase.acceptedStdout;
-            // the extension host will send shortened version of both of these
-            testcase.stdin = '';
-            testcase.acceptedStdout = '';
-            postProviderMessage({ type: ProviderMessageType.SAVE, id, stdin, acceptedStdout });
-          }}>save</button>
+        {<div class="flex flex-row">
+          {stdinArrowButton}
+          <pre class="text-base display-font">{testcase.$stdin}</pre>
+        </div>}
+        <div class="flex flex-row">
+          <div class="w-6 shrink-0"></div>
+          <AutoresizeTextarea input={newStdin} onKeyUp={event => {
+            if (event.key === 'Enter') {
+              postProviderMessage({ type: ProviderMessageType.STDIN, id, data: newStdin.value });
+              newStdin.value = '';
+            }
+          }} />
         </div>
-      </div>
-      <div class="flex flex-row">
-        {stdinArrowButton}
-        <AutoresizeTextarea input={testcase.$stdin!} onKeyUp={() => { }} />
-      </div>
-      <div class="flex flex-row">
-        {acStdoutArrowButton}
-        <AutoresizeTextarea input={testcase.$acceptedStdout!} onKeyUp={() => { }} />
-      </div>
-    </div>;
-  default:
-    return <></>;
+        {<div class="flex flex-row">
+          {stderrArrowButton}
+          <pre class="text-base display-font">{testcase.$stderr}</pre>
+        </div>}
+        {<div class="flex flex-row">
+          {stdoutArrowButton}
+          <pre class="text-base display-font">{testcase.$stdout}</pre>
+        </div>}
+      </div>;
+    case Status.EDITING:
+      return <div class="container mx-auto mb-6">
+        <div class="flex flex-row">
+          <div class="w-6 shrink-0"></div>
+          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
+              const stdin = testcase.stdin;
+              const acceptedStdout = testcase.acceptedStdout;
+              // the extension host will send shortened version of both of these
+              testcase.stdin = '';
+              testcase.acceptedStdout = '';
+              postProviderMessage({ type: ProviderMessageType.SAVE, id, stdin, acceptedStdout });
+            }}>save</button>
+          </div>
+        </div>
+        <div class="flex flex-row">
+          {stdinArrowButton}
+          <AutoresizeTextarea input={testcase.$stdin!} onKeyUp={() => { }} />
+        </div>
+        <div class="flex flex-row">
+          {acStdoutArrowButton}
+          <AutoresizeTextarea input={testcase.$acceptedStdout!} onKeyUp={() => { }} />
+        </div>
+      </div>;
+    default:
+      return <></>;
   }
 }

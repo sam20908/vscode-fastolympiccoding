@@ -1,7 +1,7 @@
 import { ProviderMessage } from '../message';
 
-const vscode = acquireVsCodeApi();  
+const vscode = acquireVsCodeApi(); // eslint-disable-line
 
 export const postProviderMessage = (msg: ProviderMessage) => {
-  vscode.postMessage(msg);  
+  vscode.postMessage(msg); // eslint-disable-line
 };

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 interface IWorkspaceState<Data> {
-    [key: string]: Data;
+  [key: string]: Data;
 }
 
 function getNonce(): string {
@@ -18,50 +18,50 @@ export default abstract class <Data, ProviderMessageType, WebviewMessageType> im
 
   constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
 
-    abstract onMessage(msg: ProviderMessageType): void;
-    abstract onDispose(): void;
+  abstract onMessage(msg: ProviderMessageType): void;
+  abstract onDispose(): void;
 
-    public resolveWebviewView(webviewView: vscode.WebviewView): void {
-      this._webview = webviewView.webview;
-      webviewView.webview.options = {
-        enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist')],
-      };
-      webviewView.webview.html = this._getWebviewContent(webviewView.webview);
-      webviewView.webview.onDidReceiveMessage((message: ProviderMessageType) => this.onMessage(message));
-      webviewView.onDidDispose(() => this.onDispose());
-      webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
-    }
+  public resolveWebviewView(webviewView: vscode.WebviewView): void {
+    this._webview = webviewView.webview;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist')],
+    };
+    webviewView.webview.html = this._getWebviewContent(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage((message: ProviderMessageType) => this.onMessage(message));
+    webviewView.onDidDispose(() => this.onDispose());
+    webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
+  }
 
-    public getViewId(): string {
-      return `fastolympiccoding.${this.view}`;
-    }
+  public getViewId(): string {
+    return `fastolympiccoding.${this.view}`;
+  }
 
-    public readStorage() {
-      return this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
-    }
+  public readStorage() {
+    return this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
+  }
 
-    public writeStorage(file: string, data: Data) {
-      const fileData = this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
-      this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
-    }
+  public writeStorage(file: string, data: Data) {
+    const fileData = this._context.workspaceState.get<IWorkspaceState<Data>>(this.view, {});
+    this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
+  }
 
-    public clearData() {
-      this._context.workspaceState.update(this.view, undefined);
-    }
+  public clearData() {
+    this._context.workspaceState.update(this.view, undefined);
+  }
 
-    protected _postMessage(msg: WebviewMessageType): void {
-      this._webview?.postMessage(msg);
-    }
+  protected _postMessage(msg: WebviewMessageType): void {
+    this._webview?.postMessage(msg);
+  }
 
-    private _getWebviewContent(webview: vscode.Webview): string {
-      const config = vscode.workspace.getConfiguration('fastolympiccoding');
-      const font = config.get<string>('font')!;
-      const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
-      const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
-      const nonce = getNonce();
+  private _getWebviewContent(webview: vscode.Webview): string {
+    const config = vscode.workspace.getConfiguration('fastolympiccoding');
+    const font = config.get<string>('font')!;
+    const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
+    const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
+    const nonce = getNonce();
 
-      return `
+    return `
         <!DOCTYPE html>
         <html lang="en">
             <head>
@@ -81,9 +81,9 @@ export default abstract class <Data, ProviderMessageType, WebviewMessageType> im
         </body>
         </html>
         `;
-    }
+  }
 
-    private _getUri(webview: vscode.Webview, paths: string[]) {
-      return webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths)).toString();
-    }
+  private _getUri(webview: vscode.Webview, paths: string[]) {
+    return webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths)).toString();
+  }
 }
