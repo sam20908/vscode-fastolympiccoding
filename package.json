@@ -34,11 +34,13 @@
     "views": {
       "fastolympiccoding": [
         {
+          "icon": "$(list-selection)",
           "id": "fastolympiccoding.judge",
           "type": "webview",
           "name": "Judge"
         },
         {
+          "icon": "$(debug-alt)",
           "id": "fastolympiccoding.stress",
           "type": "webview",
           "name": "Stress"
