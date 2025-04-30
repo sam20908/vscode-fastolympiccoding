@@ -49,14 +49,13 @@ export class Runnable {
 export async function getFileChecksum(file: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('md5');
-    fs.readFile(file, { encoding: 'utf8' }, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        hash.update(data);
-      }
+    const stream = fs.createReadStream(file, { encoding: 'utf8' });
+    stream.once('error', err => reject(err));
+    stream.once('end', () => {
+      hash.end();
+      resolve(hash.digest('hex'));
     });
-    resolve(hash.digest('hex'));
+    stream.pipe(hash);
   });
 }
 
