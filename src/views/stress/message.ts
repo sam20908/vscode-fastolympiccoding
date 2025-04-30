@@ -1,4 +1,4 @@
-import { Status } from "~common/common";
+import { Status } from '~common/common';
 
 export enum WebviewMessageType {
   STATUS,

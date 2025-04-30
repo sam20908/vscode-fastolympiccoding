@@ -8,12 +8,18 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
+    plugins: { js, tseslint },
     extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+    rules: {
+      "indent": ["error", 2],
+      "quotes": ["error", "single"],
+      "semi": ["error", "always"],
     }
   },
   markdown.configs.recommended,

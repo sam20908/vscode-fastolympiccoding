@@ -108,7 +108,7 @@ export async function getDefaultBuildTaskName() {
 }
 
 export class ReadonlyStringProvider implements vscode.TextDocumentContentProvider {
-  public static SCHEME: string = "fastolympiccoding";
+  public static SCHEME: string = 'fastolympiccoding';
   provideTextDocumentContent(uri: vscode.Uri): vscode.ProviderResult<string> {
     return uri.path;
   }
@@ -135,25 +135,25 @@ export function resolveVariables(string: string, inContextOfFile?: string): stri
   // ${getDefaultBuildTaskName} is not supported because it is painful to implement. Bark if necessary :)
 
   const vscodeSubstitutions: { [regex: string]: string } = {
-    "${userHome}": os.homedir(),
-    "${workspaceFolder}": workspace?.uri.fsPath ?? '',
-    "${workspaceFolderBasename}": workspace?.name ?? '',
-    "${file}": absoluteFilePath ?? '',
-    "${fileWorkspaceFolder}": activeWorkspace?.uri.fsPath ?? '',
-    "${relativeFile}": relativeFilePath ?? '',
-    "${relativeFileDirname}": relativeFilePath ? relativeFilePath.substring(0, relativeFilePath.lastIndexOf(path.sep)) : '',
-    "${fileBasename}": parsedPath?.base ?? '',
-    "${fileBasenameNoExtension}": parsedPath?.name ?? '',
-    "${fileExtname}": parsedPath?.ext ?? '',
-    "${fileDirname}": parsedPath?.dir ?? '',
-    "${fileDirnameBasename}": parsedPath ? parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1) : '',
-    "${cwd}": parsedPath?.dir ?? '',
-    "${lineNumber}": `${activeEditor?.selection.start.line? + 1 : ''}`,
-    "${selectedText}": activeEditor?.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end)) ?? '',
-    "${execPath}": process.execPath,
-    "${pathSeparator}": path.sep,
-    "${/}": path.sep,
-    "${exeExtname}": os.platform() === 'win32' ? '.exe' : ''
+    '${userHome}': os.homedir(),
+    '${workspaceFolder}': workspace?.uri.fsPath ?? '',
+    '${workspaceFolderBasename}': workspace?.name ?? '',
+    '${file}': absoluteFilePath ?? '',
+    '${fileWorkspaceFolder}': activeWorkspace?.uri.fsPath ?? '',
+    '${relativeFile}': relativeFilePath ?? '',
+    '${relativeFileDirname}': relativeFilePath ? relativeFilePath.substring(0, relativeFilePath.lastIndexOf(path.sep)) : '',
+    '${fileBasename}': parsedPath?.base ?? '',
+    '${fileBasenameNoExtension}': parsedPath?.name ?? '',
+    '${fileExtname}': parsedPath?.ext ?? '',
+    '${fileDirname}': parsedPath?.dir ?? '',
+    '${fileDirnameBasename}': parsedPath ? parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1) : '',
+    '${cwd}': parsedPath?.dir ?? '',
+    '${lineNumber}': `${activeEditor?.selection.start.line? + 1 : ''}`,
+    '${selectedText}': activeEditor?.document.getText(new vscode.Range(activeEditor.selection.start, activeEditor.selection.end)) ?? '',
+    '${execPath}': process.execPath,
+    '${pathSeparator}': path.sep,
+    '${/}': path.sep,
+    '${exeExtname}': os.platform() === 'win32' ? '.exe' : ''
   };
 
   // Replace all regexes with their matches at once
