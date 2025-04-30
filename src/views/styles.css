@@ -1,5 +1,5 @@
 @import 'tailwindcss';
 
-.skipped *:not(.unskip) {
+.fade *:not(.unfade) {
   opacity: 0.5;
 }

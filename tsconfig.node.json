@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "NodeNext",
+    "lib": []
+  },
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/extension.ts",
+    "src/common/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/views/judge/message.ts",
+    "src/views/judge/provider/**/*.ts",
+    "src/views/stress/message.ts",
+    "src/views/stress/provider/**/*.ts",
+    "./src/common/**/*.ts",
+    "./src/utils/**/*.ts",
+    "src/external/observable.ts",
+  ]
+}
