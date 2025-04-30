@@ -29,7 +29,6 @@ const extensionConfig = {
 function getWebviewConfig(subsystem) {
     return {
         ...baseConfig,
-        target: "es2020",
         format: "esm",
         entryPoints: [`./src/views/${subsystem}/webview/index.tsx`],
         outfile: `./dist/${subsystem}/index.js`,
@@ -54,9 +53,8 @@ const configs = [
             }
             console.log("[watch] build finished, watching for changes...");
         } else {
-            for (const config of configs) {
-                await build(config);
-            }
+            const builds = configs.map(config => build(config));
+            await Promise.all(builds);
             console.log("build complete");
         }
     } catch (err) {
