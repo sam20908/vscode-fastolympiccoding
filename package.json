@@ -243,7 +243,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run prod",
-    "lint": "eslint ./src",
+    "lint": "eslint",
     "build-js": "node ./esbuild.mjs",
     "prod-js": "cross-env NODE_ENV=production node ./esbuild.mjs",
     "watch-js": "node ./esbuild.mjs --watch",
