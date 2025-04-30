@@ -10,7 +10,7 @@
     "Testing"
   ],
   "engines": {
-    "vscode": "^1.98.0"
+    "vscode": "^1.99.1"
   },
   "publisher": "sam20908",
   "repository": {
@@ -262,15 +262,15 @@
     "@eslint/css": "^0.7.0",
     "@eslint/js": "^9.25.1",
     "@eslint/markdown": "^6.4.0",
-    "@tailwindcss/cli": "^4.1.4",
-    "@types/node": "^22.15.2",
+    "@tailwindcss/cli": "^4.1.5",
+    "@types/node": "^22.15.3",
     "@types/vscode": "^1.99.1",
     "@types/vscode-webview": "^1.57.5",
     "cross-env": "^7.0.3",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
     "npm-run-all": "^4.1.5",
-    "tailwindcss": "^4.1.4",
+    "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.1"
   },
