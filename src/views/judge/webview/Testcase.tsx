@@ -33,7 +33,7 @@ export default function ({ id, testcase }: Props) {
     });
     const toggleSkipButton = useComputed(() => {
         if (testcase.skipped) {
-            return <button class="text-base leading-tight bg-black px-3 w-fit display-font unfade" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>unfade</button>;
+            return <button class="text-base leading-tight bg-black px-3 w-fit display-font unfade" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>unskip</button>;
         } else {
             return <button class="text-base leading-tight bg-black px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>skip</button>;
         }
