@@ -157,12 +157,11 @@ export function resolveVariables(string: string, inContextOfFile?: string): stri
   };
 
   // Replace all regexes with their matches at once
-  const vscodeVariableRgex = new RegExp(Object.keys(vscodeSubstitutions).join('|'), 'g');
+  const vscodeVariableRgex = new RegExp(Object.keys(vscodeSubstitutions).map(variable => `\\${variable}`).join('|'), 'g');
   const vscodeResolvedString = string.replace(vscodeVariableRgex, (variable) => vscodeSubstitutions[variable]);
 
   // Resolve ${path:...} last
-  const resolved = vscodeResolvedString.replace(/\${path:(.*?)}/g, (match) => path.normalize(match));
-
+  const resolved = vscodeResolvedString.replace(/\${path:(.*?)}/g, (match, group: string) => path.normalize(group));
   return resolved;
 }
 
