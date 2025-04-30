@@ -5,6 +5,7 @@ import AutoresizeTextarea from './AutoresizeTextarea';
 import { PreactObservable } from '~external/observable';
 import { Action, ProviderMessageType } from '../message';
 import { BLUE_COLOR, GREEN_COLOR, RED_COLOR } from '~common/webview';
+import { postProviderMessage } from './message';
 
 interface Props {
     id: number;
@@ -12,8 +13,8 @@ interface Props {
 }
 
 export default function ({ id, testcase }: Props) {
-    const toggleVisibility = () => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_VISIBILITY });
-    const expandStdio = (stdio: Stdio) => postMessage({ type: ProviderMessageType.VIEW, id, stdio });
+    const toggleVisibility = () => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_VISIBILITY });
+    const expandStdio = (stdio: Stdio) => postProviderMessage({ type: ProviderMessageType.VIEW, id, stdio });
 
     const newStdin = useSignal('');
     const headerBar = useComputed(() => {
@@ -32,9 +33,9 @@ export default function ({ id, testcase }: Props) {
     });
     const toggleSkipButton = useComputed(() => {
         if (testcase.skipped) {
-            return <button class="text-base leading-tight bg-black px-3 w-fit display-font unfade" onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>unfade</button>;
+            return <button class="text-base leading-tight bg-black px-3 w-fit display-font unfade" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>unfade</button>;
         } else {
-            return <button class="text-base leading-tight bg-black px-3 w-fit display-font" onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>skip</button>;
+            return <button class="text-base leading-tight bg-black px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>skip</button>;
         }
     });
 
@@ -67,12 +68,12 @@ export default function ({ id, testcase }: Props) {
                     <div class="w-6 shrink-0"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
                         {headerBar}
-                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.EDIT })}>edit</button>
+                        <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.EDIT })}>edit</button>
                         <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
                             newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
-                            postMessage({ type: ProviderMessageType.ACTION, id, action: Action.RUN });
+                            postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.RUN });
                         }}>run</button>
-                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.DELETE })}>delete</button>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DELETE })}>delete</button>
                         <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{testcase.$elapsed}ms</p>
                         {toggleSkipButton}
                     </div>
@@ -100,16 +101,16 @@ export default function ({ id, testcase }: Props) {
                         {(testcase.status === Status.WA || testcase.status === Status.NA) &&
                             <div class="flex flex-row gap-x-2">
                                 <div class="w-4 shrink-0"></div>
-                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.ACCEPT })}>accept</button>
+                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.ACCEPT })}>accept</button>
                                 {(testcase.status === Status.WA) &&
-                                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.VIEW_DIFF })}>view diff</button>
+                                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.VIEW_DIFF })}>view diff</button>
                                 }
                             </div>
                         }
                         {(testcase.status === Status.AC) &&
                             <div class="flex flex-row">
                                 <div class="w-6 shrink-0"></div>
-                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.DECLINE })}>decline</button>
+                                <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DECLINE })}>decline</button>
                             </div>
                         }
                     </>
@@ -129,7 +130,7 @@ export default function ({ id, testcase }: Props) {
                 <div class="flex flex-row">
                     <div class="w-6 shrink-0"></div>
                     <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.ACTION, id, action: Action.STOP })}>stop</button>
+                        <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.STOP })}>stop</button>
                     </div>
                 </div>
                 {<div class="flex flex-row">
@@ -140,7 +141,7 @@ export default function ({ id, testcase }: Props) {
                     <div class="w-6 shrink-0"></div>
                     <AutoresizeTextarea input={newStdin} onKeyUp={event => {
                         if (event.key === 'Enter') {
-                            postMessage({ type: ProviderMessageType.STDIN, id, data: newStdin.value });
+                            postProviderMessage({ type: ProviderMessageType.STDIN, id, data: newStdin.value });
                             newStdin.value = '';
                         }
                     }} />
@@ -165,7 +166,7 @@ export default function ({ id, testcase }: Props) {
                             // the extension host will send shortened version of both of these
                             testcase.stdin = '';
                             testcase.acceptedStdout = '';
-                            postMessage({ type: ProviderMessageType.SAVE, id, stdin, acceptedStdout });
+                            postProviderMessage({ type: ProviderMessageType.SAVE, id, stdin, acceptedStdout });
                         }}>save</button>
                     </div>
                 </div>

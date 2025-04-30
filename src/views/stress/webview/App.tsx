@@ -1,11 +1,11 @@
 import { useEffect } from "preact/hooks";
 import { batch, signal, useComputed } from "@preact/signals";
-import 'vscode-webview';
 
 import State from './State';
+import { postProviderMessage } from "./message";
 import { observable, PreactObservable } from "~external/observable";
 import { Status } from "~common/common";
-import { IShowMessage, IStatusMessage, IStdioMessage, ProviderMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from "../message";
+import { IShowMessage, IStatusMessage, IStdioMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from "../message";
 import { BLUE_COLOR, RED_COLOR } from "~common/webview";
 
 interface IState {
@@ -13,15 +13,11 @@ interface IState {
     status: Status;
 }
 
-const vscode = acquireVsCodeApi();
-
-const postMessage = (msg: ProviderMessage) => vscode.postMessage(msg);
-
 const state: PreactObservable<IState[]> = observable([{ data: '', status: Status.NA }, { data: '', status: Status.NA }, { data: '', status: Status.NA }]);
 const showView = signal(true);
 
-const expand = (id: number) => postMessage({ type: ProviderMessageType.VIEW, id });
-const add = (id: number) => postMessage({ type: ProviderMessageType.ADD, id });
+const expand = (id: number) => postProviderMessage({ type: ProviderMessageType.VIEW, id });
+const add = (id: number) => postProviderMessage({ type: ProviderMessageType.ADD, id });
 
 window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
     switch (event.data.type) {
@@ -61,14 +57,14 @@ function handleShow({ visible }: IShowMessage) {
 }
 
 export default function App() {
-    useEffect(() => postMessage({ type: ProviderMessageType.LOADED }), []);
+    useEffect(() => postProviderMessage({ type: ProviderMessageType.LOADED }), []);
 
     const button = useComputed(() => {
         if (state[1].status === Status.RUNNING)
-            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.STOP })}>stop</button>;
+            return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.STOP })}>stop</button>;
         if (state[0].status === Status.COMPILING || state[1].status === Status.COMPILING || state[2].status === Status.COMPILING)
             return <></>;
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postMessage({ type: ProviderMessageType.RUN })}>stress test</button>;
+        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.RUN })}>stress test</button>;
     });
 
     return <>{showView.value &&

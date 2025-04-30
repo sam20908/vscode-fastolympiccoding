@@ -5,6 +5,7 @@ import Testcase from './Testcase';
 import { observable } from '~external/observable';
 import { IDeleteMessage, INewMessage, ISetMessage, IShowMessage, IStdioMessage, ProviderMessageType, WebviewMessage, WebviewMessageType } from '../message';
 import { ITestcase, Status, Stdio } from '~common/common';
+import { postProviderMessage } from './message';
 
 const testcases = observable(new Map<number, ITestcase>());
 const show = signal(true);
@@ -75,7 +76,7 @@ function handleShow({ visible }: IShowMessage) {
 }
 
 export default function () {
-    useEffect(() => postMessage({ type: ProviderMessageType.LOADED }), []);
+    useEffect(() => postProviderMessage({ type: ProviderMessageType.LOADED }), []);
     const testcaseComponents = useComputed(() => {
         const components = [];
         for (const [id, testcase] of testcases.entries()) {
@@ -86,7 +87,7 @@ export default function () {
 
     return <>{
         show.value && <>{testcaseComponents}
-            <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postMessage({ type: ProviderMessageType.NEXT })}>next test</button>
+            <button class="ml-6 text-base leading-tight bg-zinc-600 px-3 shrink-0 display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.NEXT })}>next test</button>
         </>}
     </>;
 }

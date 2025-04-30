@@ -4,6 +4,6 @@ import { ProviderMessage } from "../message";
 const vscode = acquireVsCodeApi();
 
 export const postProviderMessage = (msg: ProviderMessage) => {
-    // eslint-disable-next-line
-    vscode.postMessage(msg);
+  // eslint-disable-next-line
+  vscode.postMessage(msg);
 }
