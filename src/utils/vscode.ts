@@ -132,7 +132,7 @@ export function resolveVariables(string: string, inContextOfFile?: string): stri
     }
   }
 
-  // ${getDefaultBuildTaskName} is not supported because it is painful to implement. Bark if necessary :)
+  // ${getDefaultBuildTaskName} is not supported because it is slow and requires async. Bark if necessary :)
 
   const vscodeSubstitutions: { [regex: string]: string } = {
     '${userHome}': os.homedir(),
