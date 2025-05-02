@@ -14,43 +14,6 @@ interface Props {
 const from = ['Generator', 'Solution', 'Good Solution'];
 
 export default function ({ data, status, id, onView, onAdd }: Props) {
-	const statusItem = (() => {
-		if (status === Status.WA) {
-			return (
-				<p
-					class="text-base leading-tight px-3 w-fit display-font"
-					style={{ backgroundColor: RED_COLOR }}
-				>
-					WA
-				</p>
-			);
-		}
-
-		if (status === Status.CE) {
-			return (
-				<p
-					class="text-base leading-tight px-3 w-fit display-font"
-					style={{ backgroundColor: RED_COLOR }}
-				>
-					CE
-				</p>
-			);
-		}
-
-		if (status === Status.RE) {
-			return (
-				<p
-					class="text-base leading-tight px-3 w-fit display-font"
-					style={{ backgroundColor: RED_COLOR }}
-				>
-					RE
-				</p>
-			);
-		}
-
-		return <></>;
-	})();
-
 	switch (status) {
 		case Status.COMPILING:
 			return (
@@ -91,7 +54,18 @@ export default function ({ data, status, id, onView, onAdd }: Props) {
 							<p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">
 								{from[id]}
 							</p>
-							{statusItem}
+							{[Status.RE, Status.CE, Status.WA].includes(status) && (
+								<p
+									class="text-base leading-tight px-3 w-fit display-font"
+									style={{ backgroundColor: RED_COLOR }}
+								>
+									{status === Status.CE
+										? 'CE'
+										: status === Status.RE
+											? 'RE'
+											: 'WA'}
+								</p>
+							)}
 							{(status === Status.RE || status === Status.WA) && (
 								<button
 									type="button"
