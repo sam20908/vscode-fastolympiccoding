@@ -15,7 +15,7 @@ export class Runnable {
 	private _signal: NodeJS.Signals | null = null;
 	private _exitCode: number | null = null;
 
-	run(command: string, timeout?: number, cwd?: string, ...args: string[]) {
+	run(command: string, timeout: number, cwd?: string, ...args: string[]) {
 		this._process = child_process.spawn(command, args, { cwd, timeout });
 		this._process.stdout.setEncoding('utf-8');
 		this._process.stderr.setEncoding('utf-8');
@@ -106,7 +106,7 @@ export async function compile(
 			context.subscriptions.push(compilationStatusItem);
 
 			const process = new Runnable();
-			process.run(resolvedArgs[0], undefined, ...resolvedArgs.slice(1));
+			process.run(resolvedArgs[0], 0, undefined, ...resolvedArgs.slice(1));
 
 			let err = '';
 			process.process?.stderr.on('data', (data: string) => {
