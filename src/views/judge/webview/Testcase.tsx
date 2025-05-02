@@ -1,185 +1,315 @@
 import { useComputed, useSignal } from '@preact/signals';
+import type { FunctionComponent } from 'preact';
 
-import { ITestcase, Status, Stdio } from '~common/common';
+import { type ITestcase, Status, Stdio } from '~common/common';
 import AutoresizeTextarea from './AutoresizeTextarea';
-import { PreactObservable } from '~external/observable';
+import type { PreactObservable } from '~external/observable';
 import { Action, ProviderMessageType } from '../message';
-import { BLUE_COLOR, GREEN_COLOR, RED_COLOR } from '~common/webview';
+import {
+	ArrowSvgInwards,
+	ArrowSvgOutwards,
+	BLUE_COLOR,
+	GRAY_COLOR,
+	GREEN_COLOR,
+	RED_COLOR,
+} from '~common/webview';
 import { postProviderMessage } from './message';
 
 interface Props {
-    id: number;
-    testcase: PreactObservable<ITestcase>;
+	id: number;
+	testcase: PreactObservable<ITestcase>;
+}
+interface ActionButtonProps {
+	id: number;
+	action: Action;
+	backgroundColor: string;
+	text: string;
+	onClickPrePost?: () => unknown;
+}
+interface StatusButtonProps {
+	id: number;
+	status: Status;
 }
 
+const ActionButton: FunctionComponent<ActionButtonProps> = ({
+	id,
+	action,
+	backgroundColor,
+	text,
+	onClickPrePost,
+}: ActionButtonProps) => (
+	<button
+		type="button"
+		class="text-base leading-tight px-3 w-fit display-font"
+		style={{ backgroundColor: backgroundColor }}
+		onClick={() => {
+			onClickPrePost?.();
+			postProviderMessage({ type: ProviderMessageType.ACTION, id, action });
+		}}
+	>
+		{text}
+	</button>
+);
+const StatusButton: FunctionComponent<StatusButtonProps> = ({
+	status,
+	id,
+}: StatusButtonProps) => {
+	let color: string;
+	let text: string;
+	switch (status) {
+		case Status.CE:
+			color = RED_COLOR;
+			text = 'CE';
+			break;
+		case Status.RE:
+			color = RED_COLOR;
+			text = 'RE';
+			break;
+		case Status.WA:
+			color = RED_COLOR;
+			text = 'WA';
+			break;
+		case Status.AC:
+			color = GREEN_COLOR;
+			text = 'AC';
+			break;
+		default:
+			color = GRAY_COLOR;
+			text = 'NA';
+			break;
+	}
+
+	return (
+		<ActionButton
+			id={id}
+			action={Action.TOGGLE_VISIBILITY}
+			backgroundColor={color}
+			text={text}
+		/>
+	);
+};
+
 export default function ({ id, testcase }: Props) {
-  const toggleVisibility = () => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_VISIBILITY });
-  const expandStdio = (stdio: Stdio) => postProviderMessage({ type: ProviderMessageType.VIEW, id, stdio });
+	const viewStdio = (stdio: Stdio) =>
+		postProviderMessage({ type: ProviderMessageType.VIEW, id, stdio });
 
-  const newStdin = useSignal('');
-  const headerBar = useComputed(() => {
-    switch (testcase.status) {
-      case Status.CE:
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>CE</button>;
-      case Status.RE:
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>RE</button>;
-      case Status.WA:
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={toggleVisibility}>WA</button>;
-      case Status.AC:
-        return <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={toggleVisibility}>AC</button>;
-      default:
-        return <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={toggleVisibility}>NA</button>;
-    }
-  });
-  const toggleSkipButton = useComputed(() => {
-    if (testcase.skipped) {
-      return <button class="text-base leading-tight bg-black px-3 w-fit display-font unfade" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>unskip</button>;
-    } else {
-      return <button class="text-base leading-tight bg-black px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.TOGGLE_SKIP })}>skip</button>;
-    }
-  });
+	const newStdin = useSignal('');
 
-  const stdinArrowButton =
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => expandStdio(Stdio.STDIN)}>
-          <path fill={GREEN_COLOR} fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-        </svg>;
-  const stderrArrowButton =
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => expandStdio(Stdio.STDERR)}>
-          <path fill={RED_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-        </svg>;
-  const stdoutArrowButton =
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => expandStdio(Stdio.STDOUT)}>
-          <path fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-        </svg>;
-  const acStdoutArrowButton =
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 mr-2 mt-1 shrink-0" onClick={() => expandStdio(Stdio.ACCEPTED_STDOUT)}>
-          <path fill={GREEN_COLOR} fillRule="evenodd" d="M14 8a.75.75 0 0 1-.75.75H4.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h8.69A.75.75 0 0 1 14 8Z" clipRule="evenodd" />
-        </svg>;
+	const StdinRow: FunctionComponent = () => (
+		<div class="flex flex-row">
+			<ArrowSvgInwards color="#FFFFFF" onClick={() => viewStdio(Stdio.STDIN)} />
+			<pre class="text-base display-font">{testcase.$stdin}</pre>
+		</div>
+	);
+	const StderrRow: FunctionComponent = () => (
+		<div class="flex flex-row">
+			<ArrowSvgOutwards
+				color={RED_COLOR}
+				onClick={() => viewStdio(Stdio.STDERR)}
+			/>
+			<pre class="text-base display-font">{testcase.$stderr}</pre>
+		</div>
+	);
+	const StdoutRow: FunctionComponent = () => (
+		<div class="flex flex-row">
+			<ArrowSvgOutwards
+				color="#FFFFFF"
+				onClick={() => viewStdio(Stdio.STDOUT)}
+			/>
+			<pre class="text-base display-font">{testcase.$stdout}</pre>
+		</div>
+	);
+	const AcceptedStdoutRow: FunctionComponent = () => (
+		<div class="flex flex-row">
+			<ArrowSvgOutwards
+				color={GREEN_COLOR}
+				onClick={() => viewStdio(Stdio.ACCEPTED_STDOUT)}
+			/>
+			<pre class="text-base display-font">{testcase.$acceptedStdout}</pre>
+		</div>
+	);
 
-
-  switch (testcase.status) {
-    case Status.NA:
-    case Status.WA:
-    case Status.AC:
-    case Status.RE:
-    case Status.CE:
-      return <div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
-        <div class="flex flex-row unfade">
-          <div class="w-6 shrink-0"></div>
-          <div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
-            {headerBar}
-            <button class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font" onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.EDIT })}>edit</button>
-            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
-              newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
-              postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.RUN });
-            }}>run</button>
-            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DELETE })}>delete</button>
-            <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">{testcase.$elapsed}ms</p>
-            {toggleSkipButton}
-          </div>
-        </div>
-        {(!testcase.skipped && testcase.shown && !(testcase.status === Status.AC && !testcase.toggled)) &&
-                    <>
-                      {<div class="flex flex-row">
-                        {stdinArrowButton}
-                        <pre class="text-base display-font">{testcase.$stdin}</pre>
-                      </div>}
-                      {<div class="flex flex-row">
-                        {stderrArrowButton}
-                        <pre class="text-base display-font">{testcase.$stderr}</pre>
-                      </div>}
-                      {<div class="flex flex-row">
-                        {stdoutArrowButton}
-                        <pre class="text-base display-font">{testcase.$stdout}</pre>
-                      </div>}
-                      {(testcase.status === Status.WA) &&
-                            <div class="flex flex-row">
-                              {acStdoutArrowButton}
-                              <pre class="text-base display-font">{testcase.$acceptedStdout}</pre>
-                            </div>
-                      }
-                      {(testcase.status === Status.WA || testcase.status === Status.NA) &&
-                            <div class="flex flex-row gap-x-2">
-                              <div class="w-4 shrink-0"></div>
-                              <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: GREEN_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.ACCEPT })}>accept</button>
-                              {(testcase.status === Status.WA) &&
-                                    <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.VIEW_DIFF })}>view diff</button>
-                              }
-                            </div>
-                      }
-                      {(testcase.status === Status.AC) &&
-                            <div class="flex flex-row">
-                              <div class="w-6 shrink-0"></div>
-                              <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.DECLINE })}>decline</button>
-                            </div>
-                      }
-                    </>
-        }
-      </div>;
-    case Status.COMPILING:
-      return <div class="container mx-auto mb-6">
-        <div class="flex flex-row">
-          <div class="w-6 shrink-0"></div>
-          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-            <p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">compiling</p>
-          </div>
-        </div>
-      </div>;
-    case Status.RUNNING:
-      return <div class="container mx-auto mb-6">
-        <div class="flex flex-row">
-          <div class="w-6 shrink-0"></div>
-          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: RED_COLOR }} onClick={() => postProviderMessage({ type: ProviderMessageType.ACTION, id, action: Action.STOP })}>stop</button>
-          </div>
-        </div>
-        {<div class="flex flex-row">
-          {stdinArrowButton}
-          <pre class="text-base display-font">{testcase.$stdin}</pre>
-        </div>}
-        <div class="flex flex-row">
-          <div class="w-6 shrink-0"></div>
-          <AutoresizeTextarea input={newStdin} onKeyUp={event => {
-            if (event.key === 'Enter') {
-              postProviderMessage({ type: ProviderMessageType.STDIN, id, data: newStdin.value });
-              newStdin.value = '';
-            }
-          }} />
-        </div>
-        {<div class="flex flex-row">
-          {stderrArrowButton}
-          <pre class="text-base display-font">{testcase.$stderr}</pre>
-        </div>}
-        {<div class="flex flex-row">
-          {stdoutArrowButton}
-          <pre class="text-base display-font">{testcase.$stdout}</pre>
-        </div>}
-      </div>;
-    case Status.EDITING:
-      return <div class="container mx-auto mb-6">
-        <div class="flex flex-row">
-          <div class="w-6 shrink-0"></div>
-          <div class="flex justify-start gap-x-2 bg-zinc-800 grow">
-            <button class="text-base leading-tight px-3 w-fit display-font" style={{ backgroundColor: BLUE_COLOR }} onClick={() => {
-              const stdin = testcase.stdin;
-              const acceptedStdout = testcase.acceptedStdout;
-              // the extension host will send shortened version of both of these
-              testcase.stdin = '';
-              testcase.acceptedStdout = '';
-              postProviderMessage({ type: ProviderMessageType.SAVE, id, stdin, acceptedStdout });
-            }}>save</button>
-          </div>
-        </div>
-        <div class="flex flex-row">
-          {stdinArrowButton}
-          <AutoresizeTextarea input={testcase.$stdin!} onKeyUp={() => { }} />
-        </div>
-        <div class="flex flex-row">
-          {acStdoutArrowButton}
-          <AutoresizeTextarea input={testcase.$acceptedStdout!} onKeyUp={() => { }} />
-        </div>
-      </div>;
-    default:
-      return <></>;
-  }
+	switch (testcase.status) {
+		case Status.NA:
+		case Status.WA:
+		case Status.AC:
+		case Status.RE:
+		case Status.CE:
+			return (
+				<div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
+					<div class="flex flex-row unfade">
+						<div class="w-6 shrink-0" />
+						<div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
+							<StatusButton id={id} status={testcase.status} />
+							<ActionButton
+								id={id}
+								action={Action.EDIT}
+								backgroundColor={GRAY_COLOR}
+								text="edit"
+							/>
+							,
+							<ActionButton
+								id={id}
+								action={Action.RUN}
+								backgroundColor={BLUE_COLOR}
+								text="run"
+								onClickPrePost={() => {
+									newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
+								}}
+							/>
+							,
+							<ActionButton
+								id={id}
+								action={Action.DELETE}
+								backgroundColor={RED_COLOR}
+								text="delete"
+							/>
+							,
+							<p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">
+								{testcase.$elapsed}ms
+							</p>
+							,
+							<ActionButton
+								id={id}
+								action={Action.TOGGLE_SKIP}
+								backgroundColor="#FFFFFF"
+								text={testcase.skipped ? 'unskip' : 'skip'}
+							/>
+						</div>
+					</div>
+					{!testcase.skipped &&
+						testcase.shown &&
+						!(testcase.status === Status.AC && !testcase.toggled) && (
+							<>
+								<StdinRow />
+								<StderrRow />
+								<StdoutRow />
+								{testcase.status === Status.WA && <AcceptedStdoutRow />}
+								{(testcase.status === Status.WA ||
+									testcase.status === Status.NA) && (
+									<div class="flex flex-row gap-x-2">
+										<div class="w-4 shrink-0" />
+										<ActionButton
+											id={id}
+											action={Action.ACCEPT}
+											backgroundColor={GREEN_COLOR}
+											text="accept"
+										/>
+										{testcase.status === Status.WA && (
+											<ActionButton
+												id={id}
+												action={Action.VIEW_DIFF}
+												backgroundColor={BLUE_COLOR}
+												text="diff"
+											/>
+										)}
+									</div>
+								)}
+								{testcase.status === Status.AC && (
+									<div class="flex flex-row">
+										<div class="w-6 shrink-0" />
+										<ActionButton
+											id={id}
+											action={Action.DECLINE}
+											backgroundColor={RED_COLOR}
+											text="decline"
+										/>
+									</div>
+								)}
+							</>
+						)}
+				</div>
+			);
+		case Status.COMPILING:
+			return (
+				<div class="container mx-auto mb-6">
+					<div class="flex flex-row">
+						<div class="w-6 shrink-0" />
+						<div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+							<p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">
+								compiling
+							</p>
+						</div>
+					</div>
+				</div>
+			);
+		case Status.RUNNING:
+			return (
+				<div class="container mx-auto mb-6">
+					<div class="flex flex-row">
+						<div class="w-6 shrink-0" />
+						<div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+							<ActionButton
+								id={id}
+								action={Action.STOP}
+								backgroundColor={RED_COLOR}
+								text="stop"
+							/>
+						</div>
+					</div>
+					<StdinRow />
+					<div class="flex flex-row">
+						<div class="w-6 shrink-0" />
+						<AutoresizeTextarea
+							input={newStdin}
+							onKeyUp={(event) => {
+								if (event.key === 'Enter') {
+									postProviderMessage({
+										type: ProviderMessageType.STDIN,
+										id,
+										data: newStdin.value,
+									});
+									newStdin.value = '';
+								}
+							}}
+						/>
+					</div>
+					<StderrRow />
+					<StdoutRow />
+				</div>
+			);
+		case Status.EDITING:
+			return (
+				<div class="container mx-auto mb-6">
+					<div class="flex flex-row">
+						<div class="w-6 shrink-0" />
+						<div class="flex justify-start gap-x-2 bg-zinc-800 grow">
+							<button
+								type="button"
+								class="text-base leading-tight px-3 w-fit display-font"
+								style={{ backgroundColor: BLUE_COLOR }}
+								onClick={() => {
+									const stdin = testcase.stdin;
+									const acceptedStdout = testcase.acceptedStdout;
+									// the extension host will send shortened version of both of these
+									testcase.stdin = '';
+									testcase.acceptedStdout = '';
+									postProviderMessage({
+										type: ProviderMessageType.SAVE,
+										id,
+										stdin,
+										acceptedStdout,
+									});
+								}}
+							>
+								save
+							</button>
+						</div>
+					</div>
+					<div class="flex flex-row">
+						<ArrowSvgInwards color="#FFFFFF" />
+						{/* biome-ignore lint/style/noNonNullAssertion: Guaranteed by the signals library */}
+						<AutoresizeTextarea input={testcase.$stdin!} onKeyUp={() => {}} />
+					</div>
+					<div class="flex flex-row">
+						<ArrowSvgOutwards color={GREEN_COLOR} />
+						<AutoresizeTextarea
+							// biome-ignore lint/style/noNonNullAssertion: uaranteed by the signals library
+							input={testcase.$acceptedStdout!}
+							onKeyUp={() => {}}
+						/>
+					</div>
+				</div>
+			);
+	}
 }

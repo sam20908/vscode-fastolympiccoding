@@ -1,5 +1,5 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 .fade *:not(.unfade) {
-  opacity: 0.5;
+	opacity: 0.5;
 }

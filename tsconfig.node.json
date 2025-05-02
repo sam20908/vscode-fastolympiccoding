@@ -14,7 +14,6 @@
     "src/views/stress/message.ts",
     "src/views/stress/provider/**/*.ts",
     "./src/common/**/*.ts",
-    "./src/utils/**/*.ts",
-    "src/external/observable.ts",
+    "./src/utils/**/*.ts"
   ]
 }
