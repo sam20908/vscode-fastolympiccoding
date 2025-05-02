@@ -9,7 +9,7 @@ export enum Action {
 	DECLINE = 5,
 	TOGGLE_VISIBILITY = 6,
 	TOGGLE_SKIP = 7,
-	VIEW_DIFF = 8,
+	COMPARE = 8,
 }
 
 export enum ProviderMessageType {

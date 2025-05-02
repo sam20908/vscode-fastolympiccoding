@@ -147,7 +147,6 @@ export default function ({ id, testcase }: Props) {
 								backgroundColor={GRAY_COLOR}
 								text="edit"
 							/>
-							,
 							<ActionButton
 								id={id}
 								action={Action.RUN}
@@ -157,22 +156,19 @@ export default function ({ id, testcase }: Props) {
 									newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
 								}}
 							/>
-							,
 							<ActionButton
 								id={id}
 								action={Action.DELETE}
 								backgroundColor={RED_COLOR}
 								text="delete"
 							/>
-							,
 							<p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">
 								{testcase.$elapsed}ms
 							</p>
-							,
 							<ActionButton
 								id={id}
 								action={Action.TOGGLE_SKIP}
-								backgroundColor="#FFFFFF"
+								backgroundColor="#000000"
 								text={testcase.skipped ? 'unskip' : 'skip'}
 							/>
 						</div>
@@ -198,9 +194,9 @@ export default function ({ id, testcase }: Props) {
 										{testcase.status === Status.WA && (
 											<ActionButton
 												id={id}
-												action={Action.VIEW_DIFF}
+												action={Action.COMPARE}
 												backgroundColor={BLUE_COLOR}
-												text="diff"
+												text="compare"
 											/>
 										)}
 									</div>

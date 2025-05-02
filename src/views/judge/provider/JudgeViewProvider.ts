@@ -209,8 +209,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			case Action.TOGGLE_SKIP:
 				this._toggleSkip(id);
 				break;
-			case Action.VIEW_DIFF:
-				this._viewDiff(id);
+			case Action.COMPARE:
+				this._compare(id);
 				break;
 		}
 	}
@@ -558,7 +558,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		this._saveTestcases();
 	}
 
-	private _viewDiff(id: number) {
+	private _compare(id: number) {
 		// biome-ignore lint/style/noNonNullAssertion: Called only if testcase exists
 		const testcase = this._state.get(id)!;
 		const stdout = vscode.Uri.parse(
