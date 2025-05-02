@@ -35,10 +35,12 @@ interface IState
 }
 
 function getExitCodeStatus(
+	signal: NodeJS.Signals | null,
 	code: number | null,
 	stdout: string,
 	acceptedStdout: string,
 ) {
+	if (signal === 'SIGTERM') return Status.TL;
 	if (code === null || code) return Status.RE;
 	if (acceptedStdout === '\n') return Status.NA;
 	if (stdout === acceptedStdout) return Status.AC;
@@ -126,6 +128,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				shown: true,
 				toggled: false,
 				skipped: false,
+				timeLimit: data.timeLimit,
 			};
 		});
 
@@ -233,6 +236,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				shown: testcase.shown,
 				toggled: testcase.toggled,
 				skipped: testcase.skipped,
+				timeLimit: testcase.timeLimit,
 			});
 		}
 		super.writeStorage(file, testcases);
@@ -253,6 +257,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			shown: testcase?.shown ?? true,
 			toggled: testcase?.toggled ?? false,
 			skipped: testcase?.skipped ?? false,
+			timeLimit: testcase?.timeLimit ?? 0, // 0 for no time limit
 			id,
 			process: new Runnable(),
 		};
@@ -302,6 +307,30 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			id,
 			property: 'elapsed',
 			value: newTestcase.elapsed,
+		});
+		super._postMessage({
+			type: WebviewMessageType.SET,
+			id,
+			property: 'shown',
+			value: newTestcase.shown,
+		});
+		super._postMessage({
+			type: WebviewMessageType.SET,
+			id,
+			property: 'toggled',
+			value: newTestcase.toggled,
+		});
+		super._postMessage({
+			type: WebviewMessageType.SET,
+			id,
+			property: 'skipped',
+			value: newTestcase.skipped,
+		});
+		super._postMessage({
+			type: WebviewMessageType.SET,
+			id,
+			property: 'timeLimit',
+			value: newTestcase.timeLimit,
 		});
 
 		return newTestcase;
@@ -392,7 +421,12 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			: undefined;
 		testcase.stderr.reset();
 		testcase.stdout.reset();
-		testcase.process.run(resolvedArgs[0], cwd, ...resolvedArgs.slice(1));
+		testcase.process.run(
+			resolvedArgs[0],
+			testcase.timeLimit,
+			cwd,
+			...resolvedArgs.slice(1),
+		);
 
 		testcase.process.process?.stdin.write(testcase.stdin.data);
 		testcase.process.process?.stderr.on('data', (data: string) =>
@@ -426,11 +460,15 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			testcase.process.process?.stderr.removeAllListeners('data');
 			testcase.process.process?.stdout.removeAllListeners('data');
 			testcase.status = getExitCodeStatus(
+				testcase.process.signal,
 				exitCode,
 				testcase.stdout.data,
 				testcase.acceptedStdout.data,
 			);
-			testcase.elapsed = testcase.process.elapsed;
+			testcase.elapsed =
+				testcase.status === Status.TL
+					? testcase.timeLimit
+					: testcase.process.elapsed;
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
@@ -603,7 +641,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.stdin.write(data, false);
 	}
 
-	private _save({ id, stdin, acceptedStdout }: ISaveMessage) {
+	private _save({ id, stdin, acceptedStdout, timeLimit }: ISaveMessage) {
 		// biome-ignore lint/style/noNonNullAssertion: Called only if testcase exists
 		const testcase = this._state.get(id)!;
 
@@ -619,20 +657,34 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'acceptedStdout',
 			value: '',
 		});
+
 		testcase.stdin.reset();
 		testcase.acceptedStdout.reset();
 		testcase.stdin.write(stdin, true);
 		testcase.acceptedStdout.write(acceptedStdout, true);
 		testcase.status = getExitCodeStatus(
+			testcase.process.signal,
 			testcase.process.exitCode,
 			testcase.stdout.data,
 			testcase.acceptedStdout.data,
 		);
+		testcase.elapsed =
+			testcase.status === Status.TL
+				? testcase.timeLimit
+				: testcase.process.elapsed;
+		testcase.timeLimit = timeLimit;
+
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
 			property: 'status',
 			value: testcase.status,
+		});
+		super._postMessage({
+			type: WebviewMessageType.SET,
+			id,
+			property: 'timeLimit',
+			value: testcase.timeLimit,
 		});
 
 		this._saveTestcases();

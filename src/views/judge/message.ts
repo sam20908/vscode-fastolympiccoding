@@ -36,6 +36,7 @@ export interface ISaveMessage {
 	id: number;
 	stdin: string;
 	acceptedStdout: string;
+	timeLimit: number;
 }
 export interface IViewMessage {
 	type: ProviderMessageType.VIEW;

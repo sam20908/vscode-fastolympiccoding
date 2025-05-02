@@ -4,9 +4,10 @@ export enum Status {
 	WA = 2,
 	AC = 3,
 	NA = 4,
-	COMPILING = 5,
-	RUNNING = 6,
-	EDITING = 7,
+	TL = 5,
+	COMPILING = 6,
+	RUNNING = 7,
+	EDITING = 8,
 }
 
 export enum Stdio {
@@ -26,4 +27,5 @@ export interface ITestcase {
 	shown: boolean;
 	toggled: boolean;
 	skipped: boolean;
+	timeLimit: number;
 }

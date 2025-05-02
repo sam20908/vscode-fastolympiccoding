@@ -195,19 +195,46 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			? resolveVariables(languageSettings.currentWorkingDirectory)
 			: undefined;
 		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-		const maxRuntime = config.get<number>('maxRuntime')!;
+		const testcaseTimeLimit = config.get<number>('stressTestcaseTimeLimit')!;
+		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
+		const timeLimit = config.get<number>('stressTimeLimit')!;
 		const start = Date.now();
 
 		let anyFailed = false;
 		this._stopFlag = false;
 		while (
 			!this._stopFlag &&
-			(maxRuntime === -1 || Date.now() - start <= maxRuntime)
+			(timeLimit === 0 || Date.now() - start <= timeLimit)
 		) {
 			super._postMessage({ type: WebviewMessageType.CLEAR });
 			for (let i = 0; i < 3; i++) {
 				this._state[i].data.reset();
 			}
+
+			const seed = Math.round(Math.random() * 9007199254740991);
+			const generatorRunArguments = this._resolveRunArguments(
+				languageSettings.runCommand,
+				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
+				config.get('generatorFile')!,
+			);
+			this._state[0].process.run(
+				generatorRunArguments[0],
+				testcaseTimeLimit,
+				cwd,
+				...generatorRunArguments.slice(1),
+			);
+			this._state[0].process.process?.on('error', (data) =>
+				this._state[0].data.write(data.message, true),
+			);
+			this._state[0].process.process?.stdin.write(`${seed}\n`);
+			this._state[0].process.process?.stdout.on('data', (data: string) => {
+				this._state[0].data.write(data, false);
+				this._state[1].process.process?.stdin.write(data);
+				this._state[2].process.process?.stdin.write(data);
+			});
+			this._state[0].process.process?.stdout.once('end', () =>
+				this._state[0].data.write('', true),
+			);
 
 			const solutionRunArguments = this._resolveRunArguments(
 				languageSettings.runCommand,
@@ -215,6 +242,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			);
 			this._state[1].process.run(
 				solutionRunArguments[0],
+				testcaseTimeLimit,
 				cwd,
 				...solutionRunArguments.slice(1),
 			);
@@ -235,6 +263,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			);
 			this._state[2].process.run(
 				goodSolutionRunArguments[0],
+				testcaseTimeLimit,
 				cwd,
 				...goodSolutionRunArguments.slice(1),
 			);
@@ -246,30 +275,6 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			);
 			this._state[2].process.process?.stdout.once('end', () =>
 				this._state[2].data.write('', true),
-			);
-
-			const seed = Math.round(Math.random() * 9007199254740991);
-			const generatorRunArguments = this._resolveRunArguments(
-				languageSettings.runCommand,
-				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				config.get('generatorFile')!,
-			);
-			this._state[0].process.run(
-				generatorRunArguments[0],
-				cwd,
-				...generatorRunArguments.slice(1),
-			);
-			this._state[0].process.process?.on('error', (data) =>
-				this._state[0].data.write(data.message, true),
-			);
-			this._state[0].process.process?.stdin.write(`${seed}\n`);
-			this._state[0].process.process?.stdout.on('data', (data: string) => {
-				this._state[0].data.write(data, false);
-				this._state[1].process.process?.stdin.write(data);
-				this._state[2].process.process?.stdin.write(data);
-			});
-			this._state[0].process.process?.stdout.once('end', () =>
-				this._state[0].data.write('', true),
 			);
 
 			for (let i = 0; i < 3; i++) {
@@ -289,9 +294,17 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				this._state.map((value) => value.process.promise),
 			);
 			for (let i = 0; i < 3; i++) {
-				anyFailed ||= !!this._state[i].process.exitCode;
-				this._state[i].status =
-					this._state[i].process.exitCode === 0 ? Status.NA : Status.RE;
+				if (this._state[i].process.signal === 'SIGTERM') {
+					anyFailed = true;
+					this._state[i].status = Status.TL;
+				} else if (this._state[i].process.signal === 'SIGUSR1') {
+					this._state[i].status = Status.NA;
+				} else if (this._state[i].process.exitCode !== 0) {
+					anyFailed = true;
+					this._state[i].status = Status.RE;
+				} else {
+					this._state[i].status = Status.NA;
+				}
 			}
 			if (anyFailed || this._state[1].data.data !== this._state[2].data.data) {
 				break;
@@ -360,6 +373,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			shown: true,
 			toggled: false,
 			skipped: false,
+			timeLimit: 0,
 		});
 	}
 

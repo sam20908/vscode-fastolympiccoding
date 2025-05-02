@@ -54,7 +54,9 @@ export default function ({ data, status, id, onView, onAdd }: Props) {
 							<p class="text-base leading-tight bg-zinc-600 px-3 w-fit display-font">
 								{from[id]}
 							</p>
-							{[Status.RE, Status.CE, Status.WA].includes(status) && (
+							{[Status.RE, Status.CE, Status.WA, Status.TL].includes(
+								status,
+							) && (
 								<p
 									class="text-base leading-tight px-3 w-fit display-font"
 									style={{ backgroundColor: RED_COLOR }}
@@ -63,7 +65,9 @@ export default function ({ data, status, id, onView, onAdd }: Props) {
 										? 'CE'
 										: status === Status.RE
 											? 'RE'
-											: 'WA'}
+											: status === Status.WA
+												? 'WA'
+												: 'TL'}
 								</p>
 							)}
 							{(status === Status.RE || status === Status.WA) && (

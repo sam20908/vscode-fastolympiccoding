@@ -1,5 +1,6 @@
-import { useComputed, useSignal } from '@preact/signals';
+import { useSignal } from '@preact/signals';
 import type { FunctionComponent } from 'preact';
+import { useRef } from 'preact/hooks';
 
 import { type ITestcase, Status, Stdio } from '~common/common';
 import {
@@ -73,6 +74,10 @@ const StatusButton: FunctionComponent<StatusButtonProps> = ({
 			color = GREEN_COLOR;
 			text = 'AC';
 			break;
+		case Status.TL:
+			color = RED_COLOR;
+			text = 'TL';
+			break;
 		default:
 			color = GRAY_COLOR;
 			text = 'NA';
@@ -94,6 +99,7 @@ export default function ({ id, testcase }: Props) {
 		postProviderMessage({ type: ProviderMessageType.VIEW, id, stdio });
 
 	const newStdin = useSignal('');
+	const newTimeLimitInput = useRef<HTMLInputElement>(null);
 
 	const StdinRow: FunctionComponent = () => (
 		<div class="flex flex-row">
@@ -135,6 +141,7 @@ export default function ({ id, testcase }: Props) {
 		case Status.AC:
 		case Status.RE:
 		case Status.CE:
+		case Status.TL:
 			return (
 				<div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
 					<div class="flex flex-row unfade">
@@ -285,6 +292,8 @@ export default function ({ id, testcase }: Props) {
 										id,
 										stdin,
 										acceptedStdout,
+										// biome-ignore lint/style/noNonNullAssertion: Ref is always set
+										timeLimit: Number(newTimeLimitInput.current!.value),
 									});
 								}}
 							>
@@ -303,6 +312,35 @@ export default function ({ id, testcase }: Props) {
 							// biome-ignore lint/style/noNonNullAssertion: uaranteed by the signals library
 							input={testcase.$acceptedStdout!}
 							onKeyUp={() => {}}
+						/>
+					</div>
+					<div class="flex flex-row">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							class="w-4 h-4 mr-2 mt-1 shrink-0"
+							viewBox="0 0 16 16"
+						>
+							<title>Clock</title>
+							<path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+							<path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+						</svg>
+						<input
+							class="text-base"
+							type="number"
+							value={testcase.timeLimit}
+							style={{
+								whiteSpace: 'pre-line',
+								resize: 'none',
+								border: 'none',
+								background: 'none',
+								width: '100%',
+								overflowY: 'hidden',
+							}}
+							ref={newTimeLimitInput}
+							min={0}
 						/>
 					</div>
 				</div>

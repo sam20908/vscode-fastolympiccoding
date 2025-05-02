@@ -12,10 +12,11 @@ export class Runnable {
 	private _promise: Promise<void> | undefined = undefined;
 	private _startTime = 0;
 	private _endTime = 0;
-	private _exitCode = 0;
+	private _signal: NodeJS.Signals | null = null;
+	private _exitCode: number | null = null;
 
-	run(command: string, cwd?: string, ...args: string[]) {
-		this._process = child_process.spawn(command, args, { cwd });
+	run(command: string, timeout?: number, cwd?: string, ...args: string[]) {
+		this._process = child_process.spawn(command, args, { cwd, timeout });
 		this._process.stdout.setEncoding('utf-8');
 		this._process.stderr.setEncoding('utf-8');
 		this._promise = new Promise((resolve) => {
@@ -29,7 +30,8 @@ export class Runnable {
 			});
 			this._process?.once('close', (code, signal) => {
 				this._endTime = performance.now();
-				this._exitCode = signal === 'SIGUSR1' ? 0 : (code ?? 1);
+				this._signal = signal;
+				this._exitCode = code;
 				resolve();
 			});
 		});
@@ -44,7 +46,10 @@ export class Runnable {
 	get elapsed(): number {
 		return Math.round(this._endTime - this._startTime);
 	}
-	get exitCode(): number {
+	get signal(): NodeJS.Signals | null {
+		return this._signal;
+	}
+	get exitCode(): number | null {
 		return this._exitCode;
 	}
 }

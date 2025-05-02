@@ -51,6 +51,7 @@ function handleNew({ id }: INewMessage) {
 			shown: true,
 			toggled: false,
 			skipped: false,
+			timeLimit: 0,
 		});
 	}
 }
