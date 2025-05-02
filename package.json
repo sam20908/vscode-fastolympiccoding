@@ -246,6 +246,7 @@
 	"scripts": {
 		"vscode:prepublish": "npm run prod",
 		"lint": "biome lint",
+		"format": "biome format",
 		"build-js": "node ./esbuild.mjs",
 		"prod-js": "cross-env NODE_ENV=production node ./esbuild.mjs",
 		"watch-js": "node ./esbuild.mjs --watch",
