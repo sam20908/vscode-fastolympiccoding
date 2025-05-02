@@ -25,6 +25,7 @@ interface ActionButtonProps {
 	action: Action;
 	backgroundColor: string;
 	text: string;
+	className?: string;
 	onClickPrePost?: () => unknown;
 }
 interface StatusButtonProps {
@@ -37,11 +38,12 @@ const ActionButton: FunctionComponent<ActionButtonProps> = ({
 	action,
 	backgroundColor,
 	text,
+	className,
 	onClickPrePost,
 }: ActionButtonProps) => (
 	<button
 		type="button"
-		class="text-base leading-tight px-3 w-fit display-font"
+		class={`text-base leading-tight px-3 w-fit display-font ${className}`}
 		style={{ backgroundColor: backgroundColor }}
 		onClick={() => {
 			onClickPrePost?.();
@@ -177,6 +179,7 @@ export default function ({ id, testcase }: Props) {
 								action={Action.TOGGLE_SKIP}
 								backgroundColor="#000000"
 								text={testcase.skipped ? 'unskip' : 'skip'}
+								className="unfade"
 							/>
 						</div>
 					</div>
