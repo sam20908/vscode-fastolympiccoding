@@ -1,71 +1,88 @@
 import * as vscode from 'vscode';
 
 interface IWorkspaceState {
-  [key: string]: unknown;
+	[key: string]: unknown;
 }
 
 function getNonce(): string {
-  const CHOICES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let nonce = '';
-  for (let i = 0; i < 32; i++) {
-    nonce += CHOICES.charAt(Math.floor(Math.random() * CHOICES.length));
-  }
-  return nonce;
+	const CHOICES =
+		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	let nonce = '';
+	for (let i = 0; i < 32; i++) {
+		nonce += CHOICES.charAt(Math.floor(Math.random() * CHOICES.length));
+	}
+	return nonce;
 }
 
-export default abstract class <ProviderMessageType, WebviewMessageType> implements vscode.WebviewViewProvider {
-  private _webview?: vscode.Webview = undefined;
+export default abstract class<ProviderMessageType, WebviewMessageType>
+	implements vscode.WebviewViewProvider
+{
+	private _webview?: vscode.Webview = undefined;
 
-  constructor(public readonly view: string, protected _context: vscode.ExtensionContext) { }
+	constructor(
+		readonly view: string,
+		protected _context: vscode.ExtensionContext,
+	) {}
 
-  abstract onMessage(msg: ProviderMessageType): void;
-  abstract onDispose(): void;
+	abstract onMessage(msg: ProviderMessageType): void;
+	abstract onDispose(): void;
 
-  public resolveWebviewView(webviewView: vscode.WebviewView): void {
-    this._webview = webviewView.webview;
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(this._context.extensionUri, 'dist')],
-    };
-    webviewView.webview.html = this._getWebviewContent(webviewView.webview);
-    webviewView.webview.onDidReceiveMessage((message: ProviderMessageType) => this.onMessage(message));
-    webviewView.onDidDispose(() => this.onDispose());
-    webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
-  }
+	resolveWebviewView(webviewView: vscode.WebviewView): void {
+		this._webview = webviewView.webview;
+		webviewView.webview.options = {
+			enableScripts: true,
+			localResourceRoots: [
+				vscode.Uri.joinPath(this._context.extensionUri, 'dist'),
+			],
+		};
+		webviewView.webview.html = this._getWebviewContent(webviewView.webview);
+		webviewView.webview.onDidReceiveMessage((message: ProviderMessageType) =>
+			this.onMessage(message),
+		);
+		webviewView.onDidDispose(() => this.onDispose());
+		webviewView.onDidChangeVisibility(() => this.onDispose()); // webviews don't have persistent states
+	}
 
-  public getViewId(): string {
-    return `fastolympiccoding.${this.view}`;
-  }
+	getViewId(): string {
+		return `fastolympiccoding.${this.view}`;
+	}
 
-  public readStorage(): IWorkspaceState {
-    const data = this._context.workspaceState.get(this.view, {} as IWorkspaceState);
-    if (!data || typeof data !== 'object') {
-      return {};
-    }
-    return data;
-  }
+	readStorage(): IWorkspaceState {
+		const data = this._context.workspaceState.get(
+			this.view,
+			{} as IWorkspaceState,
+		);
+		if (!data || typeof data !== 'object') {
+			return {};
+		}
+		return data;
+	}
 
-  public writeStorage(file: string, data: object) {
-    const fileData = this._context.workspaceState.get(this.view, {});
-    this._context.workspaceState.update(this.view, { ...fileData, [`${file}`]: data });
-  }
+	writeStorage(file: string, data: object) {
+		const fileData = this._context.workspaceState.get(this.view, {});
+		this._context.workspaceState.update(this.view, {
+			...fileData,
+			[`${file}`]: data,
+		});
+	}
 
-  public clearData() {
-    this._context.workspaceState.update(this.view, undefined);
-  }
+	clearData() {
+		this._context.workspaceState.update(this.view, undefined);
+	}
 
-  protected _postMessage(msg: WebviewMessageType): void {
-    this._webview?.postMessage(msg);
-  }
+	protected _postMessage(msg: WebviewMessageType): void {
+		this._webview?.postMessage(msg);
+	}
 
-  private _getWebviewContent(webview: vscode.Webview): string {
-    const config = vscode.workspace.getConfiguration('fastolympiccoding');
-    const font = config.get<string>('font')!;
-    const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
-    const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
-    const nonce = getNonce();
+	private _getWebviewContent(webview: vscode.Webview): string {
+		const config = vscode.workspace.getConfiguration('fastolympiccoding');
+		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
+		const font = config.get<string>('font')!;
+		const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
+		const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
+		const nonce = getNonce();
 
-    return `
+		return `
         <!DOCTYPE html>
         <html lang="en">
             <head>
@@ -85,9 +102,11 @@ export default abstract class <ProviderMessageType, WebviewMessageType> implemen
         </body>
         </html>
         `;
-  }
+	}
 
-  private _getUri(webview: vscode.Webview, paths: string[]) {
-    return webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths)).toString();
-  }
+	private _getUri(webview: vscode.Webview, paths: string[]) {
+		return webview
+			.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, ...paths))
+			.toString();
+	}
 }

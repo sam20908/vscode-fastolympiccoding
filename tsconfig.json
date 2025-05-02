@@ -1,27 +1,19 @@
 {
-  "compilerOptions": {
-    "paths": {
-      "~common/*": [
-        "./src/common/*"
-      ],
-      "~utils/*": [
-        "./src/utils/*"
-      ],
-      "~external/*": [
-        "./external/*"
-      ]
-    },
-    "strict": true
-  },
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    },
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ],
-  "exclude": [
-    "node_modules/**/*"
-  ]
+	"compilerOptions": {
+		"paths": {
+			"~common/*": ["./src/common/*"],
+			"~utils/*": ["./src/utils/*"],
+			"~external/*": ["./external/*"]
+		},
+		"strict": true
+	},
+	"references": [
+		{
+			"path": "./tsconfig.node.json"
+		},
+		{
+			"path": "./tsconfig.app.json"
+		}
+	],
+	"exclude": ["node_modules/**/*"]
 }
