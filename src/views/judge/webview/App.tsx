@@ -1,7 +1,7 @@
 import { signal, useComputed } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import Testcase from './Testcase';
+import { type ITestcase, Status, Stdio } from '~common/common';
 import { observable } from '~external/observable';
 import {
 	type IDeleteMessage,
@@ -13,7 +13,7 @@ import {
 	type WebviewMessage,
 	WebviewMessageType,
 } from '../message';
-import { type ITestcase, Status, Stdio } from '~common/common';
+import Testcase from './Testcase';
 import { postProviderMessage } from './message';
 
 const testcases = observable(new Map<number, ITestcase>());

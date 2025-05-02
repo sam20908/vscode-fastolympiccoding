@@ -1,27 +1,27 @@
-import * as vscode from 'vscode';
 import * as path from 'node:path';
+import * as vscode from 'vscode';
 
 import { type ITestcase, Status, Stdio } from '~common/common';
 import type { ILanguageSettings, IProblem, ITest } from '~common/provider';
 import BaseViewProvider from '~utils/BaseViewProvider';
+import { Runnable, compile } from '~utils/runtime';
 import {
-	openInNewEditor,
 	ReadonlyStringProvider,
+	TextHandler,
+	openInNewEditor,
 	resolveCommand,
 	resolveVariables,
-	TextHandler,
 } from '~utils/vscode';
-import { compile, Runnable } from '~utils/runtime';
 import {
-	ProviderMessageType,
-	type ProviderMessage,
-	type WebviewMessage,
-	WebviewMessageType,
-	type IActionMessage,
 	Action,
-	type IViewMessage,
+	type IActionMessage,
 	type ISaveMessage,
 	type IStdinMessage,
+	type IViewMessage,
+	type ProviderMessage,
+	ProviderMessageType,
+	type WebviewMessage,
+	WebviewMessageType,
 } from '../message';
 
 interface IState

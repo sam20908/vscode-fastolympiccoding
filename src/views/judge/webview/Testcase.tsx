@@ -2,9 +2,6 @@ import { useComputed, useSignal } from '@preact/signals';
 import type { FunctionComponent } from 'preact';
 
 import { type ITestcase, Status, Stdio } from '~common/common';
-import AutoresizeTextarea from './AutoresizeTextarea';
-import type { PreactObservable } from '~external/observable';
-import { Action, ProviderMessageType } from '../message';
 import {
 	ArrowSvgInwards,
 	ArrowSvgOutwards,
@@ -13,6 +10,9 @@ import {
 	GREEN_COLOR,
 	RED_COLOR,
 } from '~common/webview';
+import type { PreactObservable } from '~external/observable';
+import { Action, ProviderMessageType } from '../message';
+import AutoresizeTextarea from './AutoresizeTextarea';
 import { postProviderMessage } from './message';
 
 interface Props {

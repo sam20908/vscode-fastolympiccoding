@@ -1,7 +1,16 @@
-import * as vscode from 'vscode';
 import * as path from 'node:path';
+import * as vscode from 'vscode';
 
+import { Status } from '~common/common';
+import type { ILanguageSettings } from '~common/provider';
 import BaseViewProvider from '~utils/BaseViewProvider';
+import { Runnable, compile } from '~utils/runtime';
+import {
+	TextHandler,
+	openInNewEditor,
+	resolveCommand,
+	resolveVariables,
+} from '~utils/vscode';
 import type JudgeViewProvider from '../../judge/provider/JudgeViewProvider';
 import {
 	type IAddMessage,
@@ -11,15 +20,6 @@ import {
 	type WebviewMessage,
 	WebviewMessageType,
 } from '../message';
-import { Status } from '~common/common';
-import {
-	openInNewEditor,
-	resolveCommand,
-	resolveVariables,
-	TextHandler,
-} from '~utils/vscode';
-import { compile, Runnable } from '~utils/runtime';
-import type { ILanguageSettings } from '~common/provider';
 
 interface IData {
 	data: string;

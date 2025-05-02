@@ -1,13 +1,13 @@
-import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as http from 'node:http';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-import JudgeViewProvider from './views/judge/provider/JudgeViewProvider';
-import StressViewProvider from './views/stress/provider/StressViewProvider';
-import { ReadonlyStringProvider, resolveVariables } from '~utils/vscode';
 import type { ILanguageSettings, IProblem } from '~common/provider';
 import { compile } from '~utils/runtime';
+import { ReadonlyStringProvider, resolveVariables } from '~utils/vscode';
+import JudgeViewProvider from './views/judge/provider/JudgeViewProvider';
+import StressViewProvider from './views/stress/provider/StressViewProvider';
 
 let judgeViewProvider: JudgeViewProvider;
 let stressViewProvider: StressViewProvider;

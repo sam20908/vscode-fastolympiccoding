@@ -1,10 +1,9 @@
-import { useEffect } from 'preact/hooks';
 import { batch, signal, useComputed } from '@preact/signals';
+import { useEffect } from 'preact/hooks';
 
-import State from './State';
-import { postProviderMessage } from './message';
-import { observable, type PreactObservable } from '~external/observable';
 import { Status } from '~common/common';
+import { BLUE_COLOR, RED_COLOR } from '~common/webview';
+import { type PreactObservable, observable } from '~external/observable';
 import {
 	type IShowMessage,
 	type IStatusMessage,
@@ -13,7 +12,8 @@ import {
 	type WebviewMessage,
 	WebviewMessageType,
 } from '../message';
-import { BLUE_COLOR, RED_COLOR } from '~common/webview';
+import State from './State';
+import { postProviderMessage } from './message';
 
 interface IState {
 	data: string;

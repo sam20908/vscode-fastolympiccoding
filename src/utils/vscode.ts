@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import * as path from 'node:path';
 import * as os from 'node:os';
+import * as path from 'node:path';
+import * as vscode from 'vscode';
 
 export class ReadonlyTerminal implements vscode.Pseudoterminal {
 	private _writeEmitter: vscode.EventEmitter<string> =
