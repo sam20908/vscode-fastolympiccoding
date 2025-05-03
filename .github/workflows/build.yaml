@@ -26,7 +26,7 @@ jobs:
         run: pnpm install
 
       - name: Type check project
-        run: 
+        run: |
           pnpm run type-build
           pnpm run type-check
 
