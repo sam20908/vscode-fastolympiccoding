@@ -1,5 +1,3 @@
-name: Build
-
 on:
   push:
     branches:
@@ -27,7 +25,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Check project
+      - name: Type check project
+        run: pnpm run type-check
+
+      - name: Lint and check formatting
         run: pnpm run check
 
       - name: Build project
