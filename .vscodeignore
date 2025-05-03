@@ -3,5 +3,7 @@
 !.vscodeignore
 !LICENSE
 !media/icon.png
-!dist/**/*.js
+!dist/judge/index.js
+!dist/stress/index.js
+!dist/extension.js
 !dist/styles.css
