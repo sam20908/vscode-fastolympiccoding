@@ -5,7 +5,8 @@
 			"~utils/*": ["./src/utils/*"],
 			"~external/*": ["./external/*"]
 		},
-		"strict": true
+		"strict": true,
+		"outDir": "./dist/types"
 	},
 	"references": [
 		{
