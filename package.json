@@ -254,6 +254,7 @@
 		"lint": "biome lint",
 		"format": "biome format",
 		"check": "biome check",
+		"type-build": "tsc --build",
 		"type-check": "tsc --noEmit",
 		"build-js": "node ./esbuild.mjs",
 		"prod-js": "cross-env NODE_ENV=production node ./esbuild.mjs",
