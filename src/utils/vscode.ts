@@ -195,6 +195,7 @@ export function resolveVariables(
 		'${pathSeparator}': path.sep,
 		'${/}': path.sep,
 		'${exeExtname}': os.platform() === 'win32' ? '.exe' : '',
+		asdf,
 	};
 
 	// Replace all regexes with their matches at once
