@@ -13,7 +13,8 @@
     "src/views/judge/provider/**/*.ts",
     "src/views/stress/message.ts",
     "src/views/stress/provider/**/*.ts",
-    "./src/common/**/*.ts",
-    "./src/utils/**/*.ts"
+    "src/common/**/*.ts",
+    "src/utils/common.ts",
+    "src/utils/vscode.ts"
   ]
 }

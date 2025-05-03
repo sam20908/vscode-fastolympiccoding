@@ -254,6 +254,8 @@
 		"lint": "biome lint",
 		"format": "biome format",
 		"check": "biome check",
+		"type-build": "tsc --build",
+		"type-check": "tsc --noEmit",
 		"build-js": "node ./esbuild.mjs",
 		"prod-js": "cross-env NODE_ENV=production node ./esbuild.mjs",
 		"watch-js": "node ./esbuild.mjs --watch",
@@ -275,7 +277,8 @@
 		"cross-env": "^7.0.3",
 		"esbuild": "^0.25.3",
 		"npm-run-all": "^4.1.5",
-		"tailwindcss": "^4.1.5"
+		"tailwindcss": "^4.1.5",
+		"typescript": "^5.8.3"
 	},
 	"dependencies": {
 		"@preact/signals": "^2.0.4",
