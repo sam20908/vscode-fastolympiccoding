@@ -19,6 +19,7 @@ export enum ProviderMessageType {
 	SAVE = 3,
 	VIEW = 4,
 	STDIN = 5,
+	TL = 6,
 }
 export interface ILoadedMessage {
 	type: ProviderMessageType.LOADED;
@@ -36,7 +37,6 @@ export interface ISaveMessage {
 	id: number;
 	stdin: string;
 	acceptedStdout: string;
-	timeLimit: number;
 }
 export interface IViewMessage {
 	type: ProviderMessageType.VIEW;
@@ -48,13 +48,18 @@ export interface IStdinMessage {
 	id: number;
 	data: string;
 }
+export interface ISetTimeLimit {
+	type: ProviderMessageType.TL;
+	limit: number;
+}
 export type ProviderMessage =
 	| ILoadedMessage
 	| INextMessage
 	| IActionMessage
 	| ISaveMessage
 	| IViewMessage
-	| IStdinMessage;
+	| IStdinMessage
+	| ISetTimeLimit;
 
 export enum WebviewMessageType {
 	NEW = 0,
@@ -62,6 +67,7 @@ export enum WebviewMessageType {
 	STDIO = 2,
 	DELETE = 3,
 	SHOW = 4,
+	INITIAL_STATE = 5,
 }
 export interface INewMessage {
 	type: WebviewMessageType.NEW;
@@ -87,9 +93,14 @@ export interface IShowMessage {
 	type: WebviewMessageType.SHOW;
 	visible: boolean;
 }
+export interface IInitialState {
+	type: WebviewMessageType.INITIAL_STATE;
+	timeLimit: number;
+}
 export type WebviewMessage =
 	| INewMessage
 	| ISetMessage
 	| IStdioMessage
 	| IDeleteMessage
-	| IShowMessage;
+	| IShowMessage
+	| IInitialState;

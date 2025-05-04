@@ -27,5 +27,4 @@ export interface ITestcase {
 	shown: boolean;
 	toggled: boolean;
 	skipped: boolean;
-	timeLimit: number;
 }

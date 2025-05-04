@@ -16,6 +16,7 @@ import {
 	Action,
 	type IActionMessage,
 	type ISaveMessage,
+	type ISetTimeLimit,
 	type IStdinMessage,
 	type IViewMessage,
 	type ProviderMessage,
@@ -24,6 +25,10 @@ import {
 	WebviewMessageType,
 } from '../message';
 
+interface IFileData {
+	timeLimit: number;
+	testcases: ITestcase[] | unknown;
+}
 interface IState
 	extends Omit<ITestcase, 'stdin' | 'stderr' | 'stdout' | 'acceptedStdout'> {
 	stdin: TextHandler;
@@ -49,15 +54,16 @@ function getExitCodeStatus(
 
 export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	private _state: Map<number, IState> = new Map(); // Map also remembers insertion order :D
+	private _timeLimit = 0;
 	private _newId = 0;
 
 	onMessage(msg: ProviderMessage) {
 		switch (msg.type) {
 			case ProviderMessageType.LOADED:
-				this.loadCurrentFileTestcases();
+				this.loadCurrentFileData();
 				break;
 			case ProviderMessageType.NEXT:
-				void this._run(this.addTestcaseToFile());
+				void this._run(this.addTestcaseToFile(), true);
 				break;
 			case ProviderMessageType.ACTION:
 				this._action(msg);
@@ -71,6 +77,9 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			case ProviderMessageType.STDIN:
 				this._stdin(msg);
 				break;
+			case ProviderMessageType.TL:
+				this._setTimeLimit(msg);
+				break;
 		}
 	}
 
@@ -82,12 +91,12 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super('judge', context);
 
 		vscode.window.onDidChangeActiveTextEditor(
-			() => this.loadCurrentFileTestcases(),
+			() => this.loadCurrentFileData(),
 			this,
 		);
 	}
 
-	loadCurrentFileTestcases() {
+	loadCurrentFileData() {
 		this.stopAll();
 		for (const id of this._state.keys()) {
 			super._postMessage({ type: WebviewMessageType.DELETE, id });
@@ -102,11 +111,15 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
 		const fileData = super.readStorage()[file];
-		const state = Array.isArray(fileData) ? fileData : [];
-		for (let i = 0; i < state.length; i++) {
+		const data: Partial<IFileData> =
+			typeof fileData === 'object' && fileData !== null ? fileData : {};
+		this._timeLimit = data.timeLimit ?? 0;
+
+		const testcases = Array.isArray(data.testcases) ? data.testcases : [];
+		for (let i = 0; i < testcases.length; i++) {
 			const testcase: Partial<ITestcase> =
-				state[i] !== 'null' && typeof state[i] === 'object'
-					? (state[i] as Partial<ITestcase>)
+				testcases[i] !== null && typeof testcases[i] === 'object'
+					? (testcases[i] as Partial<ITestcase>)
 					: {};
 			this._state.set(
 				this._newId,
@@ -114,6 +127,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			);
 			this._newId++;
 		}
+
+		super._postMessage({
+			type: WebviewMessageType.INITIAL_STATE,
+			timeLimit: this._timeLimit,
+		});
 	}
 
 	addFromCompetitiveCompanion(file: string, data: IProblem) {
@@ -128,7 +146,6 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				shown: true,
 				toggled: false,
 				skipped: false,
-				timeLimit: data.timeLimit,
 			};
 		});
 
@@ -155,7 +172,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				this._newId,
 				this._createTestcaseState(this._newId, testcase),
 			);
-			this._saveTestcases();
+			this._saveFileData();
 			return this._newId++;
 		}
 		if (testcase) {
@@ -170,7 +187,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 
 	runAll() {
 		for (const id of this._state.keys()) {
-			void this._run(id);
+			void this._run(id, false);
 		}
 	}
 
@@ -189,7 +206,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	private _action({ id, action }: IActionMessage) {
 		switch (action) {
 			case Action.RUN:
-				void this._run(id);
+				void this._run(id, false);
 				break;
 			case Action.STOP:
 				this._stop(id);
@@ -218,7 +235,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		}
 	}
 
-	private _saveTestcases() {
+	private _saveFileData() {
 		const file = vscode.window.activeTextEditor?.document.fileName;
 		if (!file) {
 			return;
@@ -236,10 +253,13 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				shown: testcase.shown,
 				toggled: testcase.toggled,
 				skipped: testcase.skipped,
-				timeLimit: testcase.timeLimit,
 			});
 		}
-		super.writeStorage(file, testcases);
+		const fileData: IFileData = {
+			timeLimit: this._timeLimit,
+			testcases,
+		};
+		super.writeStorage(file, fileData);
 	}
 
 	private _createTestcaseState(id: number, testcase?: Partial<ITestcase>) {
@@ -257,7 +277,6 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			shown: testcase?.shown ?? true,
 			toggled: testcase?.toggled ?? false,
 			skipped: testcase?.skipped ?? false,
-			timeLimit: testcase?.timeLimit ?? 0, // 0 for no time limit
 			id,
 			process: new Runnable(),
 		};
@@ -326,17 +345,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'skipped',
 			value: newTestcase.skipped,
 		});
-		super._postMessage({
-			type: WebviewMessageType.SET,
-			id,
-			property: 'timeLimit',
-			value: newTestcase.timeLimit,
-		});
 
 		return newTestcase;
 	}
 
-	private async _run(id: number): Promise<void> {
+	private async _run(id: number, newTestcase: boolean): Promise<void> {
 		const file = vscode.window.activeTextEditor?.document.fileName;
 		if (!file) {
 			return;
@@ -423,7 +436,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.stdout.reset();
 		testcase.process.run(
 			resolvedArgs[0],
-			testcase.timeLimit,
+			newTestcase ? 0 : this._timeLimit,
 			cwd,
 			...resolvedArgs.slice(1),
 		);
@@ -454,7 +467,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				property: 'status',
 				value: Status.RE,
 			});
-			this._saveTestcases();
+			this._saveFileData();
 		});
 		testcase.process.process?.once('close', (exitCode: number | null) => {
 			testcase.process.process?.stderr.removeAllListeners('data');
@@ -467,7 +480,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			);
 			testcase.elapsed =
 				testcase.status === Status.TL
-					? testcase.timeLimit
+					? this._timeLimit
 					: testcase.process.elapsed;
 			super._postMessage({
 				type: WebviewMessageType.SET,
@@ -482,7 +495,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				value: testcase.elapsed,
 			});
 
-			this._saveTestcases();
+			this._saveFileData();
 		});
 	}
 
@@ -495,7 +508,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		this._stop(id);
 		super._postMessage({ type: WebviewMessageType.DELETE, id });
 		this._state.delete(id);
-		this._saveTestcases();
+		this._saveFileData();
 	}
 
 	private _edit(id: number) {
@@ -535,7 +548,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.acceptedStdout.reset();
 		testcase.acceptedStdout.write(testcase.stdout.data, true);
 
-		this._saveTestcases();
+		this._saveFileData();
 	}
 
 	private _decline(id: number) {
@@ -556,7 +569,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'acceptedStdout',
 			value: '',
 		});
-		this._saveTestcases();
+		this._saveFileData();
 	}
 
 	private _toggleVisibility(id: number) {
@@ -579,7 +592,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'toggled',
 			value: true,
 		});
-		this._saveTestcases();
+		this._saveFileData();
 	}
 
 	private _toggleSkip(id: number) {
@@ -593,7 +606,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'skipped',
 			value: testcase.skipped,
 		});
-		this._saveTestcases();
+		this._saveFileData();
 	}
 
 	private _compare(id: number) {
@@ -641,7 +654,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.stdin.write(data, false);
 	}
 
-	private _save({ id, stdin, acceptedStdout, timeLimit }: ISaveMessage) {
+	private _save({ id, stdin, acceptedStdout }: ISaveMessage) {
 		// biome-ignore lint/style/noNonNullAssertion: Called only if testcase exists
 		const testcase = this._state.get(id)!;
 
@@ -670,9 +683,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		);
 		testcase.elapsed =
 			testcase.status === Status.TL
-				? testcase.timeLimit
+				? this._timeLimit
 				: testcase.process.elapsed;
-		testcase.timeLimit = timeLimit;
 
 		super._postMessage({
 			type: WebviewMessageType.SET,
@@ -680,13 +692,12 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			property: 'status',
 			value: testcase.status,
 		});
-		super._postMessage({
-			type: WebviewMessageType.SET,
-			id,
-			property: 'timeLimit',
-			value: testcase.timeLimit,
-		});
 
-		this._saveTestcases();
+		this._saveFileData();
+	}
+
+	private _setTimeLimit({ limit }: ISetTimeLimit) {
+		this._timeLimit = limit;
+		this._saveFileData();
 	}
 }

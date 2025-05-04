@@ -2,9 +2,11 @@ import { signal, useComputed } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { type ITestcase, Status, Stdio } from '~common/common';
+import { BLUE_COLOR } from '~common/webview';
 import { observable } from '~external/observable';
 import {
 	type IDeleteMessage,
+	type IInitialState,
 	type INewMessage,
 	type ISetMessage,
 	type IShowMessage,
@@ -17,6 +19,7 @@ import Testcase from './Testcase';
 import { postProviderMessage } from './message';
 
 const testcases = observable(new Map<number, ITestcase>());
+const newTimeLimit = signal(0);
 const show = signal(true);
 
 window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
@@ -36,6 +39,9 @@ window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
 		case WebviewMessageType.SHOW:
 			handleShow(msg.data);
 			break;
+		case WebviewMessageType.INITIAL_STATE:
+			handleInitialState(msg.data);
+			break;
 	}
 });
 
@@ -51,7 +57,6 @@ function handleNew({ id }: INewMessage) {
 			shown: true,
 			toggled: false,
 			skipped: false,
-			timeLimit: 0,
 		});
 	}
 }
@@ -90,11 +95,23 @@ function handleShow({ visible }: IShowMessage) {
 	show.value = visible;
 }
 
+function handleInitialState({ timeLimit }: IInitialState) {
+	newTimeLimit.value = timeLimit;
+}
+
+function submitTimeLimit() {
+	postProviderMessage({
+		type: ProviderMessageType.TL,
+		limit: Number(newTimeLimit.value),
+	});
+}
+
 export default function () {
 	useEffect(
 		() => postProviderMessage({ type: ProviderMessageType.LOADED }),
 		[],
 	);
+
 	const testcaseComponents = useComputed(() => {
 		const components = [];
 		for (const [id, testcase] of testcases.entries()) {
@@ -104,9 +121,9 @@ export default function () {
 	});
 
 	return (
-		<>
-			{show.value && (
-				<>
+		show.value && (
+			<div class="flex flex-col h-screen">
+				<div class="flex-1 overflow-auto">
 					{testcaseComponents}
 					<button
 						type="button"
@@ -117,8 +134,39 @@ export default function () {
 					>
 						next test
 					</button>
-				</>
-			)}
-		</>
+				</div>
+				<div class="m-6 flex gap-x-2 items-center my-3 bg-zinc-800">
+					<button
+						type="button"
+						class="text-base leading-tight px-3 w-fit display-font"
+						style={{ backgroundColor: BLUE_COLOR }}
+					>
+						time limit
+					</button>
+					<input
+						type="number"
+						class="appearance-none bg-transparent border-none focus:outline-none text-base leading-tight display-font w-fit"
+						value={newTimeLimit.value}
+						onInput={(event) => {
+							newTimeLimit.value = Number(event.currentTarget.value);
+						}}
+						onKeyUp={(event) => {
+							if (event.key === 'Enter') {
+								submitTimeLimit();
+							}
+						}}
+					/>
+					<span class="text-base leading-tight display-font w-fit">ms</span>
+					<button
+						type="button"
+						class="text-base leading-tight px-3 w-fit display-font"
+						style={{ backgroundColor: BLUE_COLOR }}
+						onClick={submitTimeLimit}
+					>
+						set
+					</button>
+				</div>
+			</div>
+		)
 	);
 }

@@ -373,7 +373,6 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			shown: true,
 			toggled: false,
 			skipped: false,
-			timeLimit: 0,
 		});
 	}
 
