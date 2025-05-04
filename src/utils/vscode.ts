@@ -52,19 +52,19 @@ export class TextHandler {
 		this._callback = callback;
 	}
 
-	write(data: string, last: boolean) {
-		const dataNewlineFixed = data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
+	write(_data: string, last: boolean) {
+		const data = _data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
 
 		// Competitive Companion removes trailing spaces for every line
 		for (let i = 0; i < data.length; i++) {
-			if (dataNewlineFixed[i] === ' ') {
+			if (data[i] === ' ') {
 				this._spacesCount++;
-			} else if (dataNewlineFixed[i] === '\n') {
+			} else if (data[i] === '\n') {
 				this._data += '\n';
 				this._spacesCount = 0;
 			} else {
 				this._data += ' '.repeat(this._spacesCount);
-				this._data += dataNewlineFixed[i];
+				this._data += data[i];
 				this._spacesCount = 0;
 			}
 		}
