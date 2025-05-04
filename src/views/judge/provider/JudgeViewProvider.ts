@@ -186,6 +186,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		// biome-ignore lint/style/noNonNullAssertion: Caller guarantees there is an active editor and passes a non-empty string
 		if (file === vscode.window.activeTextEditor!.document.fileName) {
 			this._addTestcase(testcase);
+			this._saveFileData();
 		} else {
 			const fileData = coerceToObject(
 				super.readStorage()[file],
