@@ -52,6 +52,22 @@ function getExitCodeStatus(
 	return Status.WA;
 }
 
+function coerceToObject(data: unknown): unknown {
+	if (typeof data === 'object' && data !== null) {
+		return data;
+	}
+	return {};
+}
+function coerceToArray(data: unknown): unknown[] {
+	const arr = [];
+	if (Array.isArray(data)) {
+		for (const obj of data) {
+			arr.push(coerceToObject(obj));
+		}
+	}
+	return arr;
+}
+
 export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	private _state: Map<number, IState> = new Map(); // Map also remembers insertion order :D
 	private _timeLimit = 0;
@@ -63,7 +79,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				this.loadCurrentFileData();
 				break;
 			case ProviderMessageType.NEXT:
-				void this._run(this.addTestcaseToFile(), true);
+				this._nextTestcase();
 				break;
 			case ProviderMessageType.ACTION:
 				this._action(msg);
@@ -101,6 +117,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		for (const id of this._state.keys()) {
 			super._postMessage({ type: WebviewMessageType.DELETE, id });
 		}
+		this._timeLimit = 0;
 		this._state.clear();
 
 		const file = vscode.window.activeTextEditor?.document.fileName;
@@ -110,22 +127,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		}
 		super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
-		const fileData = super.readStorage()[file];
-		const data: Partial<IFileData> =
-			typeof fileData === 'object' && fileData !== null ? fileData : {};
-		this._timeLimit = data.timeLimit ?? 0;
-
-		const testcases = Array.isArray(data.testcases) ? data.testcases : [];
+		const fileData = coerceToObject(
+			super.readStorage()[file],
+		) as Partial<IFileData>;
+		const testcases = coerceToArray(fileData.testcases);
+		this._timeLimit = fileData.timeLimit ?? 0;
 		for (let i = 0; i < testcases.length; i++) {
-			const testcase: Partial<ITestcase> =
-				testcases[i] !== null && typeof testcases[i] === 'object'
-					? (testcases[i] as Partial<ITestcase>)
-					: {};
-			this._state.set(
-				this._newId,
-				this._createTestcaseState(this._newId, testcase),
-			);
-			this._newId++;
+			const testcase = coerceToObject(testcases[i]) as Partial<ITestcase>;
+			this._addTestcase(testcase);
 		}
 
 		super._postMessage({
@@ -149,40 +158,46 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			};
 		});
 
-		if (file === vscode.window.activeTextEditor?.document.fileName) {
+		// biome-ignore lint/style/noNonNullAssertion: Caller guarantees there is an active editor and passes a non-empty string
+		if (file === vscode.window.activeTextEditor!.document.fileName) {
 			this.deleteAll();
-
+			this._timeLimit = data.timeLimit;
 			for (const testcase of testcases) {
-				this.addTestcaseToFile(file, testcase);
+				this._addTestcase(testcase);
 			}
+			this._saveFileData();
+
+			super._postMessage({
+				type: WebviewMessageType.INITIAL_STATE,
+				timeLimit: data.timeLimit,
+			});
 		} else {
-			super.writeStorage(file, testcases);
+			const fileData: IFileData = {
+				timeLimit: data.timeLimit,
+				testcases,
+			};
+			super.writeStorage(file, fileData);
 		}
 	}
 
-	addTestcaseToFile(file?: string, testcase?: ITestcase) {
-		const pickedFile =
-			file ?? vscode.window.activeTextEditor?.document.fileName;
-		if (!pickedFile) {
-			return -1;
-		}
+	addTestcaseToFile(file: string, testcase: ITestcase) {
+		// used by stress view
 
-		if (pickedFile === vscode.window.activeTextEditor?.document.fileName) {
-			this._state.set(
-				this._newId,
-				this._createTestcaseState(this._newId, testcase),
-			);
-			this._saveFileData();
-			return this._newId++;
+		// biome-ignore lint/style/noNonNullAssertion: Caller guarantees there is an active editor and passes a non-empty string
+		if (file === vscode.window.activeTextEditor!.document.fileName) {
+			this._addTestcase(testcase);
+		} else {
+			const fileData = coerceToObject(
+				super.readStorage()[file],
+			) as Partial<IFileData>;
+			const testcases = coerceToArray(fileData.testcases);
+			testcases.push(testcase);
+			const data: IFileData = {
+				timeLimit: fileData.timeLimit ?? 0,
+				testcases,
+			};
+			super.writeStorage(file, data);
 		}
-		if (testcase) {
-			const fileData = super.readStorage()[pickedFile];
-			const state = Array.isArray(fileData) ? fileData : [];
-			state.push(testcase);
-			super.writeStorage(pickedFile, state);
-		}
-
-		return -1;
 	}
 
 	runAll() {
@@ -201,6 +216,10 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		for (const id of this._state.keys()) {
 			this._delete(id);
 		}
+	}
+
+	private _nextTestcase() {
+		void this._run(this._addTestcase(), true);
 	}
 
 	private _action({ id, action }: IActionMessage) {
@@ -260,6 +279,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			testcases,
 		};
 		super.writeStorage(file, fileData);
+	}
+
+	private _addTestcase(testcase?: Partial<ITestcase>) {
+		this._state.set(
+			this._newId,
+			this._createTestcaseState(this._newId, testcase),
+		);
+		return this._newId++;
 	}
 
 	private _createTestcaseState(id: number, testcase?: Partial<ITestcase>) {
