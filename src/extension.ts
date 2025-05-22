@@ -115,6 +115,8 @@ function registerCommands(context: vscode.ExtensionContext): void {
 			() => {
 				judgeViewProvider.clearData();
 				stressViewProvider.clearData();
+				judgeViewProvider.loadCurrentFileData();
+				stressViewProvider.loadCurrentFileData();
 			},
 		),
 	);

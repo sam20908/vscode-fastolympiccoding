@@ -43,7 +43,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	onMessage(msg: ProviderMessage): void {
 		switch (msg.type) {
 			case ProviderMessageType.LOADED:
-				this.loadSavedData();
+				this.loadCurrentFileData();
 				break;
 			case ProviderMessageType.RUN:
 				void this.run();
@@ -75,10 +75,13 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				super._postMessage({ type: WebviewMessageType.STDIO, id, data });
 		}
 
-		vscode.window.onDidChangeActiveTextEditor(() => this.loadSavedData(), this);
+		vscode.window.onDidChangeActiveTextEditor(
+			() => this.loadCurrentFileData(),
+			this,
+		);
 	}
 
-	loadSavedData() {
+	loadCurrentFileData() {
 		this._stop();
 		for (let id = 0; id < 3; id++) {
 			this._state[id].data.reset();
