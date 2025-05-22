@@ -14,7 +14,7 @@ export class Runnable {
 	private _endTime = 0;
 	private _signal: NodeJS.Signals | null = null;
 	private _timedOut = false;
-	private _exitCode: number | null = null;
+	private _exitCode: number | null = 0;
 
 	run(command: string, timeout?: number, cwd?: string, ...args: string[]) {
 		// FIXME: Simplify TL to check a flag once https://github.com/nodejs/node/pull/51608 lands
