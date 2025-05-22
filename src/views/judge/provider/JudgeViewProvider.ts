@@ -467,7 +467,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.stdout.reset();
 		testcase.process.run(
 			resolvedArgs[0],
-			newTestcase ? 0 : this._timeLimit,
+			newTestcase ? undefined : this._timeLimit,
 			cwd,
 			...resolvedArgs.slice(1),
 		);

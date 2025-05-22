@@ -16,10 +16,10 @@ export class Runnable {
 	private _timedOut = false;
 	private _exitCode: number | null = null;
 
-	run(command: string, timeout: number, cwd?: string, ...args: string[]) {
+	run(command: string, timeout?: number, cwd?: string, ...args: string[]) {
 		// FIXME: Simplify TL to check a flag once https://github.com/nodejs/node/pull/51608 lands
 
-		const timeoutSignal = AbortSignal.timeout(timeout);
+		const timeoutSignal = timeout ? AbortSignal.timeout(timeout) : undefined;
 		this._process = child_process.spawn(command, args, {
 			cwd,
 			signal: timeoutSignal,
@@ -37,7 +37,7 @@ export class Runnable {
 				this._endTime = performance.now();
 				this._signal = signal;
 				this._exitCode = code;
-				this._timedOut = timeoutSignal.aborted;
+				this._timedOut = timeoutSignal?.aborted ?? false;
 				resolve();
 			});
 		});
@@ -115,7 +115,12 @@ export async function compile(
 			context.subscriptions.push(compilationStatusItem);
 
 			const process = new Runnable();
-			process.run(resolvedArgs[0], 0, undefined, ...resolvedArgs.slice(1));
+			process.run(
+				resolvedArgs[0],
+				undefined,
+				undefined,
+				...resolvedArgs.slice(1),
+			);
 
 			let err = '';
 			process.process?.stderr.on('data', (data: string) => {
