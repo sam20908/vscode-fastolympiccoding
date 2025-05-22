@@ -286,7 +286,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			for (let i = 0; i < 3; i++) {
 				// if any process fails then the other 2 should be gracefully closed
 				this._state[i].process.process?.once('close', (code) => {
-					if (code === null) {
+					if (code === null || code) {
 						for (let j = 0; j < 3; j++) {
 							if (j !== i) {
 								this._state[j].process.process?.kill('SIGUSR1');
