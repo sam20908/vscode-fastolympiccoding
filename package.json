@@ -202,6 +202,11 @@
 				"category": "Fast Olympic Coding"
 			},
 			{
+				"command": "fastolympiccoding.saveAll",
+				"title": "Save All Testcases",
+				"category": "Fast Olympic Coding"
+			},
+			{
 				"command": "fastolympiccoding.stressTest",
 				"title": "Run Stress Test",
 				"category": "Fast Olympic Coding"
@@ -236,6 +241,11 @@
 			{
 				"command": "fastolympiccoding.deleteAll",
 				"key": "ctrl+alt+d",
+				"when": "view.fastolympiccoding.judge.visible"
+			},
+			{
+				"command": "fastolympiccoding.saveAll",
+				"key": "ctrl+alt+s",
 				"when": "view.fastolympiccoding.judge.visible"
 			},
 			{

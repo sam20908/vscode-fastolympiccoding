@@ -36,6 +36,9 @@ window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
 		case WebviewMessageType.DELETE:
 			handleDelete(msg.data);
 			break;
+		case WebviewMessageType.SAVE_ALL:
+			handleSaveAll();
+			break;
 		case WebviewMessageType.SHOW:
 			handleShow(msg.data);
 			break;
@@ -89,6 +92,24 @@ function handleStdio({ id, data, stdio }: IStdioMessage) {
 
 function handleDelete({ id }: IDeleteMessage) {
 	testcases.delete(id);
+}
+
+function handleSaveAll() {
+	for (const [id, testcase] of testcases) {
+		if (testcase.status === Status.EDITING) {
+			const stdin = testcase.stdin;
+			const acceptedStdout = testcase.acceptedStdout;
+			// the extension host will send shortened version of both of these
+			testcase.stdin = '';
+			testcase.acceptedStdout = '';
+			postProviderMessage({
+				type: ProviderMessageType.SAVE,
+				id,
+				stdin,
+				acceptedStdout,
+			});
+		}
+	}
 }
 
 function handleShow({ visible }: IShowMessage) {

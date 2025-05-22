@@ -222,6 +222,10 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		}
 	}
 
+	saveAll() {
+		super._postMessage({ type: WebviewMessageType.SAVE_ALL });
+	}
+
 	private _nextTestcase() {
 		void this._run(this._addTestcase(), true);
 	}

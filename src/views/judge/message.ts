@@ -66,8 +66,9 @@ export enum WebviewMessageType {
 	SET = 1,
 	STDIO = 2,
 	DELETE = 3,
-	SHOW = 4,
-	INITIAL_STATE = 5,
+	SAVE_ALL = 4,
+	SHOW = 5,
+	INITIAL_STATE = 6,
 }
 export interface INewMessage {
 	type: WebviewMessageType.NEW;
@@ -89,6 +90,9 @@ export interface IDeleteMessage {
 	type: WebviewMessageType.DELETE;
 	id: number;
 }
+export interface ISaveAllMessage {
+	type: WebviewMessageType.SAVE_ALL;
+}
 export interface IShowMessage {
 	type: WebviewMessageType.SHOW;
 	visible: boolean;
@@ -102,5 +106,6 @@ export type WebviewMessage =
 	| ISetMessage
 	| IStdioMessage
 	| IDeleteMessage
+	| ISaveAllMessage
 	| IShowMessage
 	| IInitialState;
