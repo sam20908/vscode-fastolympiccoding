@@ -223,9 +223,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...generatorRunArguments.slice(1),
 			);
-			this._state[0].process.process?.on('error', (data) =>
-				this._state[0].data.write(data.message, true),
-			);
+			this._state[0].process.process?.on('error', (data) => {
+				if (data.name !== 'AbortError') {
+					this._state[0].data.write(data.message, true);
+				}
+			});
 			this._state[0].process.process?.stdin.write(`${seed}\n`);
 			this._state[0].process.process?.stdout.on('data', (data: string) => {
 				this._state[0].data.write(data, false);
@@ -246,9 +248,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...solutionRunArguments.slice(1),
 			);
-			this._state[1].process.process?.on('error', (data) =>
-				this._state[1].data.write(data.message, true),
-			);
+			this._state[1].process.process?.on('error', (data) => {
+				if (data.name !== 'AbortError') {
+					this._state[1].data.write(data.message, true);
+				}
+			});
 			this._state[1].process.process?.stdout.on('data', (data: string) =>
 				this._state[1].data.write(data, false),
 			);
@@ -267,9 +271,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...goodSolutionRunArguments.slice(1),
 			);
-			this._state[2].process.process?.on('error', (data) =>
-				this._state[2].data.write(data.message, true),
-			);
+			this._state[2].process.process?.on('error', (data) => {
+				if (data.name !== 'AbortError') {
+					this._state[2].data.write(data.message, true);
+				}
+			});
 			this._state[2].process.process?.stdout.on('data', (data: string) =>
 				this._state[2].data.write(data, false),
 			);
@@ -294,7 +300,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				this._state.map((value) => value.process.promise),
 			);
 			for (let i = 0; i < 3; i++) {
-				if (this._state[i].process.signal === 'SIGTERM') {
+				if (this._state[i].process.timedOut) {
 					anyFailed = true;
 					this._state[i].status = Status.TL;
 				} else if (this._state[i].process.signal === 'SIGUSR1') {

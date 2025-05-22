@@ -13,10 +13,17 @@ export class Runnable {
 	private _startTime = 0;
 	private _endTime = 0;
 	private _signal: NodeJS.Signals | null = null;
+	private _timedOut = false;
 	private _exitCode: number | null = null;
 
 	run(command: string, timeout: number, cwd?: string, ...args: string[]) {
-		this._process = child_process.spawn(command, args, { cwd, timeout });
+		// FIXME: Simplify TL to check a flag once https://github.com/nodejs/node/pull/51608 lands
+
+		const timeoutSignal = AbortSignal.timeout(timeout);
+		this._process = child_process.spawn(command, args, {
+			cwd,
+			signal: timeoutSignal,
+		});
 		this._process.stdout.setEncoding('utf-8');
 		this._process.stderr.setEncoding('utf-8');
 		this._promise = new Promise((resolve) => {
@@ -24,14 +31,13 @@ export class Runnable {
 				this._startTime = performance.now();
 			});
 			this._process?.once('error', () => {
-				this._startTime = performance.now();
-				this._exitCode = -1;
-				resolve();
+				this._startTime = performance.now(); // necessary since an invalid command can lead to process not spawned
 			});
 			this._process?.once('close', (code, signal) => {
 				this._endTime = performance.now();
 				this._signal = signal;
 				this._exitCode = code;
+				this._timedOut = timeoutSignal.aborted;
 				resolve();
 			});
 		});
@@ -48,6 +54,9 @@ export class Runnable {
 	}
 	get signal(): NodeJS.Signals | null {
 		return this._signal;
+	}
+	get timedOut(): boolean {
+		return this._timedOut;
 	}
 	get exitCode(): number | null {
 		return this._exitCode;

@@ -39,17 +39,20 @@ interface IState
 	process: Runnable;
 }
 
-function getExitCodeStatus(
-	signal: NodeJS.Signals | null,
-	code: number | null,
-	stdout: string,
-	acceptedStdout: string,
-) {
-	if (signal === 'SIGTERM') return Status.TL;
-	if (code === null || code) return Status.RE;
-	if (acceptedStdout === '\n') return Status.NA;
-	if (stdout === acceptedStdout) return Status.AC;
-	return Status.WA;
+function setTestcaseStats(state: IState, timeLimit: number) {
+	state.elapsed = state.process.elapsed;
+	if (state.process.timedOut) {
+		state.elapsed = timeLimit;
+		state.status = Status.TL;
+	} else if (state.process.exitCode === null || state.process.exitCode) {
+		state.status = Status.RE;
+	} else if (state.acceptedStdout.data === '\n') {
+		state.status = Status.NA;
+	} else if (state.stdout === state.acceptedStdout) {
+		state.status = Status.AC;
+	} else {
+		state.status = Status.WA;
+	}
 }
 
 function coerceToObject(data: unknown): unknown {
@@ -497,19 +500,10 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			});
 			this._saveFileData();
 		});
-		testcase.process.process?.once('close', (exitCode: number | null) => {
+		testcase.process.process?.once('close', () => {
 			testcase.process.process?.stderr.removeAllListeners('data');
 			testcase.process.process?.stdout.removeAllListeners('data');
-			testcase.status = getExitCodeStatus(
-				testcase.process.signal,
-				exitCode,
-				testcase.stdout.data,
-				testcase.acceptedStdout.data,
-			);
-			testcase.elapsed =
-				testcase.status === Status.TL
-					? this._timeLimit
-					: testcase.process.elapsed;
+			setTestcaseStats(testcase, this._timeLimit);
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
@@ -703,16 +697,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		testcase.acceptedStdout.reset();
 		testcase.stdin.write(stdin, true);
 		testcase.acceptedStdout.write(acceptedStdout, true);
-		testcase.status = getExitCodeStatus(
-			testcase.process.signal,
-			testcase.process.exitCode,
-			testcase.stdout.data,
-			testcase.acceptedStdout.data,
-		);
-		testcase.elapsed =
-			testcase.status === Status.TL
-				? this._timeLimit
-				: testcase.process.elapsed;
+		setTestcaseStats(testcase, this._timeLimit);
 
 		super._postMessage({
 			type: WebviewMessageType.SET,
