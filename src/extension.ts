@@ -63,19 +63,21 @@ function registerCommands(context: vscode.ExtensionContext): void {
 					return;
 				}
 
-				const config = vscode.workspace.getConfiguration('fastolympiccoding');
-				const extension = path.extname(file);
-				const runSettings = config.get<ILanguageSettings>(
-					`runSettings.${extension}`,
+				const runSettings = vscode.workspace.getConfiguration(
+					'fastolympiccoding.runSettings',
 				);
-				if (!runSettings) {
+				const extension = path.extname(file);
+				const languageSettings = runSettings[extension] as
+					| ILanguageSettings
+					| undefined;
+				if (!languageSettings) {
 					vscode.window.showWarningMessage(
 						`No run setting detected for file extension "${extension}"`,
 					);
 					return;
 				}
-				if (runSettings.compileCommand) {
-					void compile(file, runSettings.compileCommand, context); // we don't care about exit code of compilation
+				if (languageSettings.compileCommand) {
+					void compile(file, languageSettings.compileCommand, context); // we don't care about exit code of compilation
 				}
 			},
 		),
