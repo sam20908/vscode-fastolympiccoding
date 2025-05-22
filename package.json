@@ -10,7 +10,7 @@
 		"Testing"
 	],
 	"engines": {
-		"vscode": "^1.99.1"
+		"vscode": "^1.100.0"
 	},
 	"publisher": "sam20908",
 	"repository": {
