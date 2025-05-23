@@ -48,7 +48,7 @@ function setTestcaseStats(state: IState, timeLimit: number) {
 		state.status = Status.RE;
 	} else if (state.acceptedStdout.data === '\n') {
 		state.status = Status.NA;
-	} else if (state.stdout === state.acceptedStdout) {
+	} else if (state.stdout.data === state.acceptedStdout.data) {
 		state.status = Status.AC;
 	} else {
 		state.status = Status.WA;
