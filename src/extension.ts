@@ -102,10 +102,9 @@ function registerCommands(context: vscode.ExtensionContext): void {
 		),
 	);
 
-		context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.saveAll',
-			() => judgeViewProvider.saveAll(),
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand('fastolympiccoding.saveAll', () =>
+			judgeViewProvider.saveAll(),
 		),
 	);
 
