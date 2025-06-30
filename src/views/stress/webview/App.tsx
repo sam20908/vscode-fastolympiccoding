@@ -31,6 +31,7 @@ const expand = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.VIEW, id });
 const add = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.ADD, id });
+const reset = () => postProviderMessage({ type: ProviderMessageType.RESET });
 
 window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
 	switch (event.data.type) {
@@ -61,6 +62,7 @@ function handleClear() {
 	batch(() => {
 		for (let i = 0; i < 3; i++) {
 			state[i].data = '';
+			state[i].status = Status.NA;
 		}
 	});
 }
@@ -116,6 +118,14 @@ export default function App() {
 							<div class="w-6 shrink-0" />
 							<div class="flex justify-start gap-x-2 bg-zinc-800 grow">
 								{button}
+								<button
+									type="button"
+									class="text-base leading-tight px-3 w-fit display-font"
+									style={{ backgroundColor: BLUE_COLOR }}
+									onClick={reset}
+								>
+									reset
+								</button>
 							</div>
 						</div>
 					</div>

@@ -267,6 +267,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		if (!file) {
 			return;
 		}
+		if (this._state.size === 0 && this._timeLimit === 0) {
+			// everything is defaulted, might as well not save it
+			super.writeStorage(file, undefined);
+			return;
+		}
 
 		const testcases: ITestcase[] = [];
 		for (const testcase of this._state.values()) {

@@ -57,6 +57,9 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			case ProviderMessageType.ADD:
 				this._add(msg);
 				break;
+			case ProviderMessageType.RESET:
+				this._reset();
+				break;
 		}
 	}
 
@@ -385,20 +388,41 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		});
 	}
 
+	private _reset() {
+		const file = vscode.window.activeTextEditor?.document.fileName;
+		if (!file) {
+			return;
+		}
+
+		for (let i = 0; i < 3; i++) {
+			this._state[i].data.reset();
+			this._state[i].status = Status.NA;
+		}
+		super._postMessage({ type: WebviewMessageType.CLEAR });
+		this._saveState();
+	}
+
 	private _saveState() {
 		const file = vscode.window.activeTextEditor?.document.fileName;
 		if (!file) {
 			return;
 		}
 
+		let isDefault = true;
+		for (const state of this._state) {
+			isDefault &&= state.data.data === '';
+			isDefault &&= state.status === Status.NA;
+		}
 		super.writeStorage(
 			file,
-			this._state.map<IData>((value) => {
-				return {
-					data: value.data.data,
-					status: value.status,
-				};
-			}),
+			isDefault
+				? undefined
+				: this._state.map<IData>((value) => {
+						return {
+							data: value.data.data,
+							status: value.status,
+						};
+					}),
 		);
 	}
 

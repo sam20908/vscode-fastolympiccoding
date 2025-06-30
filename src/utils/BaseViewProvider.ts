@@ -58,7 +58,7 @@ export default abstract class<ProviderMessageType, WebviewMessageType>
 		return data;
 	}
 
-	writeStorage(file: string, data: object) {
+	writeStorage(file: string, data?: object) {
 		const fileData = this._context.workspaceState.get(this.view, {});
 		this._context.workspaceState.update(this.view, {
 			...fileData,
