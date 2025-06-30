@@ -11,6 +11,9 @@ import StressViewProvider from './views/stress/provider/StressViewProvider';
 
 let judgeViewProvider: JudgeViewProvider;
 let stressViewProvider: StressViewProvider;
+let competitiveCompanionServer: http.Server | undefined = undefined;
+
+let competitiveCompanionStatusItem: vscode.StatusBarItem;
 
 function registerViewProviders(context: vscode.ExtensionContext): void {
 	judgeViewProvider = new JudgeViewProvider(context);
@@ -176,12 +179,29 @@ function registerCommands(context: vscode.ExtensionContext): void {
 			},
 		),
 	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'fastolympiccoding.listenForCompetitiveCompanion',
+			() => listenForCompetitiveCompanion(),
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'fastolympiccoding.stopCompetitiveCompanion',
+			() => stopCompetitiveCompanion(),
+		),
+	);
 }
 
 function listenForCompetitiveCompanion() {
+	if (competitiveCompanionServer !== undefined) {
+		return;
+	}
+
 	let problemDatas: IProblem[] = [];
 	let cnt = 0;
-	const server = http.createServer((req, res) => {
+	competitiveCompanionServer = http.createServer((req, res) => {
 		if (req.method !== 'POST') {
 			res.end();
 			return;
@@ -194,7 +214,7 @@ function listenForCompetitiveCompanion() {
 		});
 		req.on('end', () => {
 			void (async () => {
-				res.end();
+				res.end(() => req.socket.unref());
 
 				problemDatas.push(JSON.parse(ccData) as IProblem);
 				if (problemDatas.length === 0) {
@@ -296,19 +316,49 @@ function listenForCompetitiveCompanion() {
 			})();
 		});
 	});
-	server.listen(1327);
+
+	competitiveCompanionServer.once('connection', (socket) => {
+		socket.unref();
+	});
+	competitiveCompanionServer.once('listening', () => {
+		competitiveCompanionStatusItem.show();
+	});
+	competitiveCompanionServer.once('error', (error) =>
+		vscode.window.showErrorMessage(
+			`Competitive Companion listener error: ${error}`,
+		),
+	);
+	competitiveCompanionServer.once('close', () => {
+		competitiveCompanionServer = undefined;
+		competitiveCompanionStatusItem.hide();
+	});
+
+	const config = vscode.workspace.getConfiguration('fastolympiccoding');
+	// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
+	const port = config.get<number>('port')!;
+	competitiveCompanionServer.listen(port);
 }
 
-function addActiveStatus(context: vscode.ExtensionContext): void {
-	const statusItem = vscode.window.createStatusBarItem(
-		'fastolympiccoding.active',
+function stopCompetitiveCompanion() {
+	if (competitiveCompanionServer === undefined) {
+		return;
+	}
+
+	competitiveCompanionServer.close();
+}
+
+function createCompetitiveCompanionStatus(context: vscode.ExtensionContext) {
+	const competitiveCompanionStatus = vscode.window.createStatusBarItem(
+		'fastolympiccoding.listeningForCompetitiveCompanion',
 		vscode.StatusBarAlignment.Left,
 	);
-	statusItem.name = 'Fast Olympic Coding Indicator';
-	statusItem.text = '$(zap)';
-	statusItem.tooltip = 'Fast Olympic Coding is Active';
-	statusItem.show();
-	context.subscriptions.push(statusItem);
+	competitiveCompanionStatus.name = 'Competitive Companion Indicator';
+	competitiveCompanionStatus.text = '$(zap)';
+	competitiveCompanionStatus.tooltip = 'Listening For Competitive Companion';
+	competitiveCompanionStatus.hide();
+	context.subscriptions.push(competitiveCompanionStatus);
+
+	return competitiveCompanionStatus;
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -316,5 +366,6 @@ export function activate(context: vscode.ExtensionContext): void {
 	registerCommands(context);
 	registerDocumentContentProviders(context);
 	listenForCompetitiveCompanion();
-	addActiveStatus(context);
+
+	competitiveCompanionStatusItem = createCompetitiveCompanionStatus(context);
 }

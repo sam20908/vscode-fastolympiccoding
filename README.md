@@ -158,6 +158,7 @@ Required files (naming scheme can be configured in settings):
   - `askForWhichFile` (default: `false`): Ask for which file to write testcase onto, even when a file is currently opened and only a single problem has been received
   - `includePattern` (default: `**/*`): Glob pattern to filter in the included files for asking prompt
   - `excludePattern` (default: *empty*): Glob pattern to filter out the included files for asking prompt
+  - `port` (default: *1327*): Port number to listen from Competitive Companion
 </details>
 
 ---

@@ -157,6 +157,12 @@
 			{
 				"title": "Competitive Companion",
 				"properties": {
+					"fastolympiccoding.port": {
+						"type": "number",
+						"default": 1327,
+						"minimum": 1024,
+						"description": "Port number to listen for Competitive Companion"
+					},
 					"fastolympiccoding.openSelectedFiles": {
 						"type": "boolean",
 						"default": true,
@@ -220,7 +226,17 @@
 				"command": "fastolympiccoding.insertFileTemplate",
 				"title": "Insert File Template",
 				"category": "Fast Olympic Coding"
-			}
+			},
+			{
+				"command": "fastolympiccoding.listenForCompetitiveCompanion",
+				"title": "Listen for Competitive Companion",
+				"category": "Fast Olympic Coding"
+			},
+			{
+				"command": "fastolympiccoding.stopCompetitiveCompanion",
+				"title": "Stop Competitive Companion",
+				"category": "Fast Olympic Coding"
+			}	
 		],
 		"keybindings": [
 			{
