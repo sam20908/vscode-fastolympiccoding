@@ -5,6 +5,7 @@ export enum WebviewMessageType {
 	STDIO = 1,
 	CLEAR = 2,
 	SHOW = 3,
+	RUNNING = 4,
 }
 export interface IStatusMessage {
 	type: WebviewMessageType.STATUS;
@@ -23,11 +24,16 @@ export interface IShowMessage {
 	type: WebviewMessageType.SHOW;
 	visible: boolean;
 }
+export interface IRunningMessage {
+	type: WebviewMessageType.RUNNING;
+	value: boolean;
+}
 export type WebviewMessage =
 	| IStatusMessage
 	| IStdioMessage
 	| IClearMessage
-	| IShowMessage;
+	| IShowMessage
+	| IRunningMessage;
 
 export enum ProviderMessageType {
 	LOADED = 0,

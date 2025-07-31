@@ -5,6 +5,7 @@ import { Status } from '~common/common';
 import { BLUE_COLOR, RED_COLOR } from '~common/webview';
 import { type PreactObservable, observable } from '~external/observable';
 import {
+	type IRunningMessage,
 	type IShowMessage,
 	type IStatusMessage,
 	type IStdioMessage,
@@ -26,6 +27,7 @@ const state: PreactObservable<IState[]> = observable([
 	{ data: '', status: Status.NA },
 ]);
 const showView = signal(true);
+const running = signal(false);
 
 const expand = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.VIEW, id });
@@ -46,6 +48,9 @@ window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
 			break;
 		case WebviewMessageType.SHOW:
 			handleShow(event.data);
+			break;
+		case WebviewMessageType.RUNNING:
+			handleRunning(event.data);
 			break;
 	}
 });
@@ -71,6 +76,10 @@ function handleShow({ visible }: IShowMessage) {
 	showView.value = visible;
 }
 
+function handleRunning({ value }: IRunningMessage) {
+	running.value = value;
+}
+
 export default function App() {
 	useEffect(
 		() => postProviderMessage({ type: ProviderMessageType.LOADED }),
@@ -78,7 +87,7 @@ export default function App() {
 	);
 
 	const button = useComputed(() => {
-		if (state[1].status === Status.RUNNING)
+		if (running.value)
 			return (
 				<button
 					type="button"

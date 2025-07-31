@@ -189,6 +189,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			}
 		}
 
+		super._postMessage({ type: WebviewMessageType.RUNNING, value: true });
 		for (let id = 0; id < 3; id++) {
 			super._postMessage({
 				type: WebviewMessageType.STATUS,
@@ -325,6 +326,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				setTimeout(() => resolve(), delayBetweenTestcases),
 			);
 		}
+		super._postMessage({ type: WebviewMessageType.RUNNING, value: false });
 
 		if (!anyFailed && this._state[1].data.data !== this._state[2].data.data) {
 			this._state[1].status = Status.WA;
