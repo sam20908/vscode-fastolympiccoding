@@ -113,8 +113,15 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.stressTest',
+			'fastolympiccoding.startStressTest',
 			() => void stressViewProvider.run(),
+		),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand(
+			'fastolympiccoding.stopStressTest',
+			() => stressViewProvider.stop(),
 		),
 	);
 

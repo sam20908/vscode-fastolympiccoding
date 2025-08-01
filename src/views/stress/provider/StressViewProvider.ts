@@ -49,7 +49,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				void this.run();
 				break;
 			case ProviderMessageType.STOP:
-				this._stop();
+				this.stop();
 				break;
 			case ProviderMessageType.VIEW:
 				this._view(msg);
@@ -64,7 +64,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	}
 
 	onDispose() {
-		this._stop();
+		this.stop();
 	}
 
 	constructor(
@@ -85,7 +85,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	}
 
 	loadCurrentFileData() {
-		this._stop();
+		this.stop();
 		for (let id = 0; id < 3; id++) {
 			this._state[id].data.reset();
 			this._state[id].status = Status.NA;
@@ -341,7 +341,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		this._saveState();
 	}
 
-	private _stop() {
+	stop() {
 		this._stopFlag = true;
 		for (let i = 0; i < 3; i++) {
 			this._state[i].process.process?.kill('SIGUSR1');

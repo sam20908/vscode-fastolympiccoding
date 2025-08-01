@@ -213,8 +213,13 @@
 				"category": "Fast Olympic Coding"
 			},
 			{
-				"command": "fastolympiccoding.stressTest",
-				"title": "Run Stress Test",
+				"command": "fastolympiccoding.startStressTest",
+				"title": "Start Stress Test",
+				"category": "Fast Olympic Coding"
+			},
+			{
+				"command": "fastolympiccoding.stopStressTest",
+				"title": "Stop Stress Test",
 				"category": "Fast Olympic Coding"
 			},
 			{
@@ -265,8 +270,13 @@
 				"when": "view.fastolympiccoding.judge.visible"
 			},
 			{
-				"command": "fastolympiccoding.stressTest",
+				"command": "fastolympiccoding.startStressTest",
 				"key": "ctrl+alt+g",
+				"when": "view.fastolympiccoding.stress.visible"
+			},
+			{
+				"command": "fastolympiccoding.stopStressTest",
+				"key": "ctrl+alt+h",
 				"when": "view.fastolympiccoding.stress.visible"
 			},
 			{
