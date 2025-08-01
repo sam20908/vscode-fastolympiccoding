@@ -127,6 +127,13 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
+			'fastolympiccoding.clearStressTest',
+			() => stressViewProvider.clear(),
+		),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand(
 			'fastolympiccoding.clearData',
 			() => {
 				judgeViewProvider.clearData();

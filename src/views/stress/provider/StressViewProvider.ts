@@ -39,6 +39,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		{ data: new TextHandler(), status: Status.NA, process: new Runnable() },
 	]; // [generator, solution, good solution]
 	private _stopFlag = false;
+	private _clearFlag = false;
+	private _running = false;
 
 	onMessage(msg: ProviderMessage): void {
 		switch (msg.type) {
@@ -57,8 +59,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			case ProviderMessageType.ADD:
 				this._add(msg);
 				break;
-			case ProviderMessageType.RESET:
-				this._reset();
+			case ProviderMessageType.CLEAR:
+				this.clear();
 				break;
 		}
 	}
@@ -209,6 +211,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 
 		let anyFailed = false;
 		this._stopFlag = false;
+		this._clearFlag = false;
+		this._running = true;
 		while (
 			!this._stopFlag &&
 			(timeLimit === 0 || Date.now() - start <= timeLimit)
@@ -326,11 +330,24 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				setTimeout(() => resolve(), delayBetweenTestcases),
 			);
 		}
+		this._running = false;
 		super._postMessage({ type: WebviewMessageType.RUNNING, value: false });
 
-		if (!anyFailed && this._state[1].data.data !== this._state[2].data.data) {
+		if (this._clearFlag) {
+			for (let id = 0; id < 3; id++) {
+				this._state[id].data.reset();
+				this._state[id].status = Status.NA;
+			}
+
+			super._postMessage({ type: WebviewMessageType.CLEAR });
+		} else if (
+			!anyFailed &&
+			this._state[1].data.data !== this._state[2].data.data
+		) {
 			this._state[1].status = Status.WA;
 		}
+		this._clearFlag = false;
+
 		for (let id = 0; id < 3; id++) {
 			super._postMessage({
 				type: WebviewMessageType.STATUS,
@@ -342,9 +359,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	}
 
 	stop() {
-		this._stopFlag = true;
-		for (let i = 0; i < 3; i++) {
-			this._state[i].process.process?.kill('SIGUSR1');
+		if (this._running) {
+			this._stopFlag = true;
+			for (let i = 0; i < 3; i++) {
+				this._state[i].process.process?.kill('SIGUSR1');
+			}
 		}
 	}
 
@@ -390,18 +409,19 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		});
 	}
 
-	private _reset() {
-		const file = vscode.window.activeTextEditor?.document.fileName;
-		if (!file) {
-			return;
-		}
+	clear() {
+		if (this._running) {
+			this._clearFlag = true;
+			this.stop();
+		} else {
+			for (let id = 0; id < 3; id++) {
+				this._state[id].data.reset();
+				this._state[id].status = Status.NA;
+			}
 
-		for (let i = 0; i < 3; i++) {
-			this._state[i].data.reset();
-			this._state[i].status = Status.NA;
+			super._postMessage({ type: WebviewMessageType.CLEAR });
+			this._saveState();
 		}
-		super._postMessage({ type: WebviewMessageType.CLEAR });
-		this._saveState();
 	}
 
 	private _saveState() {

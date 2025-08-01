@@ -223,6 +223,11 @@
 				"category": "Fast Olympic Coding"
 			},
 			{
+				"command": "fastolympiccoding.clearStressTest",
+				"title": "Clear Stress Test",
+				"category": "Fast Olympic Coding"
+			},
+			{
 				"command": "fastolympiccoding.clearData",
 				"title": "Clear Saved Data",
 				"category": "Fast Olympic Coding"

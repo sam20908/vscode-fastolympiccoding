@@ -33,7 +33,7 @@ const expand = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.VIEW, id });
 const add = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.ADD, id });
-const reset = () => postProviderMessage({ type: ProviderMessageType.RESET });
+const clear = () => postProviderMessage({ type: ProviderMessageType.CLEAR });
 
 window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
 	switch (event.data.type) {
@@ -131,9 +131,9 @@ export default function App() {
 									type="button"
 									class="text-base leading-tight px-3 w-fit display-font"
 									style={{ backgroundColor: BLUE_COLOR }}
-									onClick={reset}
+									onClick={clear}
 								>
-									reset
+									clear
 								</button>
 							</div>
 						</div>

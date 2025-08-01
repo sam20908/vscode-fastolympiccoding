@@ -41,7 +41,7 @@ export enum ProviderMessageType {
 	STOP = 2,
 	VIEW = 3,
 	ADD = 4,
-	RESET = 5,
+	CLEAR = 5,
 }
 export interface ILoadedMessage {
 	type: ProviderMessageType.LOADED;
@@ -61,7 +61,7 @@ export interface IAddMessage {
 	id: number;
 }
 export interface IResetMessage {
-	type: ProviderMessageType.RESET;
+	type: ProviderMessageType.CLEAR;
 }
 export type ProviderMessage =
 	| ILoadedMessage
