@@ -39,7 +39,7 @@ Provide run settings for the languages you use in `settings.json`. Here are some
 {
   "fastolympiccoding.runSettings": {
     ".cpp": {
-      "compileCommand": "g++ -std=gnu++20 -D_GLIBCXX_DEBUG ${path:${file}} -o ${path:${fileDirname}/${fileBasenameNoExtension}${exeExtname}}",
+      "compileCommand": "g++ ${path:${file}} -o ${path:${fileDirname}/${fileBasenameNoExtension}${exeExtname}}",
       "runCommand": "${path:${fileDirname}/${fileBasenameNoExtension}${exeExtname}}"
     },
     ".py": {
