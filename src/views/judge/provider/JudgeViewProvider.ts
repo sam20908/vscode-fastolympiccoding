@@ -161,8 +161,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			};
 		});
 
-		// biome-ignore lint/style/noNonNullAssertion: Caller guarantees there is an active editor and passes a non-empty string
-		if (file === vscode.window.activeTextEditor!.document.fileName) {
+		if (file === vscode.window.activeTextEditor?.document.fileName) {
 			this.deleteAll();
 			this._timeLimit = data.timeLimit;
 			for (const testcase of testcases) {
