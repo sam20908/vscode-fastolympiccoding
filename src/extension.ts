@@ -49,7 +49,14 @@ async function getFileContent(
 		return cycle;
 	})(file);
 	if (has_cycle) {
-		vscode.window.showWarningMessage('Cyclic dependency found from template');
+		const choice = await vscode.window.showWarningMessage(
+			'Cyclic dependency found! Do you still want to insert the template?',
+			'Yes',
+			'No',
+		);
+		if (choice === 'No') {
+			return undefined;
+		}
 	}
 
 	const contents = await Promise.all(
@@ -225,6 +232,10 @@ function registerCommands(context: vscode.ExtensionContext): void {
 						baseDirectory,
 						dependencies ?? {},
 					);
+					if (!content) {
+						return;
+					}
+
 					const inserted = vscode.window.activeTextEditor?.edit(
 						(edit: vscode.TextEditorEdit) => {
 							if (vscode.window.activeTextEditor) {
