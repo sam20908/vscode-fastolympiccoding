@@ -70,6 +70,18 @@
 						"type": "boolean",
 						"default": false,
 						"description": "Controls if the copied content would be folded by VSCode (only the first foldable content is folded)"
+					},
+					"fastolympiccoding.fileTemplatesDependencies": {
+						"type": "object",
+						"patternProperties": {
+							".+": {
+								"type": "array",
+								"items": {
+									"type": "string",
+									"description": "The path (relative to the base directory) to the other template required by this file."
+								}
+							}
+						}
 					}
 				}
 			},

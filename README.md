@@ -135,6 +135,7 @@ Required files (naming scheme can be configured in settings):
   <summary>Possible settings</summary>
 
   - `fileTemplatesBaseDirectory`: Full path to the base directory of all prewritten files (supports `${...}`)
+  - `fileTemplatesDependencies` (optional): Maps a template path relative to base directory to a list of other relative template paths that this one depends on
   - `foldFileTemplate` (default: `false`): Whether to fold the newly inserted prewritten code
 </details>
 

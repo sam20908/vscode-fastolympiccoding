@@ -1,4 +1,4 @@
-import * as fs from 'node:fs';
+import * as fs from 'node:fs/promises';
 import * as http from 'node:http';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
@@ -14,6 +14,50 @@ let stressViewProvider: StressViewProvider;
 let competitiveCompanionServer: http.Server | undefined = undefined;
 
 let competitiveCompanionStatusItem: vscode.StatusBarItem;
+
+interface IDependencies {
+	[file: string]: string[];
+}
+
+async function getFileContent(
+	file: string,
+	baseDirectory: string,
+	dependencies: IDependencies,
+) {
+	const visiting: Set<string> = new Set();
+	const visited: Set<string> = new Set();
+	const order: string[] = [];
+	console.log(dependencies);
+
+	const has_cycle = (function dfs(currentFile: string): boolean {
+		if (visiting.has(currentFile)) {
+			return true;
+		}
+		if (visited.has(currentFile)) {
+			return false;
+		}
+		let cycle = false;
+		visiting.add(currentFile);
+		if (currentFile in dependencies) {
+			for (const dependency of dependencies[currentFile]) {
+				cycle ||= dfs(dependency);
+			}
+		}
+		visiting.delete(currentFile);
+		visited.add(currentFile);
+		order.push(currentFile);
+		return cycle;
+	})(file);
+	if (has_cycle) {
+		vscode.window.showWarningMessage('Cyclic dependency found from template');
+	}
+
+	const contents = await Promise.all(
+		order.map((file) => fs.readFile(path.join(baseDirectory, file), 'utf-8')),
+	);
+	const combined = contents.join('\n');
+	return combined;
+}
 
 function registerViewProviders(context: vscode.ExtensionContext): void {
 	judgeViewProvider = new JudgeViewProvider(context);
@@ -150,16 +194,19 @@ function registerCommands(context: vscode.ExtensionContext): void {
 			() => {
 				void (async () => {
 					const config = vscode.workspace.getConfiguration('fastolympiccoding');
+					const dependencies = config.get<IDependencies>(
+						'fileTemplatesDependencies',
+					);
 					const baseDirectory = resolveVariables(
 						// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
 						config.get('fileTemplatesBaseDirectory')!,
 					);
-					const files = fs
-						.readdirSync(baseDirectory, {
+					const files = (
+						await fs.readdir(baseDirectory, {
 							recursive: true,
 							withFileTypes: true,
 						})
-						.filter((value) => value.isFile());
+					).filter((value) => value.isFile());
 					const items = files.map((file) => {
 						return { label: file.name, description: file.path };
 					});
@@ -170,9 +217,13 @@ function registerCommands(context: vscode.ExtensionContext): void {
 						return;
 					}
 
-					const content = fs.readFileSync(
-						path.join(pickedFile.description, pickedFile.label),
-						{ encoding: 'utf-8' },
+					const content = await getFileContent(
+						path.relative(
+							baseDirectory,
+							path.join(pickedFile.description, pickedFile.label),
+						),
+						baseDirectory,
+						dependencies ?? {},
 					);
 					const inserted = vscode.window.activeTextEditor?.edit(
 						(edit: vscode.TextEditorEdit) => {
@@ -304,13 +355,7 @@ function listenForCompetitiveCompanion() {
 						continue;
 					}
 					fileTo = path.join(workspace, fileTo);
-					if (fs.existsSync(fileTo) && !fs.lstatSync(fileTo).isFile()) {
-						vscode.window.showWarningMessage(
-							`${fileTo} is not a file! Skipped writing testcases for "${problemDatas[i].name}"`,
-						);
-						continue;
-					}
-					fs.writeFileSync(fileTo, '', { flag: 'a' }); // create the file if it doesn't exist
+					await fs.writeFile(fileTo, '', { flag: 'a' });
 
 					judgeViewProvider.addFromCompetitiveCompanion(
 						fileTo,
