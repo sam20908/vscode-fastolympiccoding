@@ -1,6 +1,6 @@
-import * as os from 'node:os';
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import * as os from "node:os";
+import * as path from "node:path";
+import * as vscode from "vscode";
 
 export class ReadonlyTerminal implements vscode.Pseudoterminal {
 	private _writeEmitter: vscode.EventEmitter<string> =
@@ -15,7 +15,7 @@ export class ReadonlyTerminal implements vscode.Pseudoterminal {
 
 	write(text: string): void {
 		// VSCode requires \r\n for newline, but keep existing \r\n
-		this._writeEmitter.fire(text.replace(/\n/g, '\r\n'));
+		this._writeEmitter.fire(text.replace(/\n/g, "\r\n"));
 	}
 
 	close(): void {
@@ -30,15 +30,15 @@ export class TextHandler {
 	private static readonly INTERVAL: number = 30;
 	// biome-ignore lint/style/noNonNullAssertion: Default is enforced by VSCode
 	private static _maxDisplayCharacters: number = vscode.workspace
-		.getConfiguration('fastolympiccoding')
-		.get('maxDisplayCharacters')!;
+		.getConfiguration("fastolympiccoding")
+		.get("maxDisplayCharacters")!;
 	// biome-ignore lint/style/noNonNullAssertion: Default is enforced by VSCode
 	private static _maxDisplayLines: number = vscode.workspace
-		.getConfiguration('fastolympiccoding')
-		.get('maxDisplayLines')!;
-	private _data = '';
+		.getConfiguration("fastolympiccoding")
+		.get("maxDisplayLines")!;
+	private _data = "";
 	private _shortDataLength = 0;
-	private _pending = '';
+	private _pending = "";
 	private _spacesCount = 0;
 	private _newlineCount = 0;
 	private _lastWrite = Number.NEGATIVE_INFINITY;
@@ -53,23 +53,23 @@ export class TextHandler {
 	}
 
 	write(_data: string, last: boolean) {
-		const data = _data.replace(/\r\n/g, '\n'); // just avoid \r\n entirely
+		const data = _data.replace(/\r\n/g, "\n"); // just avoid \r\n entirely
 
 		// Competitive Companion removes trailing spaces for every line
 		for (let i = 0; i < data.length; i++) {
-			if (data[i] === ' ') {
+			if (data[i] === " ") {
 				this._spacesCount++;
-			} else if (data[i] === '\n') {
-				this._data += '\n';
+			} else if (data[i] === "\n") {
+				this._data += "\n";
 				this._spacesCount = 0;
 			} else {
-				this._data += ' '.repeat(this._spacesCount);
+				this._data += " ".repeat(this._spacesCount);
 				this._data += data[i];
 				this._spacesCount = 0;
 			}
 		}
-		if (last && this._data.at(-1) !== '\n') {
-			this._data += '\n';
+		if (last && this._data.at(-1) !== "\n") {
+			this._data += "\n";
 		}
 		if (this._shortDataLength > TextHandler._maxDisplayCharacters) {
 			return;
@@ -82,7 +82,7 @@ export class TextHandler {
 			this._newlineCount < TextHandler._maxDisplayLines;
 			i++
 		) {
-			if (data[i] === '\n') {
+			if (data[i] === "\n") {
 				this._newlineCount++;
 			}
 			this._shortDataLength++;
@@ -99,19 +99,19 @@ export class TextHandler {
 			this._shortDataLength === TextHandler._maxDisplayCharacters ||
 			this._newlineCount === TextHandler._maxDisplayLines
 		) {
-			this._pending += '...';
+			this._pending += "...";
 			this._shortDataLength = TextHandler._maxDisplayCharacters + 1;
 		}
 		if (this._callback) {
 			this._callback(this._pending);
 		}
-		this._pending = '';
+		this._pending = "";
 	}
 
 	reset() {
-		this._data = '';
+		this._data = "";
 		this._shortDataLength = 0;
-		this._pending = '';
+		this._pending = "";
 		this._spacesCount = 0;
 		this._newlineCount = 0;
 		this._lastWrite = Number.NEGATIVE_INFINITY;
@@ -125,13 +125,13 @@ export async function getDefaultBuildTaskName() {
 			return task.name;
 		}
 	}
-	return '';
+	return "";
 }
 
 export class ReadonlyStringProvider
 	implements vscode.TextDocumentContentProvider
 {
-	static SCHEME = 'fastolympiccoding';
+	static SCHEME = "fastolympiccoding";
 	provideTextDocumentContent(uri: vscode.Uri): vscode.ProviderResult<string> {
 		return uri.path;
 	}
@@ -157,7 +157,7 @@ export function resolveVariables(
 		if (absoluteFilePath?.includes(workspace.uri.fsPath)) {
 			activeWorkspace = workspace;
 			relativeFilePath = absoluteFilePath
-				?.replace(workspace.uri.fsPath, '')
+				?.replace(workspace.uri.fsPath, "")
 				.substring(path.sep.length);
 			break;
 		}
@@ -166,43 +166,43 @@ export function resolveVariables(
 	// ${getDefaultBuildTaskName} is not supported because it is slow and requires async. Bark if necessary :)
 
 	const vscodeSubstitutions: { [regex: string]: string } = {
-		'${userHome}': os.homedir(),
-		'${workspaceFolder}': workspace?.uri.fsPath ?? '',
-		'${workspaceFolderBasename}': workspace?.name ?? '',
-		'${file}': absoluteFilePath ?? '',
-		'${fileWorkspaceFolder}': activeWorkspace?.uri.fsPath ?? '',
-		'${relativeFile}': relativeFilePath ?? '',
-		'${relativeFileDirname}': relativeFilePath
+		"${userHome}": os.homedir(),
+		"${workspaceFolder}": workspace?.uri.fsPath ?? "",
+		"${workspaceFolderBasename}": workspace?.name ?? "",
+		"${file}": absoluteFilePath ?? "",
+		"${fileWorkspaceFolder}": activeWorkspace?.uri.fsPath ?? "",
+		"${relativeFile}": relativeFilePath ?? "",
+		"${relativeFileDirname}": relativeFilePath
 			? relativeFilePath.substring(0, relativeFilePath.lastIndexOf(path.sep))
-			: '',
-		'${fileBasename}': parsedPath?.base ?? '',
-		'${fileBasenameNoExtension}': parsedPath?.name ?? '',
-		'${fileExtname}': parsedPath?.ext ?? '',
-		'${fileDirname}': parsedPath?.dir ?? '',
-		'${fileDirnameBasename}': parsedPath
+			: "",
+		"${fileBasename}": parsedPath?.base ?? "",
+		"${fileBasenameNoExtension}": parsedPath?.name ?? "",
+		"${fileExtname}": parsedPath?.ext ?? "",
+		"${fileDirname}": parsedPath?.dir ?? "",
+		"${fileDirnameBasename}": parsedPath
 			? parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1)
-			: '',
-		'${cwd}': parsedPath?.dir ?? '',
-		'${lineNumber}': `${activeEditor?.selection.start.line ? +1 : ''}`,
-		'${selectedText}':
+			: "",
+		"${cwd}": parsedPath?.dir ?? "",
+		"${lineNumber}": `${activeEditor?.selection.start.line ? +1 : ""}`,
+		"${selectedText}":
 			activeEditor?.document.getText(
 				new vscode.Range(
 					activeEditor.selection.start,
 					activeEditor.selection.end,
 				),
-			) ?? '',
-		'${execPath}': process.execPath,
-		'${pathSeparator}': path.sep,
-		'${/}': path.sep,
-		'${exeExtname}': os.platform() === 'win32' ? '.exe' : '',
+			) ?? "",
+		"${execPath}": process.execPath,
+		"${pathSeparator}": path.sep,
+		"${/}": path.sep,
+		"${exeExtname}": os.platform() === "win32" ? ".exe" : "",
 	};
 
 	// Replace all regexes with their matches at once
 	const vscodeVariableRgex = new RegExp(
 		Object.keys(vscodeSubstitutions)
 			.map((variable) => `\\${variable}`)
-			.join('|'),
-		'g',
+			.join("|"),
+		"g",
 	);
 	const vscodeResolvedString = string.replace(
 		vscodeVariableRgex,
@@ -212,13 +212,13 @@ export function resolveVariables(
 	// Resolve ${path:...} last
 	const resolved = vscodeResolvedString.replace(
 		/\${path:(.*?)}/g,
-		(match, group: string) => path.normalize(group),
+		(_, group: string) => path.normalize(group),
 	);
 	return resolved;
 }
 
 export function resolveCommand(command: string, inContextOfFile?: string) {
-	const args = command.trim().split(' ');
+	const args = command.trim().split(" ");
 	return args.map((arg) => resolveVariables(arg, inContextOfFile));
 }
 

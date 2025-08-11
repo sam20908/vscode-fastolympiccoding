@@ -1,9 +1,9 @@
-import type { FunctionComponent } from 'preact';
+import type { FunctionComponent } from "preact";
 
-export const GRAY_COLOR = '#52525C';
-export const GREEN_COLOR = '#475B45';
-export const RED_COLOR = '#6C4549';
-export const BLUE_COLOR = '#4C6179';
+export const GRAY_COLOR = "#52525C";
+export const GREEN_COLOR = "#475B45";
+export const RED_COLOR = "#6C4549";
+export const BLUE_COLOR = "#4C6179";
 
 interface ArrowSvgPropsGeneric extends ArrowSvgProps {
 	d: string;
@@ -24,7 +24,7 @@ const ArrowSvg: FunctionComponent<ArrowSvgPropsGeneric> = ({
 		fill="currentColor"
 		class="w-4 h-4 mr-2 mt-1 shrink-0"
 		onClick={onClick}
-		onKeyDown={(event) => event.key === 'Enter' && onClick?.()}
+		onKeyDown={(event) => event.key === "Enter" && onClick?.()}
 	>
 		<title>Arrow</title>
 		<path fill={color} fillRule="evenodd" d={d} clipRule="evenodd" />

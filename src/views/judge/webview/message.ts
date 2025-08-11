@@ -1,4 +1,4 @@
-import type { ProviderMessage } from '../message';
+import type { ProviderMessage } from "../message";
 
 const vscode = acquireVsCodeApi();
 

@@ -17,25 +17,25 @@ export interface IProblem {
 	memoryLimit: number;
 	timeLimit: number;
 	tests: ITest[];
-	testType: 'single' | 'multiNumber';
+	testType: "single" | "multiNumber";
 	input:
 		| {
-				type: 'stdin';
+				type: "stdin";
 		  }
 		| {
-				type: 'file';
+				type: "file";
 				fileName: string;
 		  }
 		| {
-				type: 'regex';
+				type: "regex";
 				pattern: string;
 		  };
 	output:
 		| {
-				type: 'stdout';
+				type: "stdout";
 		  }
 		| {
-				type: 'file';
+				type: "file";
 				fileName: string;
 		  };
 	languages:

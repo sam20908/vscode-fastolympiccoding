@@ -1,7 +1,7 @@
-import type { Signal } from '@preact/signals';
+import type { Signal } from "@preact/signals";
 
-import { Status } from '~common/common';
-import { ArrowSvgOutwards, BLUE_COLOR, RED_COLOR } from '~common/webview';
+import { Status } from "~common/common";
+import { ArrowSvgOutwards, BLUE_COLOR, RED_COLOR } from "~common/webview";
 
 interface Props {
 	data: Signal<string>;
@@ -11,7 +11,7 @@ interface Props {
 	onAdd: (id: number) => void;
 }
 
-const from = ['Generator', 'Solution', 'Good Solution'];
+const from = ["Generator", "Solution", "Good Solution"];
 
 export default function ({ data, status, id, onView, onAdd }: Props) {
 	switch (status) {
@@ -62,12 +62,12 @@ export default function ({ data, status, id, onView, onAdd }: Props) {
 									style={{ backgroundColor: RED_COLOR }}
 								>
 									{status === Status.CE
-										? 'CE'
+										? "CE"
 										: status === Status.RE
-											? 'RE'
+											? "RE"
 											: status === Status.WA
-												? 'WA'
-												: 'TL'}
+												? "WA"
+												: "TL"}
 								</p>
 							)}
 							{(status === Status.RE || status === Status.WA) && (

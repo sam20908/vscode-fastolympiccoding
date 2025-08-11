@@ -1,17 +1,17 @@
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import * as path from "node:path";
+import * as vscode from "vscode";
 
-import { Status } from '~common/common';
-import type { ILanguageSettings } from '~common/provider';
-import BaseViewProvider from '~utils/BaseViewProvider';
-import { Runnable, compile } from '~utils/runtime';
+import { Status } from "~common/common";
+import type { ILanguageSettings } from "~common/provider";
+import BaseViewProvider from "~utils/BaseViewProvider";
+import { compile, Runnable } from "~utils/runtime";
 import {
-	TextHandler,
 	openInNewEditor,
 	resolveCommand,
 	resolveVariables,
-} from '~utils/vscode';
-import type JudgeViewProvider from '../../judge/provider/JudgeViewProvider';
+	TextHandler,
+} from "~utils/vscode";
+import type JudgeViewProvider from "../../judge/provider/JudgeViewProvider";
 import {
 	type IAddMessage,
 	type IViewMessage,
@@ -19,7 +19,7 @@ import {
 	ProviderMessageType,
 	type WebviewMessage,
 	WebviewMessageType,
-} from '../message';
+} from "../message";
 
 interface IData {
 	data: string;
@@ -73,7 +73,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		context: vscode.ExtensionContext,
 		private _testcaseViewProvider: JudgeViewProvider,
 	) {
-		super('stress', context);
+		super("stress", context);
 
 		for (let id = 0; id < 3; id++) {
 			this._state[id].data.callback = (data: string) =>
@@ -110,11 +110,11 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		const state = fileData && Array.isArray(fileData) ? fileData : [];
 		for (let id = 0; id < state.length; id++) {
 			const testcase =
-				state[id] !== 'null' && typeof state[id] === 'object'
+				state[id] !== "null" && typeof state[id] === "object"
 					? (state[id] as Partial<IData>)
 					: {};
 
-			this._state[id].data.write(testcase.data ?? '', true);
+			this._state[id].data.write(testcase.data ?? "", true);
 			this._state[id].status = testcase.status ?? Status.NA;
 			super._postMessage({
 				type: WebviewMessageType.STATUS,
@@ -131,12 +131,12 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		}
 
 		const extension = path.extname(file);
-		const config = vscode.workspace.getConfiguration('fastolympiccoding');
+		const config = vscode.workspace.getConfiguration("fastolympiccoding");
 		const runSettings = vscode.workspace.getConfiguration(
-			'fastolympiccoding.runSettings',
+			"fastolympiccoding.runSettings",
 		);
 		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-		const delayBetweenTestcases = config.get<number>('delayBetweenTestcases')!;
+		const delayBetweenTestcases = config.get<number>("delayBetweenTestcases")!;
 
 		const languageSettings = runSettings[extension] as
 			| ILanguageSettings
@@ -166,18 +166,19 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			const promises = [
 				compile(
 					// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-					resolveVariables(config.get('generatorFile')!),
+					resolveVariables(config.get("generatorFile")!),
 					languageSettings.compileCommand,
 					this._context,
 				).then(callback.bind(this, 0)),
 				compile(
-					resolveVariables('${file}'),
+					// biome-ignore lint/suspicious/noTemplateCurlyInString: for the extension
+					resolveVariables("${file}"),
 					languageSettings.compileCommand,
 					this._context,
 				).then(callback.bind(this, 1)),
 				compile(
 					// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-					resolveVariables(config.get('goodSolutionFile')!),
+					resolveVariables(config.get("goodSolutionFile")!),
 					languageSettings.compileCommand,
 					this._context,
 				).then(callback.bind(this, 2)),
@@ -204,9 +205,9 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			? resolveVariables(languageSettings.currentWorkingDirectory)
 			: undefined;
 		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-		const testcaseTimeLimit = config.get<number>('stressTestcaseTimeLimit')!;
+		const testcaseTimeLimit = config.get<number>("stressTestcaseTimeLimit")!;
 		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-		const timeLimit = config.get<number>('stressTimeLimit')!;
+		const timeLimit = config.get<number>("stressTimeLimit")!;
 		const start = Date.now();
 
 		let anyFailed = false;
@@ -226,7 +227,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			const generatorRunArguments = this._resolveRunArguments(
 				languageSettings.runCommand,
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				config.get('generatorFile')!,
+				config.get("generatorFile")!,
 			);
 			this._state[0].process.run(
 				generatorRunArguments[0],
@@ -234,24 +235,25 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...generatorRunArguments.slice(1),
 			);
-			this._state[0].process.process?.on('error', (data) => {
-				if (data.name !== 'AbortError') {
+			this._state[0].process.process?.on("error", (data) => {
+				if (data.name !== "AbortError") {
 					this._state[0].data.write(data.message, true);
 				}
 			});
 			this._state[0].process.process?.stdin.write(`${seed}\n`);
-			this._state[0].process.process?.stdout.on('data', (data: string) => {
+			this._state[0].process.process?.stdout.on("data", (data: string) => {
 				this._state[0].data.write(data, false);
 				this._state[1].process.process?.stdin.write(data);
 				this._state[2].process.process?.stdin.write(data);
 			});
-			this._state[0].process.process?.stdout.once('end', () =>
-				this._state[0].data.write('', true),
+			this._state[0].process.process?.stdout.once("end", () =>
+				this._state[0].data.write("", true),
 			);
 
 			const solutionRunArguments = this._resolveRunArguments(
 				languageSettings.runCommand,
-				'${file}',
+				// biome-ignore lint/suspicious/noTemplateCurlyInString: for the extension
+				"${file}",
 			);
 			this._state[1].process.run(
 				solutionRunArguments[0],
@@ -259,22 +261,22 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...solutionRunArguments.slice(1),
 			);
-			this._state[1].process.process?.on('error', (data) => {
-				if (data.name !== 'AbortError') {
+			this._state[1].process.process?.on("error", (data) => {
+				if (data.name !== "AbortError") {
 					this._state[1].data.write(data.message, true);
 				}
 			});
-			this._state[1].process.process?.stdout.on('data', (data: string) =>
+			this._state[1].process.process?.stdout.on("data", (data: string) =>
 				this._state[1].data.write(data, false),
 			);
-			this._state[1].process.process?.stdout.once('end', () =>
-				this._state[1].data.write('', true),
+			this._state[1].process.process?.stdout.once("end", () =>
+				this._state[1].data.write("", true),
 			);
 
 			const goodSolutionRunArguments = this._resolveRunArguments(
 				languageSettings.runCommand,
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				config.get('goodSolutionFile')!,
+				config.get("goodSolutionFile")!,
 			);
 			this._state[2].process.run(
 				goodSolutionRunArguments[0],
@@ -282,25 +284,25 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				cwd,
 				...goodSolutionRunArguments.slice(1),
 			);
-			this._state[2].process.process?.on('error', (data) => {
-				if (data.name !== 'AbortError') {
+			this._state[2].process.process?.on("error", (data) => {
+				if (data.name !== "AbortError") {
 					this._state[2].data.write(data.message, true);
 				}
 			});
-			this._state[2].process.process?.stdout.on('data', (data: string) =>
+			this._state[2].process.process?.stdout.on("data", (data: string) =>
 				this._state[2].data.write(data, false),
 			);
-			this._state[2].process.process?.stdout.once('end', () =>
-				this._state[2].data.write('', true),
+			this._state[2].process.process?.stdout.once("end", () =>
+				this._state[2].data.write("", true),
 			);
 
 			for (let i = 0; i < 3; i++) {
 				// if any process fails then the other 2 should be gracefully closed
-				this._state[i].process.process?.once('close', (code) => {
+				this._state[i].process.process?.once("close", (code) => {
 					if (code === null || code) {
 						for (let j = 0; j < 3; j++) {
 							if (j !== i) {
-								this._state[j].process.process?.kill('SIGUSR1');
+								this._state[j].process.process?.kill("SIGUSR1");
 							}
 						}
 					}
@@ -314,7 +316,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				if (this._state[i].process.timedOut) {
 					anyFailed = true;
 					this._state[i].status = Status.TL;
-				} else if (this._state[i].process.signal === 'SIGUSR1') {
+				} else if (this._state[i].process.signal === "SIGUSR1") {
 					this._state[i].status = Status.NA;
 				} else if (this._state[i].process.exitCode !== 0) {
 					anyFailed = true;
@@ -362,7 +364,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		if (this._running) {
 			this._stopFlag = true;
 			for (let i = 0; i < 3; i++) {
-				this._state[i].process.process?.kill('SIGUSR1');
+				this._state[i].process.process?.kill("SIGUSR1");
 			}
 		}
 	}
@@ -382,8 +384,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			resolvedFile = resolveVariables(
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
 				vscode.workspace
-					.getConfiguration('fastolympiccoding')
-					.get('generatorFile')!,
+					.getConfiguration("fastolympiccoding")
+					.get("generatorFile")!,
 			);
 		} else if (id === 1) {
 			resolvedFile = file;
@@ -391,14 +393,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			resolvedFile = resolveVariables(
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
 				vscode.workspace
-					.getConfiguration('fastolympiccoding')
-					.get('goodSolutionFile')!,
+					.getConfiguration("fastolympiccoding")
+					.get("goodSolutionFile")!,
 			);
 		}
 
 		this._testcaseViewProvider.addTestcaseToFile(resolvedFile, {
 			stdin: this._state[0].data.data,
-			stderr: '',
+			stderr: "",
 			stdout: this._state[1].data.data,
 			acceptedStdout: this._state[2].data.data,
 			elapsed: 0,
@@ -432,7 +434,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 
 		let isDefault = true;
 		for (const state of this._state) {
-			isDefault &&= state.data.data === '';
+			isDefault &&= state.data.data === "";
 			isDefault &&= state.status === Status.NA;
 		}
 		super.writeStorage(

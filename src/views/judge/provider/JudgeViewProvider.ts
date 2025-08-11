@@ -1,17 +1,17 @@
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import * as path from "node:path";
+import * as vscode from "vscode";
 
-import { type ITestcase, Status, Stdio } from '~common/common';
-import type { ILanguageSettings, IProblem, ITest } from '~common/provider';
-import BaseViewProvider from '~utils/BaseViewProvider';
-import { Runnable, compile } from '~utils/runtime';
+import { type ITestcase, Status, Stdio } from "~common/common";
+import type { ILanguageSettings, IProblem, ITest } from "~common/provider";
+import BaseViewProvider from "~utils/BaseViewProvider";
+import { compile, Runnable } from "~utils/runtime";
 import {
-	ReadonlyStringProvider,
-	TextHandler,
 	openInNewEditor,
+	ReadonlyStringProvider,
 	resolveCommand,
 	resolveVariables,
-} from '~utils/vscode';
+	TextHandler,
+} from "~utils/vscode";
 import {
 	Action,
 	type IActionMessage,
@@ -23,14 +23,14 @@ import {
 	ProviderMessageType,
 	type WebviewMessage,
 	WebviewMessageType,
-} from '../message';
+} from "../message";
 
 interface IFileData {
 	timeLimit: number;
 	testcases: ITestcase[] | unknown;
 }
 interface IState
-	extends Omit<ITestcase, 'stdin' | 'stderr' | 'stdout' | 'acceptedStdout'> {
+	extends Omit<ITestcase, "stdin" | "stderr" | "stdout" | "acceptedStdout"> {
 	stdin: TextHandler;
 	stderr: TextHandler;
 	stdout: TextHandler;
@@ -46,7 +46,7 @@ function setTestcaseStats(state: IState, timeLimit: number) {
 		state.status = Status.TL;
 	} else if (state.process.exitCode === null || state.process.exitCode) {
 		state.status = Status.RE;
-	} else if (state.acceptedStdout.data === '\n') {
+	} else if (state.acceptedStdout.data === "\n") {
 		state.status = Status.NA;
 	} else if (state.stdout.data === state.acceptedStdout.data) {
 		state.status = Status.AC;
@@ -56,7 +56,7 @@ function setTestcaseStats(state: IState, timeLimit: number) {
 }
 
 function coerceToObject(data: unknown): unknown {
-	if (typeof data === 'object' && data !== null) {
+	if (typeof data === "object" && data !== null) {
 		return data;
 	}
 	return {};
@@ -107,7 +107,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 	}
 
 	constructor(context: vscode.ExtensionContext) {
-		super('judge', context);
+		super("judge", context);
 
 		vscode.window.onDidChangeActiveTextEditor(
 			() => this.loadCurrentFileData(),
@@ -150,8 +150,8 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		const testcases: ITestcase[] = data.tests.map((test: ITest): ITestcase => {
 			return {
 				stdin: test.input,
-				stderr: '',
-				stdout: '',
+				stderr: "",
+				stdout: "",
 				acceptedStdout: test.output,
 				elapsed: 0,
 				status: Status.WA,
@@ -349,39 +349,39 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				data,
 			});
 
-		newTestcase.stdin.write(testcase?.stdin ?? '', !!testcase);
-		newTestcase.stderr.write(testcase?.stderr ?? '', !!testcase);
-		newTestcase.stdout.write(testcase?.stdout ?? '', !!testcase);
-		newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? '', true);
+		newTestcase.stdin.write(testcase?.stdin ?? "", !!testcase);
+		newTestcase.stderr.write(testcase?.stderr ?? "", !!testcase);
+		newTestcase.stdout.write(testcase?.stdout ?? "", !!testcase);
+		newTestcase.acceptedStdout.write(testcase?.acceptedStdout ?? "", true);
 
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: newTestcase.status,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'elapsed',
+			property: "elapsed",
 			value: newTestcase.elapsed,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'shown',
+			property: "shown",
 			value: newTestcase.shown,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'toggled',
+			property: "toggled",
 			value: newTestcase.toggled,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'skipped',
+			property: "skipped",
 			value: newTestcase.skipped,
 		});
 
@@ -406,7 +406,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		}
 
 		const runSettings = vscode.workspace.getConfiguration(
-			'fastolympiccoding.runSettings',
+			"fastolympiccoding.runSettings",
 		);
 		const extension = path.extname(file);
 		const languageSettings = runSettings[extension] as
@@ -423,7 +423,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
-				property: 'status',
+				property: "status",
 				value: Status.COMPILING,
 			});
 			const code = await compile(
@@ -435,7 +435,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 				super._postMessage({
 					type: WebviewMessageType.SET,
 					id,
-					property: 'status',
+					property: "status",
 					value: Status.CE,
 				});
 				return;
@@ -451,19 +451,19 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'stderr',
-			value: '',
+			property: "stderr",
+			value: "",
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'stdout',
-			value: '',
+			property: "stdout",
+			value: "",
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: Status.RUNNING,
 		});
 
@@ -481,19 +481,19 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		);
 
 		testcase.process.process?.stdin.write(testcase.stdin.data);
-		testcase.process.process?.stderr.on('data', (data: string) =>
+		testcase.process.process?.stderr.on("data", (data: string) =>
 			testcase.stderr.write(data, false),
 		);
-		testcase.process.process?.stdout.on('data', (data: string) =>
+		testcase.process.process?.stdout.on("data", (data: string) =>
 			testcase.stdout.write(data, false),
 		);
-		testcase.process.process?.stderr.once('end', () =>
-			testcase.stderr.write('', true),
+		testcase.process.process?.stderr.once("end", () =>
+			testcase.stderr.write("", true),
 		);
-		testcase.process.process?.stdout.once('end', () =>
-			testcase.stdout.write('', true),
+		testcase.process.process?.stdout.once("end", () =>
+			testcase.stdout.write("", true),
 		);
-		testcase.process.process?.once('error', (data: Error) => {
+		testcase.process.process?.once("error", (data: Error) => {
 			super._postMessage({
 				type: WebviewMessageType.STDIO,
 				id,
@@ -503,25 +503,25 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
-				property: 'status',
+				property: "status",
 				value: Status.RE,
 			});
 			this._saveFileData();
 		});
-		testcase.process.process?.once('close', () => {
-			testcase.process.process?.stderr.removeAllListeners('data');
-			testcase.process.process?.stdout.removeAllListeners('data');
+		testcase.process.process?.once("close", () => {
+			testcase.process.process?.stderr.removeAllListeners("data");
+			testcase.process.process?.stdout.removeAllListeners("data");
 			setTestcaseStats(testcase, this._timeLimit);
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
-				property: 'status',
+				property: "status",
 				value: testcase.status,
 			});
 			super._postMessage({
 				type: WebviewMessageType.SET,
 				id,
-				property: 'elapsed',
+				property: "elapsed",
 				value: testcase.elapsed,
 			});
 
@@ -547,13 +547,13 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: Status.EDITING,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'stdin',
+			property: "stdin",
 			value: testcase.stdin.data,
 		});
 	}
@@ -566,14 +566,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: testcase.status,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'acceptedStdout',
-			value: '',
+			property: "acceptedStdout",
+			value: "",
 		});
 		testcase.acceptedStdout.reset();
 		testcase.acceptedStdout.write(testcase.stdout.data, true);
@@ -590,14 +590,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: testcase.status,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'acceptedStdout',
-			value: '',
+			property: "acceptedStdout",
+			value: "",
 		});
 		this._saveFileData();
 	}
@@ -613,13 +613,13 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'shown',
+			property: "shown",
 			value: testcase.shown,
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'toggled',
+			property: "toggled",
 			value: true,
 		});
 		this._saveFileData();
@@ -633,7 +633,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'skipped',
+			property: "skipped",
 			value: testcase.skipped,
 		});
 		this._saveFileData();
@@ -650,7 +650,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		);
 
 		vscode.commands.executeCommand(
-			'vscode.diff',
+			"vscode.diff",
 			stdout,
 			acStdout,
 			`Diff: Testcase #${id + 1}`,
@@ -691,14 +691,14 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'stdin',
-			value: '',
+			property: "stdin",
+			value: "",
 		});
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'acceptedStdout',
-			value: '',
+			property: "acceptedStdout",
+			value: "",
 		});
 
 		testcase.stdin.reset();
@@ -710,7 +710,7 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({
 			type: WebviewMessageType.SET,
 			id,
-			property: 'status',
+			property: "status",
 			value: testcase.status,
 		});
 

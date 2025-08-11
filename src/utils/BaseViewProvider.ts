@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 interface IWorkspaceState {
 	[key: string]: unknown;
@@ -6,8 +6,8 @@ interface IWorkspaceState {
 
 function getNonce(): string {
 	const CHOICES =
-		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	let nonce = '';
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	let nonce = "";
 	for (let i = 0; i < 32; i++) {
 		nonce += CHOICES.charAt(Math.floor(Math.random() * CHOICES.length));
 	}
@@ -32,7 +32,7 @@ export default abstract class<ProviderMessageType, WebviewMessageType>
 		webviewView.webview.options = {
 			enableScripts: true,
 			localResourceRoots: [
-				vscode.Uri.joinPath(this._context.extensionUri, 'dist'),
+				vscode.Uri.joinPath(this._context.extensionUri, "dist"),
 			],
 		};
 		webviewView.webview.html = this._getWebviewContent(webviewView.webview);
@@ -52,7 +52,7 @@ export default abstract class<ProviderMessageType, WebviewMessageType>
 			this.view,
 			{} as IWorkspaceState,
 		);
-		if (!data || typeof data !== 'object') {
+		if (!data || typeof data !== "object") {
 			return {};
 		}
 		return data;
@@ -75,11 +75,11 @@ export default abstract class<ProviderMessageType, WebviewMessageType>
 	}
 
 	private _getWebviewContent(webview: vscode.Webview): string {
-		const config = vscode.workspace.getConfiguration('fastolympiccoding');
+		const config = vscode.workspace.getConfiguration("fastolympiccoding");
 		// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-		const font = config.get<string>('font')!;
-		const scriptUri = this._getUri(webview, ['dist', this.view, 'index.js']);
-		const stylesUri = this._getUri(webview, ['dist', 'styles.css']);
+		const font = config.get<string>("font")!;
+		const scriptUri = this._getUri(webview, ["dist", this.view, "index.js"]);
+		const stylesUri = this._getUri(webview, ["dist", "styles.css"]);
 		const nonce = getNonce();
 
 		return `

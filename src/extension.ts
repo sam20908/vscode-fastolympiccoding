@@ -1,17 +1,17 @@
-import * as fs from 'node:fs/promises';
-import * as http from 'node:http';
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import * as fs from "node:fs/promises";
+import * as http from "node:http";
+import * as path from "node:path";
+import * as vscode from "vscode";
 
-import type { ILanguageSettings, IProblem } from '~common/provider';
-import { compile } from '~utils/runtime';
-import { ReadonlyStringProvider, resolveVariables } from '~utils/vscode';
-import JudgeViewProvider from './views/judge/provider/JudgeViewProvider';
-import StressViewProvider from './views/stress/provider/StressViewProvider';
+import type { ILanguageSettings, IProblem } from "~common/provider";
+import { compile } from "~utils/runtime";
+import { ReadonlyStringProvider, resolveVariables } from "~utils/vscode";
+import JudgeViewProvider from "./views/judge/provider/JudgeViewProvider";
+import StressViewProvider from "./views/stress/provider/StressViewProvider";
 
 let judgeViewProvider: JudgeViewProvider;
 let stressViewProvider: StressViewProvider;
-let competitiveCompanionServer: http.Server | undefined = undefined;
+let competitiveCompanionServer: http.Server | undefined;
 
 let competitiveCompanionStatusItem: vscode.StatusBarItem;
 
@@ -50,19 +50,19 @@ async function getFileContent(
 	})(file);
 	if (has_cycle) {
 		const choice = await vscode.window.showWarningMessage(
-			'Cyclic dependency found! Do you still want to insert the template?',
-			'Yes',
-			'No',
+			"Cyclic dependency found! Do you still want to insert the template?",
+			"Yes",
+			"No",
 		);
-		if (choice === 'No') {
+		if (choice === "No") {
 			return undefined;
 		}
 	}
 
 	const contents = await Promise.all(
-		order.map((file) => fs.readFile(path.join(baseDirectory, file), 'utf-8')),
+		order.map((file) => fs.readFile(path.join(baseDirectory, file), "utf-8")),
 	);
-	const combined = contents.join('\n');
+	const combined = contents.join("\n");
 	return combined;
 }
 
@@ -100,17 +100,17 @@ function registerCommands(context: vscode.ExtensionContext): void {
 		vscode.StatusBarAlignment.Right,
 		10000,
 	);
-	compilationStatusItem.name = 'Compilation Status';
-	compilationStatusItem.text = '$(zap) Compiling...';
+	compilationStatusItem.name = "Compilation Status";
+	compilationStatusItem.text = "$(zap) Compiling...";
 	compilationStatusItem.backgroundColor = new vscode.ThemeColor(
-		'statusBarItem.warningBackground',
+		"statusBarItem.warningBackground",
 	);
 	compilationStatusItem.hide(); // enable and disable it as necessary
 	context.subscriptions.push(compilationStatusItem);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.compile',
+			"fastolympiccoding.compile",
 			() => {
 				const file = vscode.window.activeTextEditor?.document.fileName;
 				if (!file) {
@@ -118,7 +118,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 				}
 
 				const runSettings = vscode.workspace.getConfiguration(
-					'fastolympiccoding.runSettings',
+					"fastolympiccoding.runSettings",
 				);
 				const extension = path.extname(file);
 				const languageSettings = runSettings[extension] as
@@ -138,54 +138,54 @@ function registerCommands(context: vscode.ExtensionContext): void {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('fastolympiccoding.runAll', () =>
+		vscode.commands.registerTextEditorCommand("fastolympiccoding.runAll", () =>
 			judgeViewProvider.runAll(),
 		),
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('fastolympiccoding.stopAll', () =>
+		vscode.commands.registerTextEditorCommand("fastolympiccoding.stopAll", () =>
 			judgeViewProvider.stopAll(),
 		),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.deleteAll',
+			"fastolympiccoding.deleteAll",
 			() => judgeViewProvider.deleteAll(),
 		),
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('fastolympiccoding.saveAll', () =>
+		vscode.commands.registerTextEditorCommand("fastolympiccoding.saveAll", () =>
 			judgeViewProvider.saveAll(),
 		),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.startStressTest',
+			"fastolympiccoding.startStressTest",
 			() => void stressViewProvider.run(),
 		),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.stopStressTest',
+			"fastolympiccoding.stopStressTest",
 			() => stressViewProvider.stop(),
 		),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.clearStressTest',
+			"fastolympiccoding.clearStressTest",
 			() => stressViewProvider.clear(),
 		),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.clearData',
+			"fastolympiccoding.clearData",
 			() => {
 				judgeViewProvider.clearData();
 				stressViewProvider.clearData();
@@ -197,16 +197,16 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand(
-			'fastolympiccoding.insertFileTemplate',
+			"fastolympiccoding.insertFileTemplate",
 			() => {
 				void (async () => {
-					const config = vscode.workspace.getConfiguration('fastolympiccoding');
+					const config = vscode.workspace.getConfiguration("fastolympiccoding");
 					const dependencies = config.get<IDependencies>(
-						'fileTemplatesDependencies',
+						"fileTemplatesDependencies",
 					);
 					const baseDirectory = resolveVariables(
 						// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-						config.get('fileTemplatesBaseDirectory')!,
+						config.get("fileTemplatesBaseDirectory")!,
 					);
 					const files = (
 						await fs.readdir(baseDirectory, {
@@ -218,7 +218,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 						return { label: file.name, description: file.path };
 					});
 					const pickedFile = await vscode.window.showQuickPick(items, {
-						title: 'Insert File Template',
+						title: "Insert File Template",
 					});
 					if (!pickedFile) {
 						return;
@@ -247,9 +247,9 @@ function registerCommands(context: vscode.ExtensionContext): void {
 						},
 					);
 					// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-					const foldTemplate = config.get<boolean>('foldFileTemplate')!;
+					const foldTemplate = config.get<boolean>("foldFileTemplate")!;
 					if (inserted && foldTemplate) {
-						vscode.commands.executeCommand('editor.fold');
+						vscode.commands.executeCommand("editor.fold");
 					}
 				})();
 			},
@@ -258,13 +258,13 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'fastolympiccoding.listenForCompetitiveCompanion',
+			"fastolympiccoding.listenForCompetitiveCompanion",
 			() => listenForCompetitiveCompanion(),
 		),
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'fastolympiccoding.stopCompetitiveCompanion',
+			"fastolympiccoding.stopCompetitiveCompanion",
 			() => stopCompetitiveCompanion(),
 		),
 	);
@@ -278,17 +278,17 @@ function listenForCompetitiveCompanion() {
 	let problemDatas: IProblem[] = [];
 	let cnt = 0;
 	competitiveCompanionServer = http.createServer((req, res) => {
-		if (req.method !== 'POST') {
+		if (req.method !== "POST") {
 			res.end();
 			return;
 		}
 
-		let ccData = '';
-		req.setEncoding('utf-8');
-		req.on('data', (data) => {
+		let ccData = "";
+		req.setEncoding("utf-8");
+		req.on("data", (data) => {
 			ccData += data;
 		});
-		req.on('end', () => {
+		req.on("end", () => {
 			void (async () => {
 				res.end(() => req.socket.unref());
 
@@ -310,16 +310,16 @@ function listenForCompetitiveCompanion() {
 
 				const file = vscode.window.activeTextEditor?.document.fileName;
 				const workspace =
-					vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? '';
-				const config = vscode.workspace.getConfiguration('fastolympiccoding');
+					vscode.workspace.workspaceFolders?.at(0)?.uri.fsPath ?? "";
+				const config = vscode.workspace.getConfiguration("fastolympiccoding");
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				const openSelectedFiles = config.get<boolean>('openSelectedFiles')!;
+				const openSelectedFiles = config.get<boolean>("openSelectedFiles")!;
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				const askForWhichFile = config.get<boolean>('askForWhichFile')!;
+				const askForWhichFile = config.get<boolean>("askForWhichFile")!;
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				const includePattern = config.get<string>('includePattern')!;
+				const includePattern = config.get<string>("includePattern")!;
 				// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-				const excludePattern = config.get<string>('excludePattern')!;
+				const excludePattern = config.get<string>("excludePattern")!;
 				const files = (
 					await vscode.workspace.findFiles(includePattern, excludePattern)
 				).map((file) => ({
@@ -331,11 +331,11 @@ function listenForCompetitiveCompanion() {
 					let fileTo =
 						problemDatas[i].batch.size === 1 && file
 							? path.relative(workspace, file)
-							: '';
+							: "";
 					if (askForWhichFile || problemDatas[i].batch.size > 1 || !file) {
 						const pick = vscode.window.createQuickPick();
 						pick.title = `Testcases for "${problemDatas[i].name}"`;
-						pick.placeholder = 'Full file path to put testcases onto';
+						pick.placeholder = "Full file path to put testcases onto";
 						pick.value = fileTo;
 						pick.ignoreFocusOut = true;
 						pick.items = files;
@@ -349,24 +349,24 @@ function listenForCompetitiveCompanion() {
 								} else {
 									resolve(
 										path.join(
-											pick.selectedItems[0].description ?? '',
+											pick.selectedItems[0].description ?? "",
 											pick.selectedItems[0].label,
 										),
 									);
 								}
 								pick.hide();
 							});
-							pick.onDidHide(() => resolve(''));
+							pick.onDidHide(() => resolve(""));
 						});
 					}
-					if (fileTo === '') {
+					if (fileTo === "") {
 						vscode.window.showWarningMessage(
 							`No file to write testcases for "${problemDatas[i].name}"`,
 						);
 						continue;
 					}
 					fileTo = path.join(workspace, fileTo);
-					await fs.writeFile(fileTo, '', { flag: 'a' });
+					await fs.writeFile(fileTo, "", { flag: "a" });
 
 					judgeViewProvider.addFromCompetitiveCompanion(
 						fileTo,
@@ -387,25 +387,25 @@ function listenForCompetitiveCompanion() {
 		});
 	});
 
-	competitiveCompanionServer.once('connection', (socket) => {
+	competitiveCompanionServer.once("connection", (socket) => {
 		socket.unref();
 	});
-	competitiveCompanionServer.once('listening', () => {
+	competitiveCompanionServer.once("listening", () => {
 		competitiveCompanionStatusItem.show();
 	});
-	competitiveCompanionServer.once('error', (error) =>
+	competitiveCompanionServer.once("error", (error) =>
 		vscode.window.showErrorMessage(
 			`Competitive Companion listener error: ${error}`,
 		),
 	);
-	competitiveCompanionServer.once('close', () => {
+	competitiveCompanionServer.once("close", () => {
 		competitiveCompanionServer = undefined;
 		competitiveCompanionStatusItem.hide();
 	});
 
-	const config = vscode.workspace.getConfiguration('fastolympiccoding');
+	const config = vscode.workspace.getConfiguration("fastolympiccoding");
 	// biome-ignore lint/style/noNonNullAssertion: Default value provided by VSCode
-	const port = config.get<number>('port')!;
+	const port = config.get<number>("port")!;
 	competitiveCompanionServer.listen(port);
 }
 
@@ -419,12 +419,12 @@ function stopCompetitiveCompanion() {
 
 function createCompetitiveCompanionStatus(context: vscode.ExtensionContext) {
 	const competitiveCompanionStatus = vscode.window.createStatusBarItem(
-		'fastolympiccoding.listeningForCompetitiveCompanion',
+		"fastolympiccoding.listeningForCompetitiveCompanion",
 		vscode.StatusBarAlignment.Left,
 	);
-	competitiveCompanionStatus.name = 'Competitive Companion Indicator';
-	competitiveCompanionStatus.text = '$(zap)';
-	competitiveCompanionStatus.tooltip = 'Listening For Competitive Companion';
+	competitiveCompanionStatus.name = "Competitive Companion Indicator";
+	competitiveCompanionStatus.text = "$(zap)";
+	competitiveCompanionStatus.tooltip = "Listening For Competitive Companion";
 	competitiveCompanionStatus.hide();
 	context.subscriptions.push(competitiveCompanionStatus);
 

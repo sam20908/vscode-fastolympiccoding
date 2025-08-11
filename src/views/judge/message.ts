@@ -1,4 +1,4 @@
-import type { ITestcase, Stdio } from '~common/common';
+import type { ITestcase, Stdio } from "~common/common";
 
 export enum Action {
 	RUN = 0,

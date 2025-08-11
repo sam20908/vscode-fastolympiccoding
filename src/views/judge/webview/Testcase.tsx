@@ -1,8 +1,7 @@
-import { useSignal } from '@preact/signals';
-import type { FunctionComponent } from 'preact';
-import { useRef } from 'preact/hooks';
+import { useSignal } from "@preact/signals";
+import type { FunctionComponent } from "preact";
 
-import { type ITestcase, Status, Stdio } from '~common/common';
+import { type ITestcase, Status, Stdio } from "~common/common";
 import {
 	ArrowSvgInwards,
 	ArrowSvgOutwards,
@@ -10,11 +9,11 @@ import {
 	GRAY_COLOR,
 	GREEN_COLOR,
 	RED_COLOR,
-} from '~common/webview';
-import type { PreactObservable } from '~external/observable';
-import { Action, ProviderMessageType } from '../message';
-import AutoresizeTextarea from './AutoresizeTextarea';
-import { postProviderMessage } from './message';
+} from "~common/webview";
+import type { PreactObservable } from "~external/observable";
+import { Action, ProviderMessageType } from "../message";
+import AutoresizeTextarea from "./AutoresizeTextarea";
+import { postProviderMessage } from "./message";
 
 interface Props {
 	id: number;
@@ -62,27 +61,27 @@ const StatusButton: FunctionComponent<StatusButtonProps> = ({
 	switch (status) {
 		case Status.CE:
 			color = RED_COLOR;
-			text = 'CE';
+			text = "CE";
 			break;
 		case Status.RE:
 			color = RED_COLOR;
-			text = 'RE';
+			text = "RE";
 			break;
 		case Status.WA:
 			color = RED_COLOR;
-			text = 'WA';
+			text = "WA";
 			break;
 		case Status.AC:
 			color = GREEN_COLOR;
-			text = 'AC';
+			text = "AC";
 			break;
 		case Status.TL:
 			color = RED_COLOR;
-			text = 'TL';
+			text = "TL";
 			break;
 		default:
 			color = GRAY_COLOR;
-			text = 'NA';
+			text = "NA";
 			break;
 	}
 
@@ -100,7 +99,7 @@ export default function ({ id, testcase }: Props) {
 	const viewStdio = (stdio: Stdio) =>
 		postProviderMessage({ type: ProviderMessageType.VIEW, id, stdio });
 
-	const newStdin = useSignal('');
+	const newStdin = useSignal("");
 
 	const StdinRow: FunctionComponent = () => (
 		<div class="flex flex-row">
@@ -144,7 +143,7 @@ export default function ({ id, testcase }: Props) {
 		case Status.CE:
 		case Status.TL:
 			return (
-				<div className={`container mx-auto mb-6 ${testcase.skipped && 'fade'}`}>
+				<div className={`container mx-auto mb-6 ${testcase.skipped && "fade"}`}>
 					<div class="flex flex-row unfade">
 						<div class="w-6 shrink-0" />
 						<div class="flex justify-start gap-x-2 bg-zinc-800 grow unfade">
@@ -161,7 +160,7 @@ export default function ({ id, testcase }: Props) {
 								backgroundColor={BLUE_COLOR}
 								text="run"
 								onClickPrePost={() => {
-									newStdin.value = ''; // may be adding additional inputs, so clear out previous inputs
+									newStdin.value = ""; // may be adding additional inputs, so clear out previous inputs
 								}}
 							/>
 							<ActionButton
@@ -177,7 +176,7 @@ export default function ({ id, testcase }: Props) {
 								id={id}
 								action={Action.TOGGLE_SKIP}
 								backgroundColor="#000000"
-								text={testcase.skipped ? 'unskip' : 'skip'}
+								text={testcase.skipped ? "unskip" : "skip"}
 								className="unfade"
 							/>
 						</div>
@@ -258,13 +257,13 @@ export default function ({ id, testcase }: Props) {
 						<AutoresizeTextarea
 							input={newStdin}
 							onKeyUp={(event) => {
-								if (event.key === 'Enter') {
+								if (event.key === "Enter") {
 									postProviderMessage({
 										type: ProviderMessageType.STDIN,
 										id,
 										data: newStdin.value,
 									});
-									newStdin.value = '';
+									newStdin.value = "";
 								}
 							}}
 						/>
@@ -287,8 +286,8 @@ export default function ({ id, testcase }: Props) {
 									const stdin = testcase.stdin;
 									const acceptedStdout = testcase.acceptedStdout;
 									// the extension host will send shortened version of both of these
-									testcase.stdin = '';
-									testcase.acceptedStdout = '';
+									testcase.stdin = "";
+									testcase.acceptedStdout = "";
 									postProviderMessage({
 										type: ProviderMessageType.SAVE,
 										id,

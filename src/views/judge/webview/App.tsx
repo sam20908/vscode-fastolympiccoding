@@ -1,9 +1,9 @@
-import { signal, useComputed } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { signal, useComputed } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 
-import { type ITestcase, Status, Stdio } from '~common/common';
-import { BLUE_COLOR } from '~common/webview';
-import { observable } from '~external/observable';
+import { type ITestcase, Status, Stdio } from "~common/common";
+import { BLUE_COLOR } from "~common/webview";
+import { observable } from "~external/observable";
 import {
 	type IDeleteMessage,
 	type IInitialState,
@@ -14,15 +14,15 @@ import {
 	ProviderMessageType,
 	type WebviewMessage,
 	WebviewMessageType,
-} from '../message';
-import Testcase from './Testcase';
-import { postProviderMessage } from './message';
+} from "../message";
+import { postProviderMessage } from "./message";
+import Testcase from "./Testcase";
 
 const testcases = observable(new Map<number, ITestcase>());
 const newTimeLimit = signal(0);
 const show = signal(true);
 
-window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
+window.addEventListener("message", (msg: MessageEvent<WebviewMessage>) => {
 	switch (msg.data.type) {
 		case WebviewMessageType.NEW:
 			handleNew(msg.data);
@@ -51,10 +51,10 @@ window.addEventListener('message', (msg: MessageEvent<WebviewMessage>) => {
 function handleNew({ id }: INewMessage) {
 	if (!testcases.get(id)) {
 		testcases.set(id, {
-			stdin: '',
-			stderr: '',
-			stdout: '',
-			acceptedStdout: '',
+			stdin: "",
+			stderr: "",
+			stdout: "",
+			acceptedStdout: "",
 			elapsed: 0,
 			status: Status.NA,
 			shown: true,
@@ -100,8 +100,8 @@ function handleSaveAll() {
 			const stdin = testcase.stdin;
 			const acceptedStdout = testcase.acceptedStdout;
 			// the extension host will send shortened version of both of these
-			testcase.stdin = '';
-			testcase.acceptedStdout = '';
+			testcase.stdin = "";
+			testcase.acceptedStdout = "";
 			postProviderMessage({
 				type: ProviderMessageType.SAVE,
 				id,
@@ -172,7 +172,7 @@ export default function () {
 							newTimeLimit.value = Number(event.currentTarget.value);
 						}}
 						onKeyUp={(event) => {
-							if (event.key === 'Enter') {
+							if (event.key === "Enter") {
 								submitTimeLimit();
 							}
 						}}

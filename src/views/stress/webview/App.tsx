@@ -1,9 +1,9 @@
-import { batch, signal, useComputed } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { batch, signal, useComputed } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 
-import { Status } from '~common/common';
-import { BLUE_COLOR, RED_COLOR } from '~common/webview';
-import { type PreactObservable, observable } from '~external/observable';
+import { Status } from "~common/common";
+import { BLUE_COLOR, RED_COLOR } from "~common/webview";
+import { observable, type PreactObservable } from "~external/observable";
 import {
 	type IRunningMessage,
 	type IShowMessage,
@@ -12,9 +12,9 @@ import {
 	ProviderMessageType,
 	type WebviewMessage,
 	WebviewMessageType,
-} from '../message';
-import State from './State';
-import { postProviderMessage } from './message';
+} from "../message";
+import { postProviderMessage } from "./message";
+import State from "./State";
 
 interface IState {
 	data: string;
@@ -22,9 +22,9 @@ interface IState {
 }
 
 const state: PreactObservable<IState[]> = observable([
-	{ data: '', status: Status.NA },
-	{ data: '', status: Status.NA },
-	{ data: '', status: Status.NA },
+	{ data: "", status: Status.NA },
+	{ data: "", status: Status.NA },
+	{ data: "", status: Status.NA },
 ]);
 const showView = signal(true);
 const running = signal(false);
@@ -35,7 +35,7 @@ const add = (id: number) =>
 	postProviderMessage({ type: ProviderMessageType.ADD, id });
 const clear = () => postProviderMessage({ type: ProviderMessageType.CLEAR });
 
-window.addEventListener('message', (event: MessageEvent<WebviewMessage>) => {
+window.addEventListener("message", (event: MessageEvent<WebviewMessage>) => {
 	switch (event.data.type) {
 		case WebviewMessageType.STATUS:
 			handleStatus(event.data);
@@ -66,7 +66,7 @@ function handleStdio({ id, data }: IStdioMessage) {
 function handleClear() {
 	batch(() => {
 		for (let i = 0; i < 3; i++) {
-			state[i].data = '';
+			state[i].data = "";
 			state[i].status = Status.NA;
 		}
 	});
@@ -105,7 +105,7 @@ export default function App() {
 			state[1].status === Status.COMPILING ||
 			state[2].status === Status.COMPILING
 		)
-			return <></>;
+			return;
 		return (
 			<button
 				type="button"

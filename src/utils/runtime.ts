@@ -1,10 +1,10 @@
-import * as child_process from 'node:child_process';
-import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import * as child_process from "node:child_process";
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as vscode from "vscode";
 
-import { ReadonlyTerminal, resolveCommand } from './vscode';
+import { ReadonlyTerminal, resolveCommand } from "./vscode";
 
 export class Runnable {
 	private _process: child_process.ChildProcessWithoutNullStreams | undefined =
@@ -24,16 +24,16 @@ export class Runnable {
 			cwd,
 			signal: timeoutSignal,
 		});
-		this._process.stdout.setEncoding('utf-8');
-		this._process.stderr.setEncoding('utf-8');
+		this._process.stdout.setEncoding("utf-8");
+		this._process.stderr.setEncoding("utf-8");
 		this._promise = new Promise((resolve) => {
-			this._process?.once('spawn', () => {
+			this._process?.once("spawn", () => {
 				this._startTime = performance.now();
 			});
-			this._process?.once('error', () => {
+			this._process?.once("error", () => {
 				this._startTime = performance.now(); // necessary since an invalid command can lead to process not spawned
 			});
-			this._process?.once('close', (code, signal) => {
+			this._process?.once("close", (code, signal) => {
 				this._endTime = performance.now();
 				this._signal = signal;
 				this._exitCode = code;
@@ -65,12 +65,12 @@ export class Runnable {
 
 export async function getFileChecksum(file: string): Promise<string> {
 	return new Promise((resolve, reject) => {
-		const hash = crypto.createHash('md5');
-		const stream = fs.createReadStream(file, { encoding: 'utf8' });
-		stream.once('error', (err) => reject(err));
-		stream.once('end', () => {
+		const hash = crypto.createHash("md5");
+		const stream = fs.createReadStream(file, { encoding: "utf8" });
+		stream.once("error", (err) => reject(err));
+		stream.once("end", () => {
 			hash.end();
-			resolve(hash.digest('hex'));
+			resolve(hash.digest("hex"));
 		});
 		stream.pipe(hash);
 	});
@@ -92,9 +92,9 @@ export async function compile(
 	}
 
 	const resolvedArgs = resolveCommand(compileCommand, file);
-	const currentCommand = resolvedArgs.join(' ');
+	const currentCommand = resolvedArgs.join(" ");
 	const currentChecksum = await getFileChecksum(file);
-	const [cachedChecksum, cachedCommand] = lastCompiled.get(file) ?? [-1, ''];
+	const [cachedChecksum, cachedCommand] = lastCompiled.get(file) ?? [-1, ""];
 	if (currentChecksum === cachedChecksum && currentCommand === cachedCommand) {
 		return 0; // avoid unnecessary recompilation
 	}
@@ -106,10 +106,10 @@ export async function compile(
 				vscode.StatusBarAlignment.Right,
 				10000,
 			);
-			compilationStatusItem.name = 'Compilation Status';
+			compilationStatusItem.name = "Compilation Status";
 			compilationStatusItem.text = `$(zap) ${path.basename(file)}`;
 			compilationStatusItem.backgroundColor = new vscode.ThemeColor(
-				'statusBarItem.warningBackground',
+				"statusBarItem.warningBackground",
 			);
 			compilationStatusItem.show();
 			context.subscriptions.push(compilationStatusItem);
@@ -122,11 +122,11 @@ export async function compile(
 				...resolvedArgs.slice(1),
 			);
 
-			let err = '';
-			process.process?.stderr.on('data', (data: string) => {
+			let err = "";
+			process.process?.stderr.on("data", (data: string) => {
 				err += data;
 			});
-			process.process?.on('error', (data) => {
+			process.process?.on("error", (data) => {
 				err += data.stack;
 			});
 
@@ -141,7 +141,7 @@ export async function compile(
 			const terminal = vscode.window.createTerminal({
 				name: path.basename(file),
 				pty: dummy,
-				iconPath: { id: 'zap' },
+				iconPath: { id: "zap" },
 				location: { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
 			});
 			errorTerminal.set(file, terminal);
