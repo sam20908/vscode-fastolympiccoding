@@ -2,7 +2,13 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 
 import { type ITestcase, Status, Stdio } from "~common/common";
-import type { ILanguageSettings, IProblem, ITest } from "~common/provider";
+import {
+	coerceToArray,
+	coerceToObject,
+	type ILanguageSettings,
+	type IProblem,
+	type ITest,
+} from "~common/provider";
 import BaseViewProvider from "~utils/BaseViewProvider";
 import { compile, Runnable } from "~utils/runtime";
 import {
@@ -53,22 +59,6 @@ function setTestcaseStats(state: IState, timeLimit: number) {
 	} else {
 		state.status = Status.WA;
 	}
-}
-
-function coerceToObject(data: unknown): unknown {
-	if (typeof data === "object" && data !== null) {
-		return data;
-	}
-	return {};
-}
-function coerceToArray(data: unknown): unknown[] {
-	const arr = [];
-	if (Array.isArray(data)) {
-		for (const obj of data) {
-			arr.push(coerceToObject(obj));
-		}
-	}
-	return arr;
 }
 
 export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {

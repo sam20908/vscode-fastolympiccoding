@@ -2,7 +2,11 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 
 import { Status } from "~common/common";
-import type { ILanguageSettings } from "~common/provider";
+import {
+	coerceToArray,
+	coerceToObject,
+	type ILanguageSettings,
+} from "~common/provider";
 import BaseViewProvider from "~utils/BaseViewProvider";
 import { compile, Runnable } from "~utils/runtime";
 import {
@@ -107,12 +111,9 @@ export default class extends BaseViewProvider<ProviderMessage, WebviewMessage> {
 		super._postMessage({ type: WebviewMessageType.SHOW, visible: true });
 
 		const fileData = super.readStorage()[file];
-		const state = fileData && Array.isArray(fileData) ? fileData : [];
+		const state = coerceToArray(fileData);
 		for (let id = 0; id < state.length; id++) {
-			const testcase =
-				state[id] !== "null" && typeof state[id] === "object"
-					? (state[id] as Partial<IData>)
-					: {};
+			const testcase = coerceToObject(state[id]) as Partial<IData>;
 
 			this._state[id].data.write(testcase.data ?? "", true);
 			this._state[id].status = testcase.status ?? Status.NA;

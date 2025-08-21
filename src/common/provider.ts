@@ -53,3 +53,19 @@ export interface IProblem {
 		size: number;
 	};
 }
+
+export function coerceToObject(data: unknown): object {
+	if (typeof data === "object" && data !== null) {
+		return data;
+	}
+	return {};
+}
+export function coerceToArray(data: unknown): object[] {
+	const arr = [];
+	if (Array.isArray(data)) {
+		for (const obj of data) {
+			arr.push(coerceToObject(obj));
+		}
+	}
+	return arr;
+}
